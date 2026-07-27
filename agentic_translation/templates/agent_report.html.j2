@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agent Repair Timeline — {{ story.title }} — {{ chapter }}</title>
+  <style>
+    :root { color-scheme: light; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    body { max-width: 1100px; margin: 2rem auto; padding: 0 1rem; color: #24292f; line-height: 1.45; }
+    h1, h2, h3 { line-height: 1.2; }
+    h1 { margin-bottom: .25rem; }
+    .muted { color: #57606a; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: .75rem; margin: 1rem 0; }
+    .card, .step { border: 1px solid #d0d7de; border-radius: 8px; padding: .85rem 1rem; background: #f6f8fa; }
+    .card strong { font-size: 1.25rem; }
+    .step { margin: .75rem 0; background: #fff; }
+    .step h3 { margin: 0 0 .45rem; }
+    .ok, .accepted { color: #116329; font-weight: 700; }
+    .rejected { color: #cf222e; font-weight: 700; }
+    pre { white-space: pre-wrap; overflow-wrap: anywhere; padding: .85rem; border-radius: 6px; background: #f6f8fa; border: 1px solid #d8dee4; }
+    code { overflow-wrap: anywhere; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: .45rem .6rem; text-align: left; vertical-align: top; border-bottom: 1px solid #d8dee4; }
+  </style>
+</head>
+<body>
+  <h1>Agent Repair Timeline</h1>
+  <p class="muted">{{ story.title }} / {{ chapter }} / run <code>{{ run_id }}</code></p>
+
+  <div class="grid">
+    <div class="card">Status<br><strong class="{{ 'accepted' if status == 'verified' else 'rejected' }}">{{ status }}</strong></div>
+    <div class="card">QA findings<br><strong>{{ initial_count }} → {{ final_count }}</strong></div>
+    <div class="card">Provider<br><strong>{{ provider }}</strong><br><span class="muted">{{ model }} · {{ provider_mode }}</span></div>
+    <div class="card">Replay cache<br><strong>{{ cache_hits }}/{{ cache_total }} hits</strong></div>
+  </div>
+  {% if provenance_note %}<p class="muted"><strong>Provenance:</strong> {{ provenance_note }}</p>{% endif %}
+
+  <h2>Source and translation context</h2>
+  <h3>Source</h3>
+  <pre>{{ source_context }}</pre>
+  <h3>Initial translation</h3>
+  <pre>{{ translation_context }}</pre>
+  {% if final_context %}
+  <h3>Final translation</h3>
+  <pre>{{ final_context }}</pre>
+  {% endif %}
+
+  <h2>Initial QA findings</h2>
+  {% if initial_findings %}
+  <table>
+    <thead><tr><th>Severity</th><th>Check</th><th>Message</th></tr></thead>
+    <tbody>
+      {% for finding in initial_findings %}
+      <tr><td>{{ finding.severity }}</td><td><code>{{ finding.check_id }}</code></td><td>{{ finding.message }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% if initial_omitted %}<p class="muted">{{ initial_omitted }} additional finding(s) omitted for bounded reporting.</p>{% endif %}
+  {% else %}<p>None.</p>{% endif %}
+
+  <h2>Chronology</h2>
+  {% for step in steps %}
+  <section class="step">
+    <h3>{{ step.sequence }}. <code>{{ step.tool }}</code> — <span class="{{ 'accepted' if step.status == 'ACCEPTED' else 'rejected' if step.status == 'REJECTED' else 'ok' }}">{{ step.status }}</span></h3>
+    <p>{{ step.message }}</p>
+    {% if step.rationale %}<p><strong>Rationale:</strong> {{ step.rationale }}</p>{% endif %}
+    {% if step.old_text or step.new_text %}<p><strong>Patch:</strong> <code>{{ step.old_text }}</code> → <code>{{ step.new_text }}</code></p>{% endif %}
+    {% if step.qa_before or step.qa_after %}<p><strong>QA before/after:</strong> {{ step.qa_before }} → {{ step.qa_after }}</p>{% endif %}
+    {% if step.cache_hit is not none %}<p class="muted">Cache hit: {{ "yes" if step.cache_hit else "no" }}</p>{% endif %}
+    {% if step.auxiliary_calls %}<p class="muted"><strong>Auxiliary calls:</strong> {% for call in step.auxiliary_calls %}{{ call.namespace }} ({{ call.provider }}/{{ call.model }}){% if not loop.last %}, {% endif %}{% endfor %}</p>{% endif %}
+  </section>
+  {% else %}<p>No actions recorded.</p>{% endfor %}
+
+  {% if terminology_resolutions %}
+  <h2>Terminology resolutions</h2>
+  <ul>
+    {% for resolution in terminology_resolutions %}
+    <li><code>{{ resolution.source_term }}</code> → <strong>{{ resolution.selected_translation or "(escalated)" }}</strong>
+      <span class="muted">(votes: {{ resolution.vote_count }}, agreement: {{ "yes" if resolution.agreement else "no" }}, evaluator: {{ "yes" if resolution.evaluator_used else "no" }}, escalated: {{ "yes" if resolution.escalated else "no" }})</span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  <h2>Final QA</h2>
+  <p><strong>QA findings: {{ initial_count }} → {{ final_count }}</strong></p>
+  {% if final_findings %}
+  <ul>{% for finding in final_findings %}<li><code>{{ finding.check_id }}</code>: {{ finding.message }}</li>{% endfor %}</ul>
+  {% if final_omitted %}<p class="muted">{{ final_omitted }} additional finding(s) omitted for bounded reporting.</p>{% endif %}
+  {% else %}<p class="accepted">Verified clean.</p>{% endif %}
+
+  <h2>Artifacts</h2>
+  {% if artifact_paths %}
+  <ul>{% for name, path in artifact_paths.items() %}<li><strong>{{ name }}:</strong> <code>{{ path }}</code></li>{% endfor %}</ul>
+  {% else %}<p>None recorded.</p>{% endif %}
+</body>
+</html>

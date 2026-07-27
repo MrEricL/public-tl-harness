@@ -1,0 +1,35 @@
+[project]
+name = "agentic-translation-prototype"
+version = "0.1.0"
+description = "Demo-first agentic long-form translation production system prototype"
+requires-python = ">=3.11"
+dependencies = [
+  "ebooklib",
+  "jinja2",
+  "openai>=1",
+  "pydantic>=2",
+  "pyyaml",
+  "rich",
+  "typer",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest",
+]
+
+[project.scripts]
+agentic-translation = "agentic_translation.cli:app"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["agentic_translation*"]
+
+[tool.setuptools.package-data]
+agentic_translation = ["templates/*.j2"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

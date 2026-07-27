@@ -1,0 +1,23 @@
+slug: agentic_terminology_demo
+title: Agentic Terminology Consensus Demo
+language: zh
+public_safe: true
+chapter_ids:
+  - "0001"
+paths:
+  source_dir: source
+  glossary_path: terms/master_glossary.txt
+  expected_dir: expected
+  runs_dir: runs
+translation:
+  provider: offline
+  model: offline-fixture-v1
+qa:
+  max_repairs: 2
+report:
+  mode: full
+  max_source_chars: 1200
+  max_translation_chars: 1200
+package:
+  formats:
+    - txt

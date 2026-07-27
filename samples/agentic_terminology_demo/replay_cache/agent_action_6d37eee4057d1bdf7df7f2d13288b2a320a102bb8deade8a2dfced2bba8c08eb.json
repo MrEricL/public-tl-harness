@@ -1,0 +1,6 @@
+{
+  "new_text": "Dao Heart guarded the mountain gate.",
+  "old_text": "Heart of Dao guarded 道心.",
+  "rationale": "Apply the arbitrated terminology and remove residual source text.",
+  "tool": "submit_patch"
+}

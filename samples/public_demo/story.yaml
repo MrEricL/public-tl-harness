@@ -1,0 +1,26 @@
+slug: public_demo
+title: Public Demo
+language: zh
+public_safe: true
+chapter_ids:
+  - "0001"
+paths:
+  source_dir: samples/public_demo/source
+  glossary_path: samples/public_demo/terms/master_glossary.txt
+  prompt_path: samples/public_demo/prompt.txt
+  expected_dir: samples/public_demo/expected
+  runs_dir: runs
+translation:
+  provider: offline
+  model: offline-fixture-v1
+qa:
+  max_repairs: 3
+report:
+  mode: full
+  max_source_chars: 1200
+  max_translation_chars: 1200
+package:
+  formats:
+    - txt
+    - epub
+

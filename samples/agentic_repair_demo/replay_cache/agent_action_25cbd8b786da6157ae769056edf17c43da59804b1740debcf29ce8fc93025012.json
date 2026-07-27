@@ -1,0 +1,6 @@
+{
+  "new_text": "Dao Heart guarded the mountain gate.",
+  "old_text": "Heart of Dao guarded 道心.",
+  "rationale": "replace the bounded defective paragraph",
+  "tool": "submit_patch"
+}
