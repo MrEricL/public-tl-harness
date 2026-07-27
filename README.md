@@ -1,5 +1,7 @@
 # Agentic Translation Reliability Harness
 
+![Wuxia-inspired mountain landscape banner for the Agentic Translation Reliability Harness](assets/readme-banner.png)
+
 A bounded repair agent for Chinese–English translation pipelines.
 
 The model selects typed tools. Python validates every action and accepts a
@@ -11,7 +13,55 @@ find issue → inspect evidence → resolve terminology → propose patch → re
 
 > **Governing rule:** the model proposes; the verifier disposes.
 
-## Why this project matters
+## Why I built this
+
+I've always been a big fan of stories from China, Japan, and Korea (see the
+explosion in webtoons and anime), and the biggest bottleneck was the shortage
+of translators. There was a huge buffet of stories, but only a trickle made it
+into English. Translators had to read, translate, proofread, and publish each
+chapter. That was a lot of work for a fickle audience.
+
+In the dark ages (pre-LLM), the stopgap solution was Google Translate, but it
+was a garbled, maddening mess. Cultural idioms and phrases were translated far
+too literally. Character genders could also change constantly because pronouns
+do not always map cleanly into English without context.
+
+LLMs helped a lot. Even a quick pass with a basic open-source model could
+produce something coherent and readable. But a novel is not one chapter. Web
+novels run for hundreds of chapters and hundreds of thousands of words, and the
+model does not reliably remember every translation choice it made along the
+way.
+
+That is a real problem in fantasy stories, where names carry a lot of the
+worldbuilding. A technique called **Moon-Shadow Step** in chapter 40 might turn
+into **Lunar Shadow Footwork** in chapter 140. The **Azure Cloud Sect** might
+show up later as the **Blue Cloud School**. These are all "fine" translations
+on their own, but the terminology will jump around from chapter to chapter.
+
+There's also a "taste" problem underneath the consistency one. I speak some
+Chinese, so I can catch cases where **Blue Cloud School** is technically
+understandable but categorically wrong for the feel of a high-fantasy story.
+Traditionally, this is where a translator has the most influence: choosing the
+language that shapes the feel of the world.
+
+So this project uses a context-aware glossary: each chapter gets the
+established terms that matter for it, and the system looks for places where
+the translation drifted. I built an agentic repair process around that. When a
+term is unclear, the agent checks the source, the current translation, and the
+glossary, gets independent suggestions from two LLMs, and uses a blinded
+evaluator when they disagree — the extra context helps with taste calls like
+**Blue Cloud School**, while the glossary and guardrails keep style decisions
+consistent from chapter to chapter. Python only applies the resulting patch if
+the consistency checks improve without creating a new problem.
+
+The ideal is simple: drop in a story and have a complete English translation
+ready to read on the train. The current demo focuses on Chinese-to-English
+translation because I can personally audit ambiguous cases, but the same
+approach can apply to other languages. The broader workflow also includes
+scraping chapters at the start and binding and formatting the finished
+translation as an EPUB at the end. Those parts are omitted from this demo.
+
+## What the harness changes
 
 LLM output can sound convincing while breaking terminology, leaving source
 language in the text, or changing document structure. This project puts a

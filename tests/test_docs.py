@@ -8,7 +8,9 @@ def test_readme_frontloads_the_bounded_replay_thesis() -> None:
 
     for text in [
         "Agentic Translation Reliability Harness",
-        "Why this project matters",
+        "Why I built this",
+        "Moon-Shadow Step",
+        "What the harness changes",
         "Run the main demo",
         "resolve_terminology → submit_patch → finish",
         "What “agentic” means here",
