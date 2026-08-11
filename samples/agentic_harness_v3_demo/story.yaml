@@ -1,0 +1,11 @@
+slug: agentic_harness_v3_demo
+title: Harness v3 Golden Path
+language: zh
+public_safe: true
+chapter_ids:
+  - "0001"
+paths:
+  source_dir: source
+  glossary_path: terms/master_glossary.txt
+  expected_dir: expected
+  runs_dir: runs

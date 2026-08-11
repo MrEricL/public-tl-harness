@@ -55,6 +55,8 @@ from .agent_provider import TERMINOLOGY_TOOL_SCHEMA_VERSION
 from .agent_repair import run_repair_episode
 from .agent_report import render_agent_episode_html, render_agent_episode_markdown
 from .glossary import load_glossary
+from .harness_demo import resume_golden_demo, run_golden_demo
+from .harness_evals import load_suite, report_json, run_harness_eval
 from .preflight import PreflightReport, run_preflight
 from .providers_llm import LLMProviderUnavailable
 from .providers_llm import inspect_response_cache, is_openai_compatible_provider, probe_live_provider
@@ -68,9 +70,11 @@ app = typer.Typer(help="Agentic long-form translation production system prototyp
 demo_app = typer.Typer(help="Demo commands.")
 batch_app = typer.Typer(help="Batch corpus-production commands.")
 cache_app = typer.Typer(help="Live/replay cache commands.")
+harness_app = typer.Typer(help="Deterministic Harness v3 operational proof commands.")
 app.add_typer(demo_app, name="demo")
 app.add_typer(batch_app, name="batch")
 app.add_typer(cache_app, name="cache")
+app.add_typer(harness_app, name="harness")
 console = Console()
 
 TERMINAL_BATCH_STATUSES = {"packaged", "review_required", "failed", "skipped"}
@@ -79,6 +83,109 @@ DEFAULT_PANEL_NOTE_PREFIX = "Merged split numbered note panels."
 PRACTICAL_REVIEWER = "codex"
 PRACTICAL_PANEL_NOTE_PREFIX = "Merged split corpus panel."
 DEFAULT_AGENT_REPLAY_RUN_ID = "agentic_repair_demo_replay"
+
+
+def _print_harness_result(result) -> None:  # noqa: ANN001 - keep CLI wiring narrow.
+    run_dir = result.session_dir
+    console.print(f"Status: {result.snapshot.status}")
+    if result.episode.final_status:
+        console.print(f"Final status: {result.episode.final_status}")
+    console.print(f"Run: {run_dir}")
+    for name in (
+        "session_events.jsonl",
+        "session_snapshot.json",
+        "agent_episode.json",
+        "glossary.txt",
+        "translated_final.txt",
+        "report.md",
+        "report.html",
+    ):
+        console.print(f"{name}: {run_dir / name}")
+
+
+@harness_app.command("golden")
+def harness_golden(
+    runs_dir: Path = typer.Option(..., "--runs-dir", help="Directory that will contain the fixed demo run slug."),
+    pause_for_approval: bool = typer.Option(False, "--pause-for-approval", help="Stop at the glossary promotion approval gate."),
+    auto_approve: bool = typer.Option(False, "--auto-approve", help="Apply the scripted approval and finish in one invocation."),
+    overwrite: bool = typer.Option(False, "--overwrite", help="Replace exactly the selected fixed run directory."),
+) -> None:
+    """Run the deterministic Harness v3 golden operational path."""
+
+    try:
+        if not pause_for_approval and not auto_approve:
+            pause_for_approval = True
+        result = run_golden_demo(
+            runs_dir=runs_dir,
+            pause_for_approval=pause_for_approval,
+            auto_approve=auto_approve,
+            overwrite=overwrite,
+        )
+    except (OSError, ValueError, RuntimeError, TypeError, KeyError, json.JSONDecodeError) as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        raise typer.Exit(1) from exc
+    _print_harness_result(result)
+
+
+@harness_app.command("resume")
+def harness_resume(
+    run_dir: Path = typer.Argument(..., help="Existing golden run directory."),
+    approve: bool = typer.Option(False, "--approve", help="Approve the pending persistent glossary promotion."),
+    reject: bool = typer.Option(False, "--reject", help="Reject the pending persistent glossary promotion."),
+    reviewer: str = typer.Option("demo-reviewer", "--reviewer", help="Reviewer identity recorded in the approval receipt."),
+    note: str = typer.Option("Approved in the Harness v3 review flow.", "--note", help="Bounded review note recorded in the receipt."),
+) -> None:
+    """Resume a paused golden run with one explicit approval decision."""
+
+    try:
+        if approve == reject:
+            raise ValueError("Choose exactly one of --approve or --reject")
+        decision = "approved" if approve else "rejected"
+        result = resume_golden_demo(
+            run_dir=run_dir,
+            decision=decision,
+            reviewer=reviewer,
+            note=note,
+        )
+    except (OSError, ValueError, RuntimeError, TypeError, KeyError, json.JSONDecodeError) as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        raise typer.Exit(1) from exc
+    _print_harness_result(result)
+
+
+@harness_app.command("bench")
+def harness_bench(
+    suite: Path = typer.Option(..., "--suite", help="Local deterministic Harness v3 fixture suite."),
+    out: Path = typer.Option(
+        ...,
+        "--out",
+        "--output-dir",
+        help="Directory that will contain harness_eval.json and case artifacts.",
+    ),
+    overwrite: bool = typer.Option(False, "--overwrite", help="Replace the selected output directory."),
+    json_output: bool = typer.Option(False, "--json", help="Print the canonical report JSON."),
+) -> None:
+    """Compare deterministic Harness v3 transport/exposure contracts."""
+
+    try:
+        report = run_harness_eval(load_suite(suite), out, overwrite=overwrite)
+    except (OSError, ValueError, RuntimeError, TypeError, json.JSONDecodeError) as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        raise typer.Exit(1) from exc
+    has_failures = any(not item.passed for item in report.results)
+    if json_output:
+        typer.echo(report_json(report), nl=False)
+        if has_failures:
+            raise typer.Exit(1)
+        return
+    for summary in report.summaries:
+        console.print(
+            f"{summary.variant}: {summary.passed}/{summary.total} passed "
+            f"({summary.verified} verified, {summary.rejected} approval rejected)"
+        )
+    console.print(f"Report: {(Path(out).expanduser().resolve() / 'harness_eval.json')}")
+    if has_failures:
+        raise typer.Exit(1)
 
 
 def _apply_term_consensus_repair_defaults(

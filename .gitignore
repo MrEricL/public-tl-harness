@@ -1,9 +1,12 @@
+# Generated run artifacts at the repository root and in nested demos/benchmarks.
 runs/*
+**/runs/*
 !runs/.gitkeep
 local_fixtures/*
 !local_fixtures/.gitkeep
 .auth/
 .sessions/
+.notes/
 .agentic_cache/
 .env
 .env.local
@@ -22,3 +25,4 @@ htmlcov/
 .ruff_cache/
 .DS_Store
 LLM_UPLOAD_MEGA*.txt
+export.txt

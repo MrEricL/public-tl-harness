@@ -26,10 +26,13 @@ from .agent_models import (
     FinishAction,
     GetQAFindingsAction,
     LookupGlossaryAction,
+    NormalizePunctuationAction,
+    RepairExecutorSnapshot,
     ResolveTerminologyAction,
     ReadSourceContextAction,
     ReadTranslationContextAction,
     SubmitPatchAction,
+    TextEdit,
 )
 from .agent_provider import (
     AgentActionProvider,
@@ -38,10 +41,13 @@ from .agent_provider import (
     AgentToolSchemaVersion,
     BASE_TOOL_SCHEMA_VERSION,
     PriorObservableStep,
+    REGISTRY_TOOL_SCHEMA_VERSION,
+    tool_contracts_for_version,
 )
 from .models import GlossaryEntry, GlossaryParseResult, ProviderCallRecord, QAFinding, QAReport
 from .qa import run_translation_qa
 from .repair import validate_patch_improves_qa
+from .providers_offline import normalize_english_punctuation
 from .terminology import TerminologyResolutionError, TerminologyResolver
 from .terminology_models import TerminologyRequest, TerminologyResolution
 from .text import split_paragraphs
@@ -52,6 +58,19 @@ from .text import split_paragraphs
 MAX_CONTEXT_RADIUS = 3
 MAX_CONTEXT_CHARS = 2000
 TRUNCATION_MARKER = "...[truncated]"
+
+
+def _count_overlapping_occurrences(text: str, needle: str) -> int:
+    """Count every exact occurrence, including overlapping matches."""
+
+    count = 0
+    start = 0
+    while True:
+        index = text.find(needle, start)
+        if index < 0:
+            return count
+        count += 1
+        start = index + 1
 
 
 @dataclass
@@ -98,7 +117,7 @@ def finding_identities(
 
 
 class RepairToolExecutor:
-    """Execute the seven bounded repair tools against an in-memory translation."""
+    """Execute the bounded repair tools against an in-memory translation."""
 
     def __init__(
         self,
@@ -134,6 +153,67 @@ class RepairToolExecutor:
         self.current_qa = self._run_qa(translated_text)
         self.escalated = False
         self.finished = False
+
+    def snapshot(self) -> RepairExecutorSnapshot:
+        """Return a detached, serializable copy of the working state.
+
+        The master glossary is intentionally absent from this projection.  A
+        session snapshot carries only the episode-local glossary, while a
+        resumed executor receives the caller's master glossary separately.
+        This keeps provisional terminology changes from leaking back into the
+        caller-owned glossary object.
+        """
+
+        return RepairExecutorSnapshot(
+            current_text=self.current_text,
+            current_qa=self.current_qa.model_copy(deep=True),
+            episode_glossary=self.episode_glossary.model_copy(deep=True),
+            escalated=self.escalated,
+            finished=self.finished,
+        )
+
+    @classmethod
+    def from_snapshot(
+        cls,
+        snapshot: RepairExecutorSnapshot,
+        *,
+        source_text: str,
+        glossary: GlossaryParseResult,
+        run_id: str = "agent-repair",
+        story_slug: str = "demo",
+        chapter: str = "0001",
+        terminology_resolver: TerminologyResolver | None = None,
+        terminology_source_context_chars: int = 800,
+        terminology_translation_context_chars: int = 800,
+    ) -> "RepairToolExecutor":
+        """Restore an executor from a durable snapshot.
+
+        ``RepairToolExecutor.__init__`` still establishes all immutable
+        context and an isolated master/episode glossary pair.  The persisted
+        mutable fields are then replaced with detached copies so restoring a
+        snapshot cannot alias data owned by the snapshot model or caller.
+        """
+
+        if not isinstance(snapshot, RepairExecutorSnapshot):
+            snapshot = RepairExecutorSnapshot.model_validate(snapshot)
+        executor = cls(
+            source_text=source_text,
+            translated_text=snapshot.current_text,
+            glossary=glossary,
+            run_id=run_id,
+            story_slug=story_slug,
+            chapter=chapter,
+            terminology_resolver=terminology_resolver,
+            terminology_source_context_chars=terminology_source_context_chars,
+            terminology_translation_context_chars=terminology_translation_context_chars,
+        )
+        executor.current_text = snapshot.current_text
+        executor.current_qa = snapshot.current_qa.model_copy(deep=True)
+        executor.episode_glossary = snapshot.episode_glossary.model_copy(deep=True)
+        executor.glossary = executor.episode_glossary
+        executor.escalated = snapshot.escalated
+        executor.finished = snapshot.finished
+        return executor
 
     def _run_qa(self, translated_text: str, *, glossary: GlossaryParseResult | None = None) -> QAReport:
         return run_translation_qa(
@@ -236,6 +316,8 @@ class RepairToolExecutor:
             return self._resolve_terminology(action)
         if isinstance(action, SubmitPatchAction):
             return self._submit_patch(action)
+        if isinstance(action, NormalizePunctuationAction):
+            return self._normalize_punctuation()
         if isinstance(action, EscalateAction):
             return self._escalate(action)
         if isinstance(action, FinishAction):
@@ -524,24 +606,17 @@ class RepairToolExecutor:
                 calls.append(record)
         return calls
 
-    def _submit_patch(self, action: SubmitPatchAction) -> ToolExecutionResult:
-        before_report = self.current_qa
-        occurrence_count = self.current_text.count(action.old_text)
-        if occurrence_count != 1:
-            return self._result(
-                self._observation(
-                    ok=False,
-                    kind="patch_rejected",
-                    message=(
-                        "old_text must occur exactly once in the current translation "
-                        f"(found {occurrence_count})."
-                    ),
-                    data={"occurrences": occurrence_count},
-                ),
-                qa_before=before_report,
-            )
+    def _verify_candidate(
+        self,
+        candidate_text: str,
+        *,
+        mutation_tool: str,
+    ) -> ToolExecutionResult:
+        """Run one QA gate and commit the complete candidate atomically."""
 
-        candidate_text = self.current_text.replace(action.old_text, action.new_text, 1)
+        before_report = self.current_qa
+        # This is deliberately the only candidate QA call.  All structured
+        # edits are applied to a temporary string before entering the gate.
         candidate_report = self._run_qa(candidate_text)
         before_keys = finding_identities(before_report)
         after_keys = finding_identities(candidate_report)
@@ -559,6 +634,8 @@ class RepairToolExecutor:
             "after_findings": candidate_report.summary.total_findings,
             "new_finding_identities": [list(identity) for identity in sorted(new_keys, key=str)],
         }
+        if mutation_tool != "submit_patch":
+            evidence["mutation_tool"] = mutation_tool
         if not accepted:
             reason = "Patch did not strictly improve weighted QA."
             if new_keys:
@@ -588,6 +665,46 @@ class RepairToolExecutor:
             qa_before=before_report,
             qa_after=candidate_report,
         )
+
+    def _reject_edit(
+        self,
+        edit: TextEdit,
+        *,
+        occurrences: int,
+        whole_document: bool = False,
+    ) -> ToolExecutionResult:
+        if whole_document:
+            message = "Whole-document old_text targets are not allowed for bounded mutations."
+        else:
+            # Preserve the v1 replay observation wording for a single-edit
+            # rejection while applying the same rule to each evolving edit.
+            message = f"old_text must occur exactly once in the current translation (found {occurrences})."
+        return self._result(
+            self._observation(
+                ok=False,
+                kind="patch_rejected",
+                message=message,
+                data={"occurrences": occurrences},
+            ),
+            qa_before=self.current_qa,
+        )
+
+    def _submit_patch(self, action: SubmitPatchAction) -> ToolExecutionResult:
+        # Apply every edit to a temporary candidate.  Any invalid target
+        # rejects the whole action and leaves the working copy untouched.
+        candidate_text = self.current_text
+        for edit in action.edits:
+            if edit.old_text == candidate_text:
+                return self._reject_edit(edit, occurrences=1, whole_document=True)
+            occurrence_count = _count_overlapping_occurrences(candidate_text, edit.old_text)
+            if occurrence_count != 1:
+                return self._reject_edit(edit, occurrences=occurrence_count)
+            candidate_text = candidate_text.replace(edit.old_text, edit.new_text, 1)
+        return self._verify_candidate(candidate_text, mutation_tool=action.tool)
+
+    def _normalize_punctuation(self) -> ToolExecutionResult:
+        candidate_text = normalize_english_punctuation(self.current_text)
+        return self._verify_candidate(candidate_text, mutation_tool="normalize_punctuation")
 
     def _escalate(self, action: EscalateAction) -> ToolExecutionResult:
         self.escalated = True
@@ -827,6 +944,11 @@ def run_repair_episode(
         raise ValueError("max_steps must be at least 1")
     if max_patch_attempts < 1:
         raise ValueError("max_patch_attempts must be at least 1")
+    if tool_schema_version == REGISTRY_TOOL_SCHEMA_VERSION:
+        raise ValueError(
+            "run_repair_episode supports only the legacy agent-tools.v1/v2 schemas; "
+            "use run_repair_session for agent-tools.v3."
+        )
 
     episode_path = Path(episode_path)
     executor = RepairToolExecutor(
@@ -878,13 +1000,19 @@ def run_repair_episode(
             provided_action = provider.next_action(request)
             try:
                 action = _AGENT_ACTION_ADAPTER.validate_python(provided_action)
-                if tool_schema_version == BASE_TOOL_SCHEMA_VERSION and isinstance(
-                    action, ResolveTerminologyAction
-                ):
+                declared_tools = {
+                    contract["tool"]
+                    for contract in tool_contracts_for_version(tool_schema_version)
+                }
+                # Do not alter the byte-stable v1/v2 prompt/cache contracts;
+                # the punctuation mutation is admitted by the runtime union.
+                if tool_schema_version != REGISTRY_TOOL_SCHEMA_VERSION:
+                    declared_tools.add("normalize_punctuation")
+                if action.tool not in declared_tools:
                     raise AgentActionValidationError(
-                        "resolve_terminology is unavailable under agent-tools.v1.",
+                        f"{action.tool} is unavailable under {tool_schema_version}.",
                         response=provided_action.model_dump(mode="json")
-                        if isinstance(provided_action, ResolveTerminologyAction)
+                        if hasattr(provided_action, "model_dump")
                         else provided_action,
                     )
             except ValidationError as exc:
@@ -910,9 +1038,9 @@ def run_repair_episode(
             raise
 
         persisted_action = _bounded_action_payload(action)
-        if isinstance(action, SubmitPatchAction):
+        if isinstance(action, (SubmitPatchAction, NormalizePunctuationAction)):
             patch_attempts += 1
-        if isinstance(action, SubmitPatchAction) and patch_attempts > max_patch_attempts:
+        if isinstance(action, (SubmitPatchAction, NormalizePunctuationAction)) and patch_attempts > max_patch_attempts:
             execution = ToolExecutionResult(
                 observation=AgentObservation(
                     ok=False,
@@ -934,8 +1062,6 @@ def run_repair_episode(
                 qa_before=RepairToolExecutor._bounded_report(executor.current_qa),
                 qa_after=RepairToolExecutor._bounded_report(executor.current_qa),
             )
-        elif isinstance(action, SubmitPatchAction):
-            execution = executor.execute(action)
         else:
             execution = executor.execute(action)
 

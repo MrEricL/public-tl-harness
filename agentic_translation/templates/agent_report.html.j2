@@ -3,95 +3,346 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
   <title>Agent Repair Timeline — {{ story.title }} — {{ chapter }}</title>
   <style>
-    :root { color-scheme: light; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-    body { max-width: 1100px; margin: 2rem auto; padding: 0 1rem; color: #24292f; line-height: 1.45; }
-    h1, h2, h3 { line-height: 1.2; }
-    h1 { margin-bottom: .25rem; }
-    .muted { color: #57606a; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: .75rem; margin: 1rem 0; }
-    .card, .step { border: 1px solid #d0d7de; border-radius: 8px; padding: .85rem 1rem; background: #f6f8fa; }
-    .card strong { font-size: 1.25rem; }
-    .step { margin: .75rem 0; background: #fff; }
-    .step h3 { margin: 0 0 .45rem; }
-    .ok, .accepted { color: #116329; font-weight: 700; }
-    .rejected { color: #cf222e; font-weight: 700; }
-    pre { white-space: pre-wrap; overflow-wrap: anywhere; padding: .85rem; border-radius: 6px; background: #f6f8fa; border: 1px solid #d8dee4; }
-    code { overflow-wrap: anywhere; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: .45rem .6rem; text-align: left; vertical-align: top; border-bottom: 1px solid #d8dee4; }
+    :root {
+      --press-sheet: #eeece6;
+      --paper: #fbfaf6;
+      --paper-strong: #fffefa;
+      --ink: #1d2623;
+      --ink-soft: #59625e;
+      --rule: #d0d1ca;
+      --rule-strong: #858c86;
+      --proof-blue: #2f58bd;
+      --proof-blue-soft: #e8edfb;
+      --verified: #17634f;
+      --verified-soft: #e4f1eb;
+      --pending: #8a5b0a;
+      --pending-soft: #f4ead3;
+      --rejected: #963d43;
+      --rejected-soft: #f5e4e4;
+      --display: "Avenir Next", Avenir, "Helvetica Neue", "Segoe UI", sans-serif;
+      --body: "Avenir Next", Avenir, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --reading: Charter, "Bitstream Charter", Cambria, Georgia, serif;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    * { box-sizing: border-box; }
+    html { background: var(--press-sheet); scroll-behavior: smooth; }
+    body {
+      max-width: 78rem;
+      margin: 0 auto;
+      padding: clamp(1rem, 3vw, 2.75rem) clamp(1rem, 4vw, 3.75rem) 4rem;
+      color: var(--ink);
+      background: var(--paper);
+      font: 400 1.0625rem/1.5 var(--body);
+      text-rendering: optimizeLegibility;
+    }
+    h1, h2, h3, h4, p, dl, dd { margin-top: 0; }
+    h1, h2, h3, h4, .utility, .status-badge, .folio-mark { font-family: var(--display); }
+    h1 {
+      margin-bottom: .72rem;
+      font-size: clamp(2.25rem, 3.8vw, 3rem);
+      line-height: .98;
+      letter-spacing: -.03em;
+      font-weight: 600;
+    }
+    h2 { margin-bottom: .48rem; font-size: clamp(1.4rem, 2vw, 1.8rem); line-height: 1.12; letter-spacing: -.02em; font-weight: 600; }
+    h3 { margin-bottom: .45rem; font-size: 1.0625rem; line-height: 1.25; letter-spacing: -.01em; font-weight: 600; }
+    h4 { margin-bottom: .45rem; font-size: 1.0625rem; line-height: 1.25; letter-spacing: -.01em; font-weight: 600; }
+    p { margin-bottom: .55rem; }
+    code, pre, .mono { font-family: var(--mono); }
+    code { overflow-wrap: anywhere; font-size: .91em; }
+    a { color: var(--proof-blue); }
+    :focus-visible { outline: 3px solid var(--proof-blue); outline-offset: 4px; }
+    .skip-link {
+      position: fixed; top: .75rem; left: .75rem; z-index: 10; transform: translateY(-200%);
+      padding: .65rem .85rem; background: var(--ink); color: white; font-weight: 700;
+    }
+    .skip-link:focus { transform: translateY(0); }
+    .utility {
+      color: var(--proof-blue);
+      font: 600 .76rem/1.25 var(--display);
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+    .muted { color: var(--ink-soft); }
+    .verification-synopsis { padding-bottom: 1.35rem; border-bottom: 1px solid var(--ink); }
+    .record-line { margin-bottom: 1.35rem; color: var(--ink-soft); }
+    .synopsis-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(18rem, .9fr); gap: clamp(2rem, 3vw, 3rem); align-items: end; }
+    .synopsis-copy { min-width: 0; }
+    .synopsis-copy > .utility { display: block; margin-bottom: .5rem; }
+    .summary { max-width: 44rem; margin-bottom: .8rem; color: var(--ink-soft); font-size: 1.0625rem; }
+    .review-line { margin-bottom: 0; color: var(--verified); font-size: .9rem; font-weight: 600; }
+    .proof-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; align-self: stretch; padding-top: .4rem; }
+    .fact { display: flex; flex-direction: column; gap: .38rem; min-width: 0; padding-left: .85rem; border-left: 2px solid var(--rule-strong); }
+    .fact.qa-clean { border-left-color: var(--verified); }
+    .fact.qa-open { border-left-color: var(--rejected); }
+    .fact.approval-pending { border-left-color: var(--pending); }
+    .fact.approval-approved { border-left-color: var(--verified); }
+    .fact.approval-rejected { border-left-color: var(--rejected); }
+    .fact strong { font: 600 1.15rem/1.18 var(--display); overflow-wrap: anywhere; }
+    .fact small { color: var(--ink-soft); font-size: .78rem; line-height: 1.35; }
+    .fact strong.verified { color: var(--verified); }
+    .fact strong.pending { color: var(--pending); }
+    .fact strong.rejected { color: var(--rejected); }
+    .evidence-scope { max-width: 59rem; margin: 1.2rem 0 .35rem; padding-left: .85rem; border-left: 2px solid var(--pending); color: var(--ink-soft); font-size: .92rem; }
+    .identity-line { margin: 0; color: var(--ink-soft); font-size: .86rem; }
+    main { display: block; }
+    .report-section { padding-top: clamp(1.75rem, 3vw, 2.75rem); }
+    .section-heading { display: grid; grid-template-columns: 5rem minmax(0, 1fr); gap: 1rem; align-items: baseline; margin-bottom: 1rem; }
+    .section-heading .folio-mark { color: var(--proof-blue); font: 600 .76rem/1.25 var(--display); letter-spacing: .05em; }
+    .section-heading p { max-width: 47rem; margin: .38rem 0 0; color: var(--ink-soft); }
+    .galley-grid { display: grid; grid-template-columns: minmax(15rem, .85fr) minmax(0, 1.45fr); gap: clamp(1.5rem, 2.5vw, 2.5rem); align-items: start; }
+    .galley-margin { min-width: 0; }
+    .galley-sheet { min-width: 0; padding: 1rem 0 1.15rem; border-top: 1px solid var(--rule-strong); }
+    .galley-sheet + .galley-sheet { border-top-color: var(--rule); }
+    .galley-sheet h3 { margin-bottom: .55rem; color: var(--ink-soft); font-size: .76rem; letter-spacing: .08em; text-transform: uppercase; }
+    pre { margin: .55rem 0 0; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink); font: 400 1.1rem/1.5 var(--reading); }
+    .galley-sheet.initial pre { color: var(--ink-soft); }
+    .galley-main { min-width: 0; padding: 1.25rem 1.5rem 1.45rem; border: 1px solid var(--rule-strong); border-top: .28rem solid var(--verified); background: var(--paper-strong); }
+    .galley-main h3 { display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; }
+    .galley-main h3::after { content: "verified"; color: var(--verified); font: 600 .76rem/1.25 var(--display); letter-spacing: .05em; text-transform: uppercase; }
+    .galley-main pre { font-size: clamp(1.15rem, 1.55vw, 1.34rem); line-height: 1.5; }
+    .terminology-note { margin: 1.3rem 0 0; padding-top: .85rem; border-top: 1px solid var(--rule); color: var(--ink-soft); font-size: .9rem; }
+    .terminology-note strong { color: var(--ink); }
+    .audit-layout { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(22rem, .95fr); gap: clamp(2rem, 3.5vw, 3.5rem); align-items: start; }
+    .audit-trace, .audit-receipts { min-width: 0; border-top: 1px solid var(--rule-strong); }
+    .audit-trace { position: relative; padding-left: 1.65rem; }
+    .audit-trace::before { content: ""; position: absolute; top: .75rem; bottom: 0; left: 0; width: 2px; background: var(--proof-blue); }
+    .audit-column-heading { min-height: 2.75rem; margin: 0; padding: .65rem 0 .7rem; color: var(--proof-blue); font: 600 .90rem/1.25 var(--display); letter-spacing: .045em; text-transform: uppercase; }
+    .audit-trace .audit-column-heading { margin-left: -1.05rem; }
+    .event { position: relative; padding: 0 0 1.25rem 1rem; }
+    .event:last-child { padding-bottom: .3rem; }
+    .event::before { content: attr(data-mark); position: absolute; top: -.15rem; left: -2.55rem; display: grid; place-items: center; width: 1.75rem; height: 1.75rem; border: 1px solid var(--proof-blue); border-radius: 50%; background: var(--paper); color: var(--proof-blue); font: 600 .76rem/1 var(--mono); }
+    .event.rejected::before { border-color: var(--rejected); color: var(--rejected); }
+    .event.accepted::before, .event.ok::before { border-color: var(--verified); color: var(--verified); }
+    .event.pending::before { border-color: var(--pending); color: var(--pending); }
+    .event-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: .55rem; }
+    .event-head code { color: var(--ink); font-size: .94rem; font-weight: 700; }
+    .event-status { font: 600 .76rem/1.25 var(--display); letter-spacing: .05em; }
+    .event-status.ok, .event-status.accepted { color: var(--verified); }
+    .event-status.rejected { color: var(--rejected); }
+    .event-status.pending { color: var(--pending); }
+    .event-body { max-width: 49rem; margin: .27rem 0 0; color: var(--ink-soft); }
+    .event-meta { max-width: 53rem; margin: .35rem 0 0; color: var(--ink-soft); font-size: .9rem; }
+    .event-meta strong { color: var(--ink); }
+    .event-meta ol { margin: .3rem 0 0; padding-left: 1.4rem; }
+    .change-set { margin: .65rem 0 0; padding-top: .55rem; border-top: 1px solid var(--rule); }
+    .change-set figcaption { margin-bottom: .35rem; font: 600 .76rem/1.25 var(--display); letter-spacing: .05em; text-transform: uppercase; }
+    .change-set.rejected figcaption { color: var(--rejected); }
+    .change-set.accepted figcaption { color: var(--verified); }
+    .change-pair { display: grid; grid-template-columns: 4.8rem minmax(0, 1fr); gap: .3rem .75rem; padding: .42rem 0; border-bottom: 1px solid var(--rule); }
+    .change-pair:last-child { border-bottom: 0; }
+    .change-label { color: var(--ink-soft); font: 600 .76rem/1.35 var(--display); letter-spacing: .03em; text-transform: uppercase; }
+    .change-pair code { color: var(--ink); font-size: .84rem; line-height: 1.45; }
+    .receipt { min-width: 0; padding: 1rem 0 1.05rem; border-bottom: 1px solid var(--rule); }
+    .receipt h4 { display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; }
+    .receipt p:last-child { margin-bottom: 0; }
+    .receipt-list { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .35rem .8rem; margin: .75rem 0 0; font-size: .9rem; }
+    .receipt-list dt { color: var(--ink-soft); }
+    .receipt-list dd { margin: 0; overflow-wrap: anywhere; }
+    .tool-account { margin: .9rem 0 0; padding-top: .7rem; border-top: 1px solid var(--rule); }
+    .tool-account-summary { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: .55rem; }
+    .tool-account-summary span { color: var(--ink-soft); font-size: .86rem; }
+    .tool-breakdown { display: grid; grid-template-columns: 5.4rem minmax(0, 1fr); gap: .42rem .75rem; margin: 0; font-size: .84rem; }
+    .tool-breakdown dt { color: var(--ink-soft); }
+    .tool-breakdown dd { margin: 0; min-width: 0; }
+    .tool-list { display: flex; flex-wrap: wrap; gap: .18rem .65rem; margin: 0; padding: 0; list-style: none; }
+    .tool-list code { font-size: .82rem; }
+    .tool-list.used code { color: var(--proof-blue); font-weight: 700; }
+    .tool-list.unused code { color: var(--ink-soft); }
+    .approval-boundary { border-top: .22rem solid var(--pending); padding-top: .85rem; }
+    .approval-boundary.applied { border-top-color: var(--verified); }
+    .identity-receipt { border-top: .22rem solid var(--proof-blue); padding-top: .85rem; }
+    .qa-receipt { border-top: .22rem solid var(--verified); padding-top: .85rem; }
+    .status-badge { display: inline-flex; align-items: center; gap: .35rem; padding: .25rem .48rem; border: 1px solid currentColor; color: var(--ink-soft); font: 600 .76rem/1.25 var(--display); letter-spacing: .05em; text-transform: uppercase; }
+    .status-running, .status-in_progress { color: var(--proof-blue); }
+    .status-awaiting_approval { color: var(--pending); }
+    .status-completed, .status-verified { color: var(--verified); }
+    .status-rejected, .status-escalated, .status-failed, .status-blocked { color: var(--rejected); }
+    .hash { display: block; margin-top: .28rem; color: var(--ink-soft); font-size: .78rem; line-height: 1.45; overflow-wrap: anywhere; }
+    .finding-list, .artifact-list { margin: .65rem 0 0; padding-left: 1.25rem; }
+    .finding-list li, .artifact-list li { margin: .3rem 0; }
+    .qa-count { font: 600 1.14rem/1.15 var(--display); letter-spacing: -.02em; }
+    .patch-rejected { color: var(--rejected); }
+    .patch-accepted { color: var(--verified); }
+    .qa-receipt .finding-list { font-size: .9rem; }
+    .table-wrap { overflow-x: auto; }
+    .evidence-table { width: 100%; border-collapse: collapse; background: var(--paper-strong); }
+    .evidence-table th, .evidence-table td { padding: .7rem .75rem; border-bottom: 1px solid var(--rule); text-align: left; vertical-align: top; }
+    .evidence-table th { color: var(--ink-soft); font: 600 .76rem/1.25 var(--display); letter-spacing: .05em; text-transform: uppercase; }
+    .evidence-table tbody tr:last-child td { border-bottom: 0; }
+    details.session-receipt { border: 1px solid var(--rule); background: var(--paper-strong); }
+    details.session-receipt summary { cursor: pointer; padding: .85rem 1rem; color: var(--proof-blue); font-weight: 700; }
+    details.session-receipt[open] summary { border-bottom: 1px solid var(--rule); }
+    .artifact-section { padding-bottom: 1rem; }
+    footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--rule-strong); color: var(--ink-soft); font-size: .86rem; }
+    @media (max-width: 820px) {
+      .synopsis-grid, .audit-layout { grid-template-columns: 1fr; }
+      .proof-facts { max-width: 30rem; }
+      .galley-grid { grid-template-columns: 1fr; }
+      .section-heading { grid-template-columns: 1fr; gap: .25rem; }
+    }
+    @media (max-width: 560px) {
+      body { padding-inline: .85rem; }
+      .proof-facts { grid-template-columns: 1fr 1fr; }
+      .galley-main { padding-inline: 1rem; }
+      .audit-trace { padding-left: 1.25rem; }
+      .audit-trace .audit-column-heading { margin-left: -1.25rem; }
+      .event::before { left: -2.14rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { transition: none !important; animation: none !important; }
+    }
+    @media (prefers-reduced-transparency: reduce) {
+      .galley-main, details.session-receipt { background: var(--paper-strong); }
+    }
+    @media (prefers-contrast: more) {
+      :root { --ink-soft: #303733; --rule: #777d78; --rule-strong: #424844; }
+      .galley-main, .receipt, details.session-receipt { border-color: var(--ink); }
+    }
+    @media print {
+      html, body { background: white; }
+      body { max-width: none; padding: 0; }
+      .skip-link { display: none; }
+    }
   </style>
 </head>
 <body>
-  <h1>Agent Repair Timeline</h1>
-  <p class="muted">{{ story.title }} / {{ chapter }} / run <code>{{ run_id }}</code></p>
+  {% macro fingerprint(value) -%}
+    {%- set text = value|string -%}
+    {{- text[:12] ~ '…' ~ text[-8:] if text|length > 24 else text -}}
+  {%- endmacro %}
+  <a class="skip-link" href="#galley">Skip to verified galley</a>
+  <header class="verification-synopsis" aria-labelledby="record-heading">
+    <p class="record-line utility">Translation repair record · {{ session_status|lower }}</p>
+    <div class="synopsis-grid">
+      <div class="synopsis-copy">
+        <span class="utility">Harness v3 · bounded translation repair</span>
+        <h1 id="record-heading">Translation {% if not final_qa_available %}not yet verified{% elif final_count == 0 %}verified{% else %}requires review{% endif %}</h1>
+        <p class="summary">{{ repair_synopsis }}</p>
+        {% if pending_decision %}<p class="review-line">Reviewed by {{ pending_decision.reviewer }} · decision receipt persisted</p>{% endif %}
+      </div>
+      <div class="proof-facts" aria-label="Run proof facts">
+        <div class="fact {% if not final_qa_available %}qa-unknown{% elif final_count == 0 %}qa-clean{% else %}qa-open{% endif %}"><span class="utility">Final QA</span><strong class="{% if final_qa_available and final_count == 0 %}verified{% elif final_qa_available %}rejected{% endif %}">{% if not final_qa_available %}not run{% elif final_count == 0 %}clean{% else %}{{ final_count }} open{% endif %}</strong>{% if initial_qa %}<small>{{ initial_count }} at intake</small>{% endif %}</div>
+        <div class="fact {% if pending_approval %}approval-pending{% elif pending_decision and pending_decision.decision == 'approved' %}approval-approved{% elif pending_decision and pending_decision.decision == 'rejected' %}approval-rejected{% else %}approval-none{% endif %}"><span class="utility">Approval</span><strong class="{% if pending_approval %}pending{% elif pending_decision and pending_decision.decision == 'approved' %}verified{% elif pending_decision and pending_decision.decision == 'rejected' %}rejected{% endif %}">{% if pending_approval %}awaiting{% elif pending_decision %}{{ pending_decision.decision }}{% else %}none{% endif %}</strong></div>
+      </div>
+    </div>
+    {% if provenance_note %}<p class="evidence-scope"><strong>Evidence boundary:</strong> {{ provenance_note }}</p>{% endif %}
+    <p class="identity-line">{{ story.title }} · chapter {{ chapter }} · run <code>{{ run_id }}</code></p>
+  </header>
 
-  <div class="grid">
-    <div class="card">Status<br><strong class="{{ 'accepted' if status == 'verified' else 'rejected' }}">{{ status }}</strong></div>
-    <div class="card">QA findings<br><strong>{{ initial_count }} → {{ final_count }}</strong></div>
-    <div class="card">Provider<br><strong>{{ provider }}</strong><br><span class="muted">{{ model }} · {{ provider_mode }}</span></div>
-    <div class="card">Replay cache<br><strong>{{ cache_hits }}/{{ cache_total }} hits</strong></div>
-  </div>
-  {% if provenance_note %}<p class="muted"><strong>Provenance:</strong> {{ provenance_note }}</p>{% endif %}
+  <main>
+    <section class="report-section" id="galley" aria-labelledby="galley-heading">
+      <div class="section-heading"><span class="folio-mark">01 / GALLEY</span><div><h2 id="galley-heading">Verified galley</h2><p>Source, initial translation, and accepted revision stay together so the final wording can be checked at a glance.</p></div></div>
+      <div class="galley-grid">
+        <div class="galley-margin">
+          <article class="galley-sheet source"><h3>Source manuscript</h3><pre>{{ source_context }}</pre></article>
+          <article class="galley-sheet initial"><h3>Initial translation</h3><pre>{{ translation_context }}</pre></article>
+        </div>
+        <article class="galley-main">
+          <h3>Verified translation</h3>
+          <pre>{{ final_context }}</pre>
+          {% if glossary_effect %}<p class="terminology-note"><strong>{{ 'Applied glossary delta' if glossary_effect_applied else 'Proposed glossary delta' }}</strong><br><span class="mono">{{ glossary_effect.term }} → {{ glossary_effect.proposed_target }}</span></p>{% endif %}
+        </article>
+      </div>
+    </section>
 
-  <h2>Source and translation context</h2>
-  <h3>Source</h3>
-  <pre>{{ source_context }}</pre>
-  <h3>Initial translation</h3>
-  <pre>{{ translation_context }}</pre>
-  {% if final_context %}
-  <h3>Final translation</h3>
-  <pre>{{ final_context }}</pre>
-  {% endif %}
+    <section class="report-section" id="audit" aria-labelledby="audit-heading">
+      <div class="section-heading"><span class="folio-mark">02 / AUDIT</span><div><h2 id="audit-heading">Audit record</h2><p>Execution order, tool and model boundaries, rejected and accepted mutations, approval, identity, and final QA are one readable receipt.</p></div></div>
+      <div class="audit-layout">
+        <div class="audit-trace">
+          <h3 class="audit-column-heading">Execution trace</h3>
+          {% for step in steps %}
+          {% set outcome_class = 'pending' if step.status == 'PENDING' else 'accepted' if step.status == 'ACCEPTED' else 'rejected' if step.status == 'REJECTED' else 'ok' %}
+          <article class="event {{ outcome_class }}" data-mark="{{ step.sequence }}">
+            <div class="event-head"><code>{{ step.tool }}</code><span class="event-status {{ outcome_class }}">{% if step.tool == 'submit_patch' %}PATCH {% endif %}{{ step.status }}</span></div>
+            <p class="event-body">{{ step.message }}</p>
+            {% if step.rationale %}<p class="event-meta"><strong>Decision:</strong> {{ step.rationale }}</p>{% endif %}
+            {% if step.edits %}
+            <figure class="change-set {{ outcome_class }}">
+              <figcaption>{% if step.status == 'REJECTED' %}Rejected proposal · not applied{% elif step.status == 'ACCEPTED' %}Applied mutation · QA verified{% else %}Proposed mutation{% endif %}</figcaption>
+              {% for edit in step.edits %}<div class="change-pair"><span class="change-label">{% if step.status == 'REJECTED' %}Target{% else %}Before{% endif %}</span><code>{{ edit.old_text }}</code><span class="change-label">{% if step.status == 'REJECTED' %}Proposed{% else %}After{% endif %}</span><code>{{ edit.new_text }}</code></div>{% endfor %}
+            </figure>
+            {% elif step.old_text or step.new_text %}
+            <figure class="change-set {{ outcome_class }}"><figcaption>{% if step.status == 'REJECTED' %}Rejected proposal · not applied{% elif step.status == 'ACCEPTED' %}Applied mutation · QA verified{% else %}Proposed mutation{% endif %}</figcaption><div class="change-pair"><span class="change-label">{% if step.status == 'REJECTED' %}Target{% else %}Before{% endif %}</span><code>{{ step.old_text }}</code><span class="change-label">{% if step.status == 'REJECTED' %}Proposed{% else %}After{% endif %}</span><code>{{ step.new_text }}</code></div></figure>
+            {% endif %}
+            {% if step.qa_note %}<p class="event-meta"><strong>{{ step.qa_note }}</strong></p>{% endif %}
+          </article>
+          {% endfor %}
+          {% if not steps %}<p class="muted">No model actions recorded.</p>{% endif %}
+        </div>
 
-  <h2>Initial QA findings</h2>
-  {% if initial_findings %}
-  <table>
-    <thead><tr><th>Severity</th><th>Check</th><th>Message</th></tr></thead>
-    <tbody>
-      {% for finding in initial_findings %}
-      <tr><td>{{ finding.severity }}</td><td><code>{{ finding.check_id }}</code></td><td>{{ finding.message }}</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {% if initial_omitted %}<p class="muted">{{ initial_omitted }} additional finding(s) omitted for bounded reporting.</p>{% endif %}
-  {% else %}<p>None.</p>{% endif %}
+        <aside class="audit-receipts" aria-labelledby="receipts-heading">
+          <h3 class="audit-column-heading" id="receipts-heading">Evidence receipts</h3>
+          <article class="receipt execution-receipt">
+            <h4>Execution context <span class="status-badge status-verified">bounded</span></h4>
+            <p><strong>Model {{ model }}</strong></p>
+            <dl class="receipt-list">
+              <dt>Provider</dt><dd>{{ provider }}</dd>
+              <dt>Transport</dt><dd>{% if tool_protocol %}v3 / {{ 'native function' if tool_protocol == 'native_function' else 'prompt JSON' }}{% else %}not recorded{% endif %}</dd>
+              <dt>Cache</dt><dd>{{ cache_hits }}/{{ cache_total }} provider calls replayed</dd>
+              <dt>Actions</dt><dd>{{ steps|length }} recorded</dd>
+            </dl>
+            {% if exposed_tool_names %}
+            <div class="tool-account">
+              <p class="tool-account-summary"><strong>Tool use</strong><span>{{ used_exposed_tool_names|length }} of {{ exposed_tool_names|length }} exposed tools invoked</span></p>
+              <dl class="tool-breakdown">
+                <dt>Invoked</dt><dd>{% if used_exposed_tool_names %}<ul class="tool-list used" role="list">{% for name in used_exposed_tool_names %}<li><code>{{ name }}</code></li>{% endfor %}</ul>{% else %}<span class="muted">None recorded</span>{% endif %}</dd>
+                <dt>Not invoked</dt><dd>{% if unused_tool_names %}<ul class="tool-list unused" role="list">{% for name in unused_tool_names %}<li><code>{{ name }}</code></li>{% endfor %}</ul>{% else %}<span class="muted">None</span>{% endif %}</dd>
+                {% if used_unrecorded_tool_names %}<dt>Exposure unknown</dt><dd><ul class="tool-list used" role="list">{% for name in used_unrecorded_tool_names %}<li><code>{{ name }}</code></li>{% endfor %}</ul></dd>{% endif %}
+              </dl>
+            </div>
+            {% elif used_tool_names %}
+            <div class="tool-account"><p class="tool-account-summary"><strong>Tool use</strong><span>Exposure not recorded</span></p><ul class="tool-list used" role="list">{% for name in used_tool_names %}<li><code>{{ name }}</code></li>{% endfor %}</ul></div>
+            {% endif %}
+          </article>
 
-  <h2>Chronology</h2>
-  {% for step in steps %}
-  <section class="step">
-    <h3>{{ step.sequence }}. <code>{{ step.tool }}</code> — <span class="{{ 'accepted' if step.status == 'ACCEPTED' else 'rejected' if step.status == 'REJECTED' else 'ok' }}">{{ step.status }}</span></h3>
-    <p>{{ step.message }}</p>
-    {% if step.rationale %}<p><strong>Rationale:</strong> {{ step.rationale }}</p>{% endif %}
-    {% if step.old_text or step.new_text %}<p><strong>Patch:</strong> <code>{{ step.old_text }}</code> → <code>{{ step.new_text }}</code></p>{% endif %}
-    {% if step.qa_before or step.qa_after %}<p><strong>QA before/after:</strong> {{ step.qa_before }} → {{ step.qa_after }}</p>{% endif %}
-    {% if step.cache_hit is not none %}<p class="muted">Cache hit: {{ "yes" if step.cache_hit else "no" }}</p>{% endif %}
-    {% if step.auxiliary_calls %}<p class="muted"><strong>Auxiliary calls:</strong> {% for call in step.auxiliary_calls %}{{ call.namespace }} ({{ call.provider }}/{{ call.model }}){% if not loop.last %}, {% endif %}{% endfor %}</p>{% endif %}
-  </section>
-  {% else %}<p>No actions recorded.</p>{% endfor %}
+          <article class="receipt approval-boundary{% if pending_decision %} applied{% endif %}">
+            <h4>Decision receipt <span class="status-badge status-{% if pending_approval %}awaiting_approval{% elif pending_decision %}verified{% else %}in_progress{% endif %}">{% if pending_approval %}held{% elif pending_decision %}{{ pending_decision.decision }}{% else %}clear{% endif %}</span></h4>
+            {% if pending_approval %}<p><strong>Persistent write held for review.</strong><br><code>{{ pending_approval.tool }}</code><br>proposal <code>{{ pending_approval.proposal_id }}</code><br>{{ pending_approval.reason }}</p>{% elif pending_decision %}<p><strong>{{ pending_decision.decision|capitalize }}</strong><br>{{ pending_decision.reviewer }} · {{ pending_decision.note }}</p>{% else %}<p class="muted">No persistent effect requested.</p>{% endif %}
+            {% if glossary_effect %}<p><strong>{{ 'Applied glossary delta' if glossary_effect_applied else 'Proposed glossary delta' }}</strong><br><span class="mono">{{ glossary_effect.term }} → {{ glossary_effect.proposed_target }}</span><span class="hash mono">before {{ fingerprint(glossary_effect.before_sha256) }}<br>after {{ fingerprint(glossary_effect.after_sha256) }}</span></p>{% endif %}
+          </article>
 
-  {% if terminology_resolutions %}
-  <h2>Terminology resolutions</h2>
-  <ul>
-    {% for resolution in terminology_resolutions %}
-    <li><code>{{ resolution.source_term }}</code> → <strong>{{ resolution.selected_translation or "(escalated)" }}</strong>
-      <span class="muted">(votes: {{ resolution.vote_count }}, agreement: {{ "yes" if resolution.agreement else "no" }}, evaluator: {{ "yes" if resolution.evaluator_used else "no" }}, escalated: {{ "yes" if resolution.escalated else "no" }})</span>
-    </li>
-    {% endfor %}
-  </ul>
-  {% endif %}
+          <article class="receipt identity-receipt">
+            <h4>Resume identity <span class="status-badge status-{% if resume_identity_matched %}verified{% elif session_identity %}in_progress{% else %}blocked{% endif %}">{% if resume_identity_matched %}matched{% elif session_identity %}bound{% else %}unavailable{% endif %}</span></h4>
+            {% if resume_identity_matched %}<p><strong>Resume identity matched.</strong> Approval was applied only after the persisted run identity matched the resume inputs.</p>{% elif session_identity %}<p><strong>Identity bound.</strong> The persisted session records the inputs required for a checked resume.</p>{% else %}<p class="muted">Legacy session; no persisted identity receipt is available.</p>{% endif %}
+            {% if session_identity %}<span class="hash mono">{{ session_identity.schema_version }}<br>source {{ fingerprint(session_identity.source_sha256) }}<br>registry {{ fingerprint(session_identity.registry_sha256) }}</span>{% endif %}
+            <p class="muted">{% if provider_mode == 'synthetic_fixture' %}Synthetic contract fixture. No API key or network call is used.{% elif provider_mode == 'replay' %}Replay mode; cache-only evidence. No live provider call is used.{% elif provider_mode == 'live' %}Live provider mode; inspect persisted receipts for provider evidence.{% else %}Provider mode {{ provider_mode }}; inspect persisted receipts for provider evidence.{% endif %}</p>
+          </article>
 
-  <h2>Final QA</h2>
-  <p><strong>QA findings: {{ initial_count }} → {{ final_count }}</strong></p>
-  {% if final_findings %}
-  <ul>{% for finding in final_findings %}<li><code>{{ finding.check_id }}</code>: {{ finding.message }}</li>{% endfor %}</ul>
-  {% if final_omitted %}<p class="muted">{{ final_omitted }} additional finding(s) omitted for bounded reporting.</p>{% endif %}
-  {% else %}<p class="accepted">Verified clean.</p>{% endif %}
+          <article class="receipt qa-receipt">
+            <h4>QA receipt <span class="status-badge status-{% if not final_qa_available %}in_progress{% elif final_count == 0 %}verified{% else %}rejected{% endif %}">{% if not final_qa_available %}not run{% elif final_count == 0 %}clean{% else %}{{ final_count }} open{% endif %}</span></h4>
+            {% if final_qa_available %}<p class="qa-count">{{ initial_count }} → {{ final_count }} findings</p>{% else %}<p class="qa-count">Final QA not recorded</p>{% endif %}
+            {% if initial_findings %}<p class="muted">Initial findings</p><ul class="finding-list">{% for finding in initial_findings %}<li><code>{{ finding.check_id }}</code> · {{ finding.message }}</li>{% endfor %}</ul>{% else %}<p class="muted">Initial translation: no findings.</p>{% endif %}
+            {% if initial_omitted %}<p class="muted">{{ initial_omitted }} additional finding(s) omitted for bounded reporting.</p>{% endif %}
+            {% if not final_qa_available %}<p class="muted">No final QA report is available.</p>{% elif final_findings %}<p class="muted">Final findings</p><ul class="finding-list">{% for finding in final_findings %}<li><code>{{ finding.check_id }}</code> · {{ finding.message }}</li>{% endfor %}</ul>{% else %}<p class="patch-accepted"><strong>Clean QA.</strong> No deterministic findings remain.</p>{% endif %}
+            {% if final_omitted %}<p class="muted">{{ final_omitted }} additional finding(s) omitted for bounded reporting.</p>{% endif %}
+          </article>
+        </aside>
+      </div>
+    </section>
 
-  <h2>Artifacts</h2>
-  {% if artifact_paths %}
-  <ul>{% for name, path in artifact_paths.items() %}<li><strong>{{ name }}:</strong> <code>{{ path }}</code></li>{% endfor %}</ul>
-  {% else %}<p>None recorded.</p>{% endif %}
+    {% if session_events %}
+    <section class="report-section" aria-labelledby="session-events-heading">
+      <div class="section-heading"><span class="folio-mark">03 / EVENTS</span><div><h2 id="session-events-heading">Persisted session receipt</h2><p>{{ event_count }} append-only events preserve the complete execution account.</p></div></div>
+      <details class="session-receipt">
+        <summary>Show persisted receipt ({{ event_count }} events)</summary>
+        <div class="table-wrap"><table class="evidence-table">
+          <thead><tr><th>Seq</th><th>Event</th><th>Payload</th></tr></thead>
+          <tbody>{% for event in session_events %}<tr><td class="mono">{{ event.sequence }}</td><td><code>{{ event.event_type }}</code></td><td class="mono">{{ event.payload }}</td></tr>{% endfor %}</tbody>
+        </table></div>
+      </details>
+    </section>
+    {% endif %}
+
+    <section class="report-section artifact-section" aria-labelledby="artifact-heading">
+      <div class="section-heading"><span class="folio-mark">04 / OUTPUTS</span><div><h2 id="artifact-heading">Artifacts &amp; provenance</h2><p>The report points back to the durable run files it summarizes.</p></div></div>
+      {% if artifact_paths %}<ul class="artifact-list">{% for name, path in artifact_paths.items() %}<li><strong>{{ name }}:</strong> <code>{{ path }}</code></li>{% endfor %}</ul>{% else %}<p class="muted">No artifacts recorded.</p>{% endif %}
+    </section>
+  </main>
+  <footer>{% if provider_mode == 'synthetic_fixture' %}Deterministic synthetic fixture, not live provider output, replay evidence, or production translation evidence.{% elif provider_mode == 'replay' %}Replay evidence from a cache-only provider mode; no live provider call is made.{% elif provider_mode == 'live' %}Live provider output; inspect persisted receipts and call metadata for evidence.{% else %}Provider mode {{ provider_mode }}; inspect persisted receipts and call metadata for evidence.{% endif %} Strings are rendered as escaped evidence; this standalone report loads no external assets.</footer>
 </body>
 </html>

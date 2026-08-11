@@ -1,0 +1,122 @@
+{
+  "conditions": {
+    "baseline": "one-shot gpt-5.6-luna core_worker",
+    "harness": "Codex-originated repair trajectories migrated to the final bounded Harness v3 schema and executed through the public runtime."
+  },
+  "data_availability": {
+    "full_text_artifacts_distributed": false,
+    "notice": "The real five-chapter corpus and all derived full-text artifacts are intentionally not distributed.",
+    "retained": [
+      "methodology code",
+      "synthetic tests",
+      "aggregate metrics",
+      "selection and model provenance"
+    ]
+  },
+  "efficiency_matrix": {
+    "status": "not_run",
+    "reason": "Provider keys, dated pricing, and token/latency telemetry were unavailable; no efficiency claim is made.",
+    "arms": [
+      "weak/raw",
+      "weak+Harness",
+      "strong/raw"
+    ],
+    "planned_metrics": [
+      "input_tokens",
+      "output_tokens",
+      "cached_tokens",
+      "reasoning_tokens",
+      "latency",
+      "cost_per_chapter",
+      "QA_hits_per_1000_tokens",
+      "QA_hits_per_dollar"
+    ]
+  },
+  "limits": {
+    "chapters": 5,
+    "max_patch_attempts": 2,
+    "max_steps": 6
+  },
+  "blind": {
+    "counterbalance": {
+      "method": "seed_shuffled_pairs"
+    },
+    "roster": [
+      {
+        "family": "codex",
+        "id": "codex_judge_1",
+        "model": "gpt-5.6-terra",
+        "reasoning": "high",
+        "worker": "all_purpose_worker"
+      },
+      {
+        "family": "codex",
+        "id": "codex_judge_2",
+        "model": "gpt-5.6-terra",
+        "reasoning": "high",
+        "worker": "all_purpose_worker"
+      },
+      {
+        "family": "codex",
+        "id": "codex_judge_3",
+        "model": "gpt-5.6-terra",
+        "reasoning": "high",
+        "worker": "all_purpose_worker"
+      },
+      {
+        "family": "claude",
+        "id": "claude_sonnet_5",
+        "model": "Sonnet 5"
+      }
+    ],
+    "seed": 20260811
+  },
+  "optional": {
+    "claude": {
+      "model": "Sonnet 5",
+      "role": "fourth blind judge",
+      "status": "completed",
+      "scorecard_artifact": "not distributed"
+    },
+    "deepseek": {
+      "reason": "DEEPSEEK_API_KEY was not configured; no provider call was made.",
+      "status": "skipped"
+    }
+  },
+  "provenance": {
+    "action_origin": "Codex-originated repair trajectories migrated to the final bounded Harness v3 schema and executed through the public runtime.",
+    "verbatim_caveat": "Action JSON, episode traces, packets, mappings, scorecards, source, baseline, and Harness text are not distributed.",
+    "worker": {
+      "class": "core_worker",
+      "model": "gpt-5.6-luna",
+      "reasoning": "max"
+    },
+    "judge": {
+      "class": "all_purpose_worker",
+      "model": "gpt-5.6-terra",
+      "reasoning": "high"
+    }
+  },
+  "prompts": {
+    "blind_judge": "methodology-only; prompt text not distributed",
+    "one_shot": "methodology-only; prompt text not distributed",
+    "repair_planner": "methodology-only; prompt text not distributed"
+  },
+  "selection": {
+    "files": [
+      "0247.txt",
+      "0248.txt",
+      "0249.txt",
+      "0250.txt",
+      "0251.txt"
+    ],
+    "rejected_draws": [],
+    "seed": 20260810,
+    "source_characters": 12270,
+    "start_index": 246
+  },
+  "source_provenance": {
+    "corpus": "private five-chapter corpus (not distributed)",
+    "materialized_directory": "not distributed"
+  }
+}

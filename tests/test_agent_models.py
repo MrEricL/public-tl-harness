@@ -11,6 +11,10 @@ from agentic_translation.agent_models import (
     EscalateAction,
     FinishAction,
     ResolveTerminologyAction,
+    SearchToolsAction,
+    NormalizePunctuationAction,
+    TextEdit,
+    PromoteGlossaryTermAction,
     SubmitPatchAction,
 )
 from agentic_translation.models import ProviderCallRecord, QAReport
@@ -37,7 +41,58 @@ def test_action_union_parses_submit_patch() -> None:
     )
 
     assert isinstance(action, SubmitPatchAction)
-    assert action.old_text == "Heart of Dao"
+    assert action.edits[0].old_text == "Heart of Dao"
+
+
+def test_submit_patch_normalizes_legacy_edit_and_exposes_only_structured_edits() -> None:
+    legacy = TypeAdapter(AgentAction).validate_python(
+        {
+            "tool": "submit_patch",
+            "old_text": "old",
+            "new_text": "new",
+            "rationale": "legacy replay",
+        }
+    )
+
+    assert isinstance(legacy, SubmitPatchAction)
+    assert legacy.edits == [TextEdit(old_text="old", new_text="new")]
+    assert legacy.model_dump(mode="json") == {
+        "tool": "submit_patch",
+        "edits": [{"old_text": "old", "new_text": "new"}],
+        "rationale": "legacy replay",
+    }
+
+    structured = SubmitPatchAction(
+        edits=[TextEdit(old_text="old", new_text="new")],
+        rationale="structured",
+    )
+    assert structured.model_dump(mode="json")["edits"] == [
+        {"old_text": "old", "new_text": "new"}
+    ]
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"tool": "submit_patch", "edits": []},
+        {"tool": "submit_patch", "edits": [{"old_text": "", "new_text": "x"}]},
+        {"tool": "submit_patch", "edits": [{"old_text": "x" * 1001, "new_text": "y"}]},
+        {"tool": "submit_patch", "edits": [{"old_text": "x", "new_text": "y" * 1001}]},
+        {
+            "tool": "submit_patch",
+            "edits": [{"old_text": "x", "new_text": "y"}],
+            "rationale": "r" * 1201,
+        },
+    ],
+)
+def test_structured_patch_fields_are_bounded(payload: dict[str, object]) -> None:
+    with pytest.raises(ValidationError):
+        TypeAdapter(AgentAction).validate_python(payload)
+
+
+def test_action_union_parses_normalize_punctuation() -> None:
+    action = TypeAdapter(AgentAction).validate_python({"tool": "normalize_punctuation"})
+    assert isinstance(action, NormalizePunctuationAction)
 
 
 def test_action_union_parses_context_and_lookup_actions() -> None:
@@ -100,6 +155,35 @@ def test_action_union_rejects_unknown_tool() -> None:
         )
 
 
+def test_action_union_parses_v3_discovery_and_promotion_actions() -> None:
+    discovery = TypeAdapter(AgentAction).validate_python(
+        {"tool": "tools.search", "query": "glossary", "limit": 3}
+    )
+    promotion = TypeAdapter(AgentAction).validate_python(
+        {"tool": "promote_glossary_term", "term": "道心", "rationale": "Approved canon."}
+    )
+
+    assert isinstance(discovery, SearchToolsAction)
+    assert discovery.limit == 3
+    assert isinstance(promotion, PromoteGlossaryTermAction)
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"tool": "tools.search", "query": "", "limit": 8},
+        {"tool": "tools.search", "query": "q", "limit": 17},
+        {"tool": "tools.search", "query": "q", "limit": True},
+        {"tool": "promote_glossary_term", "term": "", "rationale": "x"},
+        {"tool": "promote_glossary_term", "term": "x", "rationale": ""},
+        {"tool": "promote_glossary_term", "term": "x", "rationale": 1},
+    ],
+)
+def test_v3_actions_remain_strict_and_bounded(payload: dict[str, object]) -> None:
+    with pytest.raises(ValidationError):
+        TypeAdapter(AgentAction).validate_python(payload)
+
+
 @pytest.mark.parametrize(
     "payload",
     [
@@ -134,15 +218,6 @@ def test_actions_reject_extra_keys_and_coerced_types(payload: dict[str, object])
                 "rationale": "Use glossary canon.",
             },
             "old_text",
-        ),
-        (
-            {
-                "tool": "submit_patch",
-                "old_text": "Heart of Dao",
-                "new_text": "",
-                "rationale": "Use glossary canon.",
-            },
-            "new_text",
         ),
         (
             {

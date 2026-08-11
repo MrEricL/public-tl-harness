@@ -1,0 +1,133 @@
+{
+  "suite": "harness-v3-contract-fixtures",
+  "disclaimer": "This compares harness contracts and exposure under synthetic fixtures; it does not measure model quality or live-provider latency.",
+  "cases": [
+    {
+      "case": "repair_verified",
+      "description": "Discover the bounded patch tool, accept one QA-improving repair, and finish verified.",
+      "source_text": "第一章\n\n道心守住了山门。",
+      "translated_text": "Chapter 1\n\nHeart of Dao guarded 道心.",
+      "glossary": "道心 -> Dao Heart\n",
+      "canonical_glossary": "道心 -> Dao Heart\n",
+      "actions": [
+        {
+          "tool": "tools.search",
+          "arguments": {
+            "query": "patch",
+            "limit": 8
+          }
+        },
+        {
+          "tool": "submit_patch",
+          "arguments": {
+            "edits": [
+              {
+                "old_text": "Heart of Dao guarded 道心.",
+                "new_text": "Dao Heart guarded the mountain gate."
+              }
+            ],
+            "rationale": "Replace the bounded dirty translation with the canonical English sentence."
+          }
+        },
+        {
+          "tool": "finish",
+          "arguments": {
+            "summary": "Deterministic QA is clean after the accepted patch."
+          }
+        }
+      ],
+      "expect": {
+        "session_status": "completed",
+        "final_status": "verified",
+        "final_finding_count": 0,
+        "glossary_write_count": 0
+      }
+    },
+    {
+      "case": "promotion_approved",
+      "description": "Resolve 道心 to Dao Heart, request canonical promotion, approve it once, and finish verified.",
+      "source_text": "第一章\n\n道心守住了山门。",
+      "translated_text": "Chapter 1\n\nDao Heart guarded the mountain gate.",
+      "glossary": "道心 -> Dao Heart\n",
+      "canonical_glossary": "道心 -> Heart of Dao\n",
+      "actions": [
+        {
+          "tool": "tools.search",
+          "arguments": {
+            "query": "terminology",
+            "limit": 8
+          }
+        },
+        {
+          "tool": "resolve_terminology",
+          "arguments": {
+            "term": "道心"
+          }
+        },
+        {
+          "tool": "promote_glossary_term",
+          "arguments": {
+            "term": "道心",
+            "rationale": "Promote the deterministic canonical term after QA is clean."
+          }
+        },
+        {
+          "tool": "finish",
+          "arguments": {
+            "summary": "Approved glossary promotion leaves deterministic QA clean."
+          }
+        }
+      ],
+      "expect": {
+        "session_status": "completed",
+        "final_status": "verified",
+        "final_finding_count": 0,
+        "glossary_write_count": 1,
+        "approval_outcome": "approved"
+      }
+    },
+    {
+      "case": "promotion_rejected",
+      "description": "Prepare the same deterministic glossary proposal, reject reviewer approval, and escalate without writing.",
+      "source_text": "第一章\n\n道心守住了山门。",
+      "translated_text": "Chapter 1\n\nDao Heart guarded the mountain gate.",
+      "glossary": "道心 -> Dao Heart\n",
+      "canonical_glossary": "道心 -> Heart of Dao\n",
+      "actions": [
+        {
+          "tool": "tools.search",
+          "arguments": {
+            "query": "terminology",
+            "limit": 8
+          }
+        },
+        {
+          "tool": "resolve_terminology",
+          "arguments": {
+            "term": "道心"
+          }
+        },
+        {
+          "tool": "promote_glossary_term",
+          "arguments": {
+            "term": "道心",
+            "rationale": "Prepare the same deterministic canonical proposal for review."
+          }
+        },
+        {
+          "tool": "finish",
+          "arguments": {
+            "summary": "This action is not reached after reviewer rejection."
+          }
+        }
+      ],
+      "expect": {
+        "session_status": "rejected",
+        "final_status": "escalated",
+        "final_finding_count": 0,
+        "glossary_write_count": 0,
+        "approval_outcome": "rejected"
+      }
+    }
+  ]
+}

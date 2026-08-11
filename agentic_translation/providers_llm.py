@@ -384,6 +384,107 @@ class _OpenAIJSONProvider:
             raise LLMProviderUnavailable(f"Live provider call failed without retry: {last_error}") from last_error
         raise LLMProviderUnavailable(f"Live provider call failed after retries: {last_error}") from last_error
 
+    def _call_chat_tool(
+        self,
+        *,
+        namespace: str,
+        payload: dict[str, Any],
+        messages: list[dict[str, str]],
+        tools: list[dict[str, Any]],
+        normalize_call: Callable[[Any], dict[str, Any]] | None = None,
+    ) -> dict[str, Any]:
+        """Call one required native function and cache its action payload.
+
+        This intentionally mirrors ``_call_json``'s cache, auth, retry, and
+        recording behavior while keeping the native request free of
+        ``response_format``.  A caller may provide a registry normalizer to
+        map provider-native names to logical action names before caching.
+        """
+
+        cached = self.cache.load(namespace, payload)
+        if cached is not None:
+            self._record_call(namespace=namespace, payload=payload, response=cached, cache_hit=True)
+            return cached
+        if self.provider_mode == "replay":
+            raise LLMProviderUnavailable(f"No replay cache entry for {namespace}. Run live with --record-cache first.")
+
+        api_key = os.environ.get(self.api_key_env)
+        model = self.model_name
+        if not api_key:
+            raise LLMProviderUnavailable(f"{self.api_key_env} is required for live {self.provider_name} providers.")
+        if not model:
+            model_hint = f"{self.model_env} or --model"
+            if self.model_env != "AGENTIC_TRANSLATION_MODEL":
+                model_hint += " (AGENTIC_TRANSLATION_MODEL also works)"
+            raise LLMProviderUnavailable(f"{model_hint} is required for live {self.provider_name} providers.")
+
+        try:
+            from openai import OpenAI
+        except Exception as exc:  # pragma: no cover - environment guard
+            raise LLMProviderUnavailable("The openai package is required for live providers.") from exc
+
+        client_kwargs: dict[str, str] = {"api_key": api_key}
+        base_url = os.environ.get(self.base_url_env) or self.default_base_url
+        if base_url:
+            client_kwargs["base_url"] = str(base_url)
+        client_factory = self.client_factory or OpenAI
+        last_error: Exception | None = None
+        stopped_without_retry = False
+
+        def value(obj: Any, key: str, default: Any = None) -> Any:
+            if isinstance(obj, dict):
+                return obj.get(key, default)
+            return getattr(obj, key, default)
+
+        for attempt in range(self.max_retries + 1):
+            try:
+                client = client_factory(**client_kwargs)
+                response = client.chat.completions.create(
+                    model=model,
+                    messages=messages,  # type: ignore[arg-type]
+                    tools=tools,
+                    tool_choice="required",
+                    parallel_tool_calls=False,
+                    temperature=0,
+                )
+                choices = value(response, "choices", [])
+                message = value(choices[0], "message") if choices else None
+                tool_calls = value(message, "tool_calls", [])
+                if not isinstance(tool_calls, list) or len(tool_calls) != 1:
+                    raise LLMProviderUnavailable("Native provider response must contain exactly one tool call.")
+                function = value(tool_calls[0], "function")
+                function_name = value(function, "name")
+                function_arguments = value(function, "arguments")
+                if not isinstance(function_name, str) or not isinstance(function_arguments, (str, dict)):
+                    raise LLMProviderUnavailable("Native provider response contained an invalid tool call.")
+                from .agent_tools import ToolCall
+
+                call = ToolCall.from_native(
+                    name=function_name,
+                    arguments=function_arguments,
+                    call_id=value(tool_calls[0], "id"),
+                )
+                parsed = normalize_call(call) if normalize_call else call.as_action_payload()
+                if self.record_cache:
+                    self.cache.save(
+                        namespace,
+                        payload,
+                        parsed,
+                        metadata={"provider": self.provider_name, "model": model},
+                    )
+                self._record_call(namespace=namespace, payload=payload, response=parsed, cache_hit=False)
+                return parsed
+            except Exception as exc:  # noqa: BLE001 - provider clients raise heterogeneous exceptions.
+                last_error = exc
+                if _is_non_retryable_provider_error(exc):
+                    stopped_without_retry = True
+                    break
+                if attempt < self.max_retries:
+                    self.sleep(min(2**attempt, 8))
+        if stopped_without_retry:
+            raise LLMProviderUnavailable(f"Live provider call failed without retry: {last_error}") from last_error
+        raise LLMProviderUnavailable(f"Live provider call failed after retries: {last_error}") from last_error
+
 
 def probe_live_provider(
     *,

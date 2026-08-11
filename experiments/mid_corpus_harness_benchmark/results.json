@@ -1,0 +1,361 @@
+{
+  "actions": {
+    "by_chapter": {
+      "0247": {
+        "accepted": 2,
+        "final_status": "verified",
+        "max_patch_attempts": 2,
+        "max_steps": 6,
+        "model": "gpt-5.6-luna-core-worker",
+        "patch_attempts": 2,
+        "provider": "codex",
+        "provider_mode": "recorded_codex_actions",
+        "rejected": 0,
+        "steps": 5
+      },
+      "0248": {
+        "accepted": 1,
+        "final_status": "verified",
+        "max_patch_attempts": 2,
+        "max_steps": 6,
+        "model": "gpt-5.6-luna-core-worker",
+        "patch_attempts": 1,
+        "provider": "codex",
+        "provider_mode": "recorded_codex_actions",
+        "rejected": 0,
+        "steps": 4
+      },
+      "0249": {
+        "accepted": 2,
+        "final_status": "verified",
+        "max_patch_attempts": 2,
+        "max_steps": 6,
+        "model": "gpt-5.6-luna-core-worker",
+        "patch_attempts": 2,
+        "provider": "codex",
+        "provider_mode": "recorded_codex_actions",
+        "rejected": 0,
+        "steps": 6
+      },
+      "0250": {
+        "accepted": 1,
+        "final_status": "verified",
+        "max_patch_attempts": 2,
+        "max_steps": 6,
+        "model": "gpt-5.6-luna-core-worker",
+        "patch_attempts": 1,
+        "provider": "codex",
+        "provider_mode": "recorded_codex_actions",
+        "rejected": 0,
+        "steps": 4
+      },
+      "0251": {
+        "accepted": 1,
+        "final_status": "verified",
+        "max_patch_attempts": 2,
+        "max_steps": 6,
+        "model": "gpt-5.6-luna-core-worker",
+        "patch_attempts": 1,
+        "provider": "codex",
+        "provider_mode": "recorded_codex_actions",
+        "rejected": 0,
+        "steps": 3
+      }
+    },
+    "totals": {
+      "accepted": 7,
+      "final_statuses": {
+        "verified": 5
+      },
+      "patch_attempts": 7,
+      "rejected": 0,
+      "steps": 22
+    }
+  },
+  "chapters": [
+    "0247",
+    "0248",
+    "0249",
+    "0250",
+    "0251"
+  ],
+  "data_availability": {
+    "full_text_artifacts_distributed": false,
+    "notice": "The real five-chapter corpus and all derived full-text artifacts are intentionally not distributed."
+  },
+  "deterministic_qa": {
+    "by_chapter": {
+      "0247": {
+        "after_by_check": {},
+        "after_findings": 0,
+        "after_score": 100,
+        "before_by_check": {
+          "chinese_punctuation": 33,
+          "glossary_required": 3
+        },
+        "before_findings": 36,
+        "before_score": 0,
+        "delta_findings": -36
+      },
+      "0248": {
+        "after_by_check": {},
+        "after_findings": 0,
+        "after_score": 100,
+        "before_by_check": {
+          "chinese_punctuation": 23
+        },
+        "before_findings": 23,
+        "before_score": 0,
+        "delta_findings": -23
+      },
+      "0249": {
+        "after_by_check": {},
+        "after_findings": 0,
+        "after_score": 100,
+        "before_by_check": {
+          "glossary_required": 2,
+          "system_panel_count": 1
+        },
+        "before_findings": 3,
+        "before_score": 76,
+        "delta_findings": -3
+      },
+      "0250": {
+        "after_by_check": {},
+        "after_findings": 0,
+        "after_score": 100,
+        "before_by_check": {
+          "glossary_required": 5
+        },
+        "before_findings": 5,
+        "before_score": 70,
+        "delta_findings": -5
+      },
+      "0251": {
+        "after_by_check": {},
+        "after_findings": 0,
+        "after_score": 100,
+        "before_by_check": {
+          "glossary_required": 1
+        },
+        "before_findings": 1,
+        "before_score": 94,
+        "delta_findings": -1
+      }
+    },
+    "totals": {
+      "after_by_check": {},
+      "after_findings": 0,
+      "after_score_mean": 100.0,
+      "before_by_check": {
+        "chinese_punctuation": 56,
+        "glossary_required": 11,
+        "system_panel_count": 1
+      },
+      "before_findings": 68,
+      "before_score_mean": 48.0,
+      "delta_findings": -68
+    }
+  },
+  "dimension_deltas": {
+    "fidelity": -0.15,
+    "fluency": -0.05,
+    "formatting": 0.3,
+    "serious_error_avoidance": 0.0,
+    "terminology": -0.3,
+    "voice": -0.05
+  },
+  "efficiency_matrix": {
+    "status": "not_run",
+    "reason": "No provider/token/price telemetry was available; no efficiency result is claimed."
+  },
+  "judge_count": 4,
+  "modal_decision_share": {
+    "by_chapter": {
+      "0247": 0.75,
+      "0248": 0.75,
+      "0249": 0.5,
+      "0250": 0.5,
+      "0251": 1.0
+    },
+    "mean": 0.7
+  },
+  "optional_providers": {
+    "claude": {
+      "model": "Sonnet 5",
+      "role": "fourth blind judge",
+      "status": "completed"
+    },
+    "deepseek": {
+      "reason": "DEEPSEEK_API_KEY was not configured; no provider call was made.",
+      "status": "skipped"
+    }
+  },
+  "pairwise_exact_agreement": {
+    "by_chapter": {
+      "0247": 0.5,
+      "0248": 0.5,
+      "0249": 0.333,
+      "0250": 0.167,
+      "0251": 1.0
+    },
+    "mean": 0.5
+  },
+  "pairwise_preferences": {
+    "fidelity": {
+      "baseline": 3,
+      "harness": 0,
+      "tie": 17
+    },
+    "fluency": {
+      "baseline": 1,
+      "harness": 0,
+      "tie": 19
+    },
+    "formatting": {
+      "baseline": 2,
+      "harness": 4,
+      "tie": 14
+    },
+    "overall": {
+      "baseline": 7,
+      "harness": 5,
+      "tie": 8
+    },
+    "serious_error_avoidance": {
+      "baseline": 0,
+      "harness": 0,
+      "tie": 20
+    },
+    "terminology": {
+      "baseline": 5,
+      "harness": 1,
+      "tie": 14
+    },
+    "voice": {
+      "baseline": 1,
+      "harness": 0,
+      "tie": 19
+    }
+  },
+  "preferences": {
+    "baseline": 7,
+    "harness": 5,
+    "tie": 8
+  },
+  "preferences_by_chapter": {
+    "0247": {
+      "baseline": 3,
+      "harness": 1,
+      "tie": 0
+    },
+    "0248": {
+      "baseline": 0,
+      "harness": 3,
+      "tie": 1
+    },
+    "0249": {
+      "baseline": 2,
+      "harness": 0,
+      "tie": 2
+    },
+    "0250": {
+      "baseline": 2,
+      "harness": 1,
+      "tie": 1
+    },
+    "0251": {
+      "baseline": 0,
+      "harness": 0,
+      "tie": 4
+    }
+  },
+  "preferences_by_judge": {
+    "claude_sonnet_5": {
+      "baseline": 1,
+      "harness": 2,
+      "tie": 2
+    },
+    "codex_judge_1": {
+      "baseline": 2,
+      "harness": 2,
+      "tie": 1
+    },
+    "codex_judge_2": {
+      "baseline": 2,
+      "harness": 1,
+      "tie": 2
+    },
+    "codex_judge_3": {
+      "baseline": 2,
+      "harness": 0,
+      "tie": 3
+    }
+  },
+  "preferences_by_model_family": {
+    "claude": {
+      "baseline": 1,
+      "harness": 2,
+      "tie": 2
+    },
+    "codex": {
+      "baseline": 6,
+      "harness": 3,
+      "tie": 6
+    }
+  },
+  "provenance": {
+    "action_origin": "Codex-originated repair trajectories migrated to the final bounded Harness v3 schema and executed through the public runtime.",
+    "verbatim_caveat": "Action JSON, episode traces, packets, mappings, scorecards, source, baseline, and Harness text are not distributed.",
+    "selection": {
+      "files": [
+        "0247.txt",
+        "0248.txt",
+        "0249.txt",
+        "0250.txt",
+        "0251.txt"
+      ],
+      "rejected_draws": [],
+      "seed": 20260810,
+      "source_characters": 12270,
+      "start_index": 246
+    },
+    "conditions": {
+      "baseline": "one-shot gpt-5.6-luna core_worker",
+      "harness": "Codex-originated repair trajectories migrated to the final bounded Harness v3 schema and executed through the public runtime."
+    },
+    "limits": {
+      "chapters": 5,
+      "max_patch_attempts": 2,
+      "max_steps": 6
+    },
+    "blind": {
+      "counterbalance": {
+        "method": "seed_shuffled_pairs"
+      },
+      "seed": 20260811
+    }
+  },
+  "systems": {
+    "baseline": {
+      "dimensions": {
+        "fidelity": 4.85,
+        "fluency": 4.85,
+        "formatting": 4.55,
+        "serious_error_avoidance": 4.9,
+        "terminology": 4.8,
+        "voice": 5.0
+      }
+    },
+    "harness": {
+      "dimensions": {
+        "fidelity": 4.7,
+        "fluency": 4.8,
+        "formatting": 4.85,
+        "serious_error_avoidance": 4.9,
+        "terminology": 4.5,
+        "voice": 4.95
+      }
+    }
+  }
+}

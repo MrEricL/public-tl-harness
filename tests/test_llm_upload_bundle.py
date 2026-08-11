@@ -32,6 +32,167 @@ def test_build_llm_upload_contains_sorted_index_and_markers(tmp_path):
         assert f"END FILE: {relative_path}" in content
 
 
+def test_build_llm_upload_includes_full_user_guide_in_custom_export(tmp_path):
+    (tmp_path / "README.md").write_text("# Overview\n", encoding="utf-8")
+    (tmp_path / "USER_GUIDE.md").write_text(
+        "# User Guide\n\nDetailed operator context.\n", encoding="utf-8"
+    )
+
+    output_path = build_llm_upload(tmp_path, tmp_path / "export.txt")
+    content = output_path.read_text(encoding="utf-8")
+
+    assert output_path == tmp_path / "export.txt"
+    assert "BEGIN FILE: USER_GUIDE.md" in content
+    assert "Detailed operator context." in content
+    assert "BEGIN FILE: export.txt" not in content
+
+
+def test_build_llm_upload_includes_code_and_data_notices(tmp_path):
+    (tmp_path / "LICENSE").write_text("MIT License\n", encoding="utf-8")
+    (tmp_path / "DATA_NOTICE.md").write_text(
+        "Benchmark corpus not distributed.\n", encoding="utf-8"
+    )
+
+    bundled = build_llm_upload(tmp_path).read_text(encoding="utf-8")
+
+    assert "BEGIN FILE: LICENSE" in bundled
+    assert "MIT License" in bundled
+    assert "BEGIN FILE: DATA_NOTICE.md" in bundled
+    assert "Benchmark corpus not distributed." in bundled
+
+
+def test_build_llm_upload_includes_docs_and_experiments_without_absolute_paths(tmp_path):
+    files = {
+        "README.md": "# Public harness\n",
+        "docs/review.md": "Review notes\n",
+        "experiments/mid_corpus_harness_benchmark/REPORT.md": "Mixed evidence\n",
+    }
+    for name, content in files.items():
+        path = tmp_path / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+
+    bundled = build_llm_upload(tmp_path).read_text(encoding="utf-8")
+
+    assert "BEGIN FILE: docs/review.md" in bundled
+    assert "BEGIN FILE: experiments/mid_corpus_harness_benchmark/REPORT.md" in bundled
+    assert str(tmp_path.resolve()) not in bundled
+
+
+def test_build_llm_upload_includes_github_workflow_configuration(tmp_path):
+    workflow = tmp_path / ".github" / "workflows" / "harness-v3.yml"
+    workflow.parent.mkdir(parents=True)
+    workflow.write_text("name: Harness v3\n", encoding="utf-8")
+
+    bundled = build_llm_upload(tmp_path).read_text(encoding="utf-8")
+
+    assert "BEGIN FILE: .github/workflows/harness-v3.yml" in bundled
+    assert "name: Harness v3" in bundled
+
+
+def test_build_llm_upload_header_records_public_release_and_mixed_evidence(tmp_path):
+    (tmp_path / "README.md").write_text("# Public harness\n", encoding="utf-8")
+
+    bundled = build_llm_upload(tmp_path).read_text(encoding="utf-8")
+    header = bundled.split("FILE INDEX\n", 1)[0]
+
+    assert "PUBLIC VERSION: 0.2.0" in header
+    assert "benchmark results are mixed" in header.lower()
+    assert "synthetic cache-only evidence" in header.lower()
+    assert (
+        "Repair actions originated in Codex runs, were migrated to the Harness v3 "
+        "schema, and re-executed through this codebase — not produced in a single "
+        "end-to-end run."
+        in header
+    )
+
+
+def test_build_llm_upload_is_byte_identical_across_generations(tmp_path):
+    (tmp_path / "README.md").write_text("# Public harness\n", encoding="utf-8")
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs" / "notes.md").write_text("Stable notes\n", encoding="utf-8")
+
+    first_output = build_llm_upload(tmp_path)
+    first_bytes = first_output.read_bytes()
+    first_hash = hashlib.sha256(first_bytes).hexdigest()
+
+    second_output = build_llm_upload(tmp_path)
+    second_bytes = second_output.read_bytes()
+    second_hash = hashlib.sha256(second_bytes).hexdigest()
+
+    assert first_output == second_output == tmp_path / "LLM_UPLOAD_MEGA.txt"
+    assert first_bytes == second_bytes
+    assert first_hash == second_hash
+
+
+def test_build_llm_upload_ends_with_exactly_one_newline(tmp_path):
+    (tmp_path / "README.md").write_text("# Public harness\n", encoding="utf-8")
+
+    bundled = build_llm_upload(tmp_path).read_text(encoding="utf-8")
+
+    assert bundled.endswith("\n")
+    assert not bundled.endswith("\n\n")
+
+
+def test_build_llm_upload_excludes_nested_private_paths(tmp_path):
+    files = {
+        "README.md": "# Public harness\n",
+        "docs/.auth/credentials.md": "auth secret\n",
+        "experiments/.sessions/session.json": "session secret\n",
+        "docs/.notes/NEED_TO.md": "private planning notes\n",
+        "tests/local_fixtures/private.txt": "fixture secret\n",
+    }
+    for name, content in files.items():
+        path = tmp_path / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+
+    bundled = build_llm_upload(tmp_path).read_text(encoding="utf-8")
+
+    assert "FILE COUNT: 1" in bundled
+    for relative_path, secret in files.items():
+        if relative_path == "README.md":
+            continue
+        assert relative_path not in bundled
+        assert secret.strip() not in bundled
+
+
+def test_build_llm_upload_excludes_nested_generated_cache_and_egg_info_paths(tmp_path):
+    files = {
+        "README.md": "# Public harness\n",
+        "docs/.ruff_cache/cache.txt": "ruff cache secret\n",
+        "experiments/.mypy_cache/cache.json": "mypy cache secret\n",
+        "tests/htmlcov/index.html": "coverage secret\n",
+        "tools/nested/demo.egg-info/PKG-INFO": "package metadata secret\n",
+    }
+    for name, content in files.items():
+        path = tmp_path / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+
+    bundled = build_llm_upload(tmp_path).read_text(encoding="utf-8")
+
+    assert "FILE COUNT: 1" in bundled
+    for relative_path, secret in files.items():
+        if relative_path == "README.md":
+            continue
+        assert relative_path not in bundled
+        assert secret.strip() not in bundled
+
+
+def test_build_llm_upload_skips_invalid_utf8_allowed_suffix(tmp_path):
+    (tmp_path / "README.md").write_text("# Public harness\n", encoding="utf-8")
+    invalid_path = tmp_path / "docs" / "invalid.md"
+    invalid_path.parent.mkdir(parents=True, exist_ok=True)
+    invalid_path.write_bytes(b"valid prefix\xff\xfe\n")
+
+    bundled = build_llm_upload(tmp_path).read_text(encoding="utf-8")
+
+    assert "FILE COUNT: 1" in bundled
+    assert "docs/invalid.md" not in bundled
+    assert "invalid.md" not in bundled
+
+
 def test_build_llm_upload_excludes_generated_and_binary_paths(tmp_path):
     files = {
         ".gitignore": "*.pyc\n",

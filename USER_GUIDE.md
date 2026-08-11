@@ -13,7 +13,100 @@ Use TXT/EPUB outputs only after artifact QA passes.
 
 The project is a bench for agentic translation: cheap translation output is useful, but not trustworthy by default. The offline score is compliance evidence, not semantic quality.
 
-For a concise public walkthrough, use `DEMO_SCRIPT.md` as the 90-second demo narration guide.
+For the concise public walkthrough, use `DEMO_SCRIPT.md` as the two-minute
+Harness v3 narration guide; its final section keeps the older 90-second replay
+as an optional coda.
+
+## 0. Harness v3 Golden Path
+
+The golden path is a deterministic, no-network contract fixture. It uses a
+synthetic native-function provider rather than a live provider or replay cache,
+so the result is a reviewable contract demonstration, not a claim about
+translation quality.
+
+### Run and pause for approval
+
+From the repository root (the folder containing `pyproject.toml`), after
+installation (see [Standard Install](#standard-install)), run:
+
+```bash
+python -m agentic_translation harness golden --runs-dir runs --pause-for-approval --overwrite
+```
+
+The command stops at `Status: awaiting_approval`. Open
+`runs/agentic_harness_v3_demo/report.html`. The report's first request shows
+the bootstrap controls and `tools.search`, then records dynamic exposure,
+typed actions, one rejected patch, one accepted QA-improving patch, and an
+approval-gated run-local glossary promotion/write marked **PENDING**.
+
+### Resume the reviewed session
+
+Approve the exact proposal in a separate process:
+
+```bash
+python -m agentic_translation harness resume runs/agentic_harness_v3_demo \
+  --approve \
+  --reviewer demo-reviewer \
+  --note "Approve the reviewed run-local glossary promotion."
+```
+
+Refresh the report. The resumed session writes `道心 → Dao Heart` once to the
+run-local glossary, leaves the master glossary unchanged, calls `finish`,
+and ends with `verified` and zero deterministic QA findings. Approval is
+idempotent; the session snapshot and event log remain the durable handoff
+between processes.
+
+After installation (see [Standard Install](#standard-install)), use the
+one-process scripted approval path:
+
+```bash
+python -m agentic_translation harness golden --runs-dir runs --auto-approve --overwrite
+```
+
+### Inspect the evidence receipt
+
+Inspect these files before describing a run as green:
+
+```text
+runs/agentic_harness_v3_demo/session_events.jsonl
+runs/agentic_harness_v3_demo/session_snapshot.json
+runs/agentic_harness_v3_demo/agent_episode.json
+runs/agentic_harness_v3_demo/report.md
+runs/agentic_harness_v3_demo/report.html
+runs/agentic_harness_v3_demo/translated_final.txt
+```
+
+`session_events.jsonl` is the chronological receipt: protocol, exposure,
+policy decisions, patch outcomes, approval identity, and the final status.
+`session_snapshot.json` is the resumable state projection. `agent_episode.json`
+keeps typed action arguments, observations, QA before/after, and the glossary
+proposal. The HTML and Markdown reports are views over those records; the final
+text is not evidence without the QA and policy receipts beside it.
+
+### Run the 3 × 3 contract bench
+
+Compare the same three deterministic cases across prompt JSON with all tools,
+native calls with all tools, and native calls with dynamic exposure:
+
+```bash
+python -m agentic_translation harness bench \
+  --suite samples/harness_eval/v3_cases.json \
+  --out runs/harness_eval \
+  --overwrite
+```
+
+The expected fixture result is **3 cases × 3 variants**, or **9/9 passed**.
+This is a contract comparison of first-request exposure and schema size. It is
+not a latency, serialized-byte, provider-quality, or production benchmark.
+
+### Keep the evidence claims bounded
+
+The benchmark repair actions originated in Codex runs, were migrated to the
+Harness v3 schema, and re-executed through this codebase — not produced in a
+single end-to-end run. The benchmark's mixed **n=5** preferences do not
+establish semantic or literary quality. Read
+`experiments/mid_corpus_harness_benchmark/README.md` and `REPORT.md` for the
+68:56/11/1 -> 0 rule-hit totals and the blind comparison caveats.
 
 ## 1. Core Concepts
 
@@ -117,7 +210,7 @@ Quality scoring is separate and only appears when live/replay candidate selectio
 ### Standard Install
 
 ```bash
-cd "agentic_translation_prototype"
+cd "/path/to/public-tl-harness"
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install -U pip
@@ -345,7 +438,7 @@ Use this to test the pipeline shape against private scraped material without put
 Fastest useful path:
 
 ```bash
-agentic-translation produce ../simulator_alliance \
+agentic-translation produce ../your-corpus \
   --count 2 \
   --dry-run
 ```
@@ -355,7 +448,7 @@ agentic-translation produce ../simulator_alliance \
 Run the planned chunk:
 
 ```bash
-agentic-translation produce ../simulator_alliance \
+agentic-translation produce ../your-corpus \
   --count 2 \
   --overwrite
 ```
@@ -363,7 +456,7 @@ agentic-translation produce ../simulator_alliance \
 Use an explicit chapter selection when you need to skip around:
 
 ```bash
-agentic-translation produce ../simulator_alliance \
+agentic-translation produce ../your-corpus \
   --chapters 0029,0030 \
   --overwrite
 ```
@@ -371,19 +464,19 @@ agentic-translation produce ../simulator_alliance \
 Tiny DeepSeek excerpt probe:
 
 ```bash
-agentic-translation --env-file .env.local produce ../simulator_alliance \
+agentic-translation --env-file .env.local produce ../your-corpus \
   --provider deepseek \
   --cheap 500 \
   --count 1 \
   --overwrite
 ```
 
-`--provider deepseek` probes DeepSeek first with `deepseek-chat`, records through `.agentic_cache/produce_deepseek`, and then delegates to the practical smoke path with fallback enabled. If the key is missing or the account is out of balance, the run records the provider failure and falls back instead of retrying expensive calls.
+`--provider deepseek` probes DeepSeek first with `deepseek-chat`, records through `.agentic_cache/produce_deepseek`, and then delegates to the practical smoke path with fallback enabled. If credentials are missing or the provider rejects the request, the run records the failure and falls back instead of retrying.
 
 Lower-level path with more knobs:
 
 ```bash
-agentic-translation smoke-project ../simulator_alliance \
+agentic-translation smoke-project ../your-corpus \
   --first 2 \
   --provider-mode offline \
   --run-id simulator_project_first2_0001_0002 \
@@ -392,12 +485,12 @@ agentic-translation smoke-project ../simulator_alliance \
   --no-write-proof
 ```
 
-`smoke-project` expects a corpus project directory with `scraped/`, `terms/master_glossary.txt`, and optionally `translated*` baseline directories. It imports the selected chapters into `local_fixtures/<project>_smoke_<range>/`, picks the latest translated directory that covers those chapters, runs the batch pipeline, writes aggregate TXT/EPUB review artifacts, and writes the triage packet: review queue, glossary gap report, manual edit plan, and work order. Use `--first N` for a quick small batch from sorted chapter files, `--start 0042 --first 3` for a window, or `--chapters 0001-0005,0010` for explicit picks. When `--run-id` is omitted, `smoke-project` prints and uses an id based on project name, mode, and selected chapters, such as `simulator_alliance_practical_0015_0016`. `--practical` is the default useful corpus loop: it applies safe glossary-update candidates, reruns affected chapters, bridges remaining glossary items through the auditable manual-review path, and attempts narrow split-panel merges. English aliases become `alias (expected)`, common plurals are handled, and source-only misses become visible `Term audit: <expected>.` paragraphs unless `--skip-source-terms` is passed. Practical bridge can run up to three bounded passes because accepted bridge edits may expose new glossary checks after QA refresh.
+`smoke-project` expects a corpus project directory with `scraped/`, `terms/master_glossary.txt`, and optionally `translated*` baseline directories. It imports the selected chapters into `local_fixtures/<project>_smoke_<range>/`, picks the latest translated directory that covers those chapters, runs the batch pipeline, writes aggregate TXT/EPUB review artifacts, and writes the triage packet: review queue, glossary gap report, manual edit plan, and work order. Use `--first N` for a quick small batch from sorted chapter files, `--start 0042 --first 3` for a window, or `--chapters 0001-0005,0010` for explicit picks. When `--run-id` is omitted, `smoke-project` prints and uses an id based on project name, mode, and selected chapters, such as `your_corpus_practical_0015_0016`. `--practical` is the default useful corpus loop: it applies safe glossary-update candidates, reruns affected chapters, bridges remaining glossary items through the auditable manual-review path, and attempts narrow split-panel merges. English aliases become `alias (expected)`, common plurals are handled, and source-only misses become visible `Term audit: <expected>.` paragraphs unless `--skip-source-terms` is passed. Practical bridge can run up to three bounded passes because accepted bridge edits may expose new glossary checks after QA refresh.
 
 Continue from the previous chunk:
 
 ```bash
-agentic-translation smoke-project ../simulator_alliance \
+agentic-translation smoke-project ../your-corpus \
   --continue-latest \
   --first 2 \
   --chunks 2 \
@@ -412,8 +505,8 @@ agentic-translation smoke-project ../simulator_alliance \
 Check progress:
 
 ```bash
-agentic-translation project-status ../simulator_alliance
-agentic-translation project-status ../simulator_alliance --json
+agentic-translation project-status ../your-corpus
+agentic-translation project-status ../your-corpus --json
 ```
 
 `project-status` reads matching `runs/*/batch_manifest.json` files, reports unique processed chapter count, latest and next chapter, current status counts, and recent matching runs.
@@ -422,10 +515,10 @@ Use `smoke-local` when you need to choose each path manually:
 
 ```bash
 agentic-translation smoke-local \
-  --source-dir ../simulator_alliance/scraped \
-  --glossary ../simulator_alliance/terms/master_glossary.txt \
+  --source-dir ../your-corpus/scraped \
+  --glossary ../your-corpus/terms/master_glossary.txt \
   --chapters 0001 \
-  --translated-dir ../simulator_alliance/translated_001_421 \
+  --translated-dir ../your-corpus/translated_001_421 \
   --provider-mode offline \
   --run-id simulator_one_command_bridge_0001 \
   --overwrite \
@@ -440,10 +533,10 @@ agentic-translation --env-file .env.local provider-probe deepseek \
   --cache-dir .agentic_cache/deepseek_probe
 ```
 
-Use `provider-probe` first when you only want to verify that a live provider is reachable. It sends one tiny JSON request, records the response when possible, and fails before any chapter import or batch run if credentials are missing. In this shell, the probe currently reports `DEEPSEEK_API_KEY is required for live deepseek providers`.
+Use `provider-probe` first when you only want to verify that a live provider is reachable. It sends one tiny JSON request, records the response when possible, and fails before any chapter import or batch run if credentials are missing.
 
 ```bash
-agentic-translation --env-file .env.local smoke-project ../simulator_alliance \
+agentic-translation --env-file .env.local smoke-project ../your-corpus \
   --chapters 0001 \
   --deepseek \
   --source-char-limit 500 \
@@ -452,27 +545,27 @@ agentic-translation --env-file .env.local smoke-project ../simulator_alliance \
   --overwrite
 ```
 
-`--deepseek` is intentionally narrow: live DeepSeek translation, offline judge, offline repair, cache recording, `deepseek-chat`, excerpt report mode, and offline fallback for live-provider failures. Add `--source-char-limit 500` when you want to spend pennies on a real-corpus excerpt instead of translating a whole chapter. If `DEEPSEEK_API_KEY` is missing or the account returns a hard error such as `402 Insufficient Balance`, the smoke command still writes the offline fallback package and records the reason in `provider_failures`; hard account/request errors are not retried.
+`--deepseek` is intentionally narrow: live DeepSeek translation, offline judge, offline repair, cache recording, `deepseek-chat`, excerpt report mode, and offline fallback for live-provider failures. Add `--source-char-limit 500` to bound provider usage to a short excerpt instead of translating a whole chapter. If credentials are missing or the provider rejects the request, the smoke command still writes the offline fallback package and records the reason in `provider_failures`; hard request errors are not retried.
 
 Create the local fixture:
 
 ```bash
 agentic-translation import-local \
-  --source-dir ../simulator_alliance/scraped \
-  --glossary ../simulator_alliance/terms/master_glossary.txt \
+  --source-dir ../your-corpus/scraped \
+  --glossary ../your-corpus/terms/master_glossary.txt \
   --chapters 0001-0010 \
-  --translated-dir ../simulator_alliance/translated_001_421 \
-  --out local_fixtures/simulator_0001_0010
+  --translated-dir ../your-corpus/translated_001_421 \
+  --out local_fixtures/your_corpus_0001_0010
 ```
 
 For a quick import plus offline triage run in one command:
 
 ```bash
 agentic-translation import-local \
-  --source-dir ../simulator_alliance/scraped \
-  --glossary ../simulator_alliance/terms/master_glossary.txt \
+  --source-dir ../your-corpus/scraped \
+  --glossary ../your-corpus/terms/master_glossary.txt \
   --chapters 0001-0002 \
-  --translated-dir ../simulator_alliance/translated_001_421 \
+  --translated-dir ../your-corpus/translated_001_421 \
   --out local_fixtures/simulator_quick_0001_0002 \
   --run-batch \
   --provider-mode offline \
@@ -489,7 +582,7 @@ agentic-translation import-local \
 Run it:
 
 ```bash
-agentic-translation batch run local_fixtures/simulator_0001_0010/story.yaml \
+agentic-translation batch run local_fixtures/your_corpus_0001_0010/story.yaml \
   --chapters 0001-0010 \
   --provider-mode live \
   --translation-provider openai \
@@ -518,11 +611,11 @@ If live credentials are not configured, use the public offline batch command to 
 
 ```bash
 agentic-translation import-local \
-  --source-dir ../simulator_alliance/scraped \
-  --glossary ../simulator_alliance/terms/master_glossary.txt \
-  --translated-dir ../simulator_alliance/translated_001_421 \
+  --source-dir ../your-corpus/scraped \
+  --glossary ../your-corpus/terms/master_glossary.txt \
+  --translated-dir ../your-corpus/translated_001_421 \
   --chapters 0001-0010 \
-  --out local_fixtures/simulator_0001_0010
+  --out local_fixtures/your_corpus_0001_0010
 ```
 
 ## 7. Batch Corpus Runs
@@ -684,7 +777,14 @@ agentic-translation batch normalize-panels runs/public_batch_demo \
   --write-proof
 ```
 
-It handles two narrow patterns: numbered note splits such as `[Note: 1...]`, `[2...]`, and `[3...]`, plus single-extra adjacent panel splits selected by a simple length-alignment heuristic and accepted only when QA clears the panel-count finding. It merges into one bracketed panel, reruns QA/packaging, records the manual-review ledger, and refreshes triage. Other panel mismatches still need `panel-report`, a live retry, or a manual edit.
+It handles two narrow patterns: numbered note splits such as `[Note: 1...]`,
+`[2...]`, and `[3...]`, plus one extra adjacent panel selected by a simple
+length-alignment heuristic. The edit is accepted only when QA clears the
+`system_panel_count` finding, which means the source and translation have
+different numbers of bracketed panels. It merges the split into one bracketed
+panel, reruns QA and packaging, records the manual-review ledger, and refreshes
+triage. Other panel mismatches still need `panel-report`, a live retry, or a
+manual edit.
 
 When the manual edit is a review decision you want to preserve, use `batch accept` instead:
 
@@ -740,7 +840,7 @@ offline batch triage
 -> inspect batch_manifest.json / batch_report.md
 -> batch review --write
 -> batch review --write-markdown
--> batch panel-report --write for panel-count diagnostics
+-> batch panel-report --write for bracketed-panel count diagnostics
 -> batch glossary-report --write for term-grouped glossary gaps
 -> batch work-order --write for action-grouped retry/manual-review commands
 -> batch execute-work-order --dry-run --write-preview --json to preview/preflight model-backed retry chapters and read recommended_next_action
@@ -965,7 +1065,7 @@ agentic-translation open-latest
 Import local private fixture:
 
 ```bash
-agentic-translation import-local --source-dir ../simulator_alliance/scraped --glossary ../simulator_alliance/terms/master_glossary.txt --chapters 0001-0010 --translated-dir ../simulator_alliance/translated_001_421 --out local_fixtures/simulator_0001_0010
+agentic-translation import-local --source-dir ../your-corpus/scraped --glossary ../your-corpus/terms/master_glossary.txt --chapters 0001-0010 --translated-dir ../your-corpus/translated_001_421 --out local_fixtures/your_corpus_0001_0010
 ```
 
 Inspect final TXT:
@@ -1043,14 +1143,16 @@ export DEEPSEEK_MODEL="deepseek-chat"
 
 or pass `--model deepseek-chat` on the command. The DeepSeek base URL defaults to `https://api.deepseek.com`; override it with `DEEPSEEK_BASE_URL` only when needed.
 
-For local work, you can put those values in an ignored dotenv-style file and load it at the CLI edge:
+For local work, put those values in an ignored dotenv-style file and load it at the CLI edge. Create `.env.local` with:
 
-```bash
-cat > .env.local <<'EOF'
+```text
 DEEPSEEK_API_KEY=...
 DEEPSEEK_MODEL=deepseek-chat
-EOF
+```
 
+Then run:
+
+```bash
 agentic-translation --env-file .env.local doctor samples/public_demo/story.yaml \
   --chapters 0001 \
   --provider-mode live \
@@ -1061,7 +1163,10 @@ agentic-translation --env-file .env.local doctor samples/public_demo/story.yaml 
   --cache-dir .agentic_cache
 ```
 
-The loader also honors `AGENTIC_TRANSLATION_ENV_FILE` and auto-loads `.env`, `.env.local`, `agentic.env`, or `global_env` from the current directory or parents when present. It fills missing environment variables only and never prints secret values.
+The loader also honors `AGENTIC_TRANSLATION_ENV_FILE` and auto-loads `.env`,
+`.env.local`, or `agentic.env` from the current directory or parents when
+present. It fills missing environment variables only and never prints secret
+values.
 
 Live translation is glossary-aware and chunks long chapters by paragraph. A non-offline translation provider is called once per chapter, not once for baseline and once for glossary; both artifacts receive the same live output so the existing QA/report flow still works.
 
@@ -1139,7 +1244,7 @@ Before sharing files externally:
 
 - The demo command still processes one chapter; the batch command handles bounded chapter ranges.
 - Offline mode does not measure semantic translation quality.
-- The cockpit report on `master` is the strong displayable demo surface. It is not the larger corpus-operations tool.
+- The generated HTML report is the focused run-review surface. It is not the larger corpus-operations tool.
 - Candidate selection is bounded and small; it is not a multi-agent ensemble.
 - Live/replay mode validates JSON responses, but it is still prototype-grade.
 - Local corpus smoke uses imported baselines and can package artifact-QA-clean aggregate TXT/EPUB; glossary-required findings now auto-repair only when a known or bounded cross-glossary alias is observed, otherwise they remain `review_required`.
@@ -1169,16 +1274,15 @@ Before sharing files externally:
 - `batch live-proof <story.yaml> --chapters <ids>` is the one-command live/cache/replay proof probe; it preflights before mutation, records cache, writes proof artifacts plus a combined `live_proof_summary.json/.md`, replays from the live manifest, and fails if either proof gate fails.
 - `batch replay <source-run-dir>` creates a new replay run from a cached live batch manifest instead of making operators reconstruct provider/cache/model/chapter flags, and it preflights cache existence, integrity, namespace coverage, recorded provider-call hashes, and provider/model metadata for the selected source chapters first.
 - Full-corpus live runs should start with one-chapter probes and bounded ranges.
-- A redacted old local project key reached DeepSeek but returned `402 Insufficient Balance`; fallback-enabled DeepSeek smoke commands still package offline artifacts and record the provider failure. Actual live model output needs a funded key via `--env-file`, `AGENTIC_TRANSLATION_ENV_FILE`, or an exported key.
 - `--allow-live-provider-fallback` is only for getting an artifact through provider outages or insufficient balance; it keeps delivery moving but intentionally fails agentic/replay proof expectations.
 - Acquisition, scraping, browser auth, WebToEpub, and static publishing are outside this prototype pass.
 
 ## 15. Recommended Next Steps
 
-1. Run `provider-probe deepseek --model deepseek-chat --cache-dir .agentic_cache/provider_probe` with a funded key before any live demo spend.
-2. Run `batch live-proof` for one public chapter with a funded API key, explicit model, and recorded cache.
+1. Run `provider-probe deepseek --model deepseek-chat --cache-dir .agentic_cache/provider_probe` with configured credentials before any live demo.
+2. Run `batch live-proof` for one public chapter with configured API credentials, an explicit model, and a recorded cache.
 3. Add `--write-proof` to operational run/resume commands, then run `doctor --json` plus `batch prove --json` in CI or shell scripts before claiming a live/replay corpus run is deliverable, agentic, and replayable.
 4. Inspect the cache index, then use the `batch live-proof` replay run as the primary model-backed demo artifact.
-5. Run a cached live 10-chapter `simulator_alliance` batch.
+5. Run a cached live 10-chapter batch from your own corpus.
 6. Use `batch glossary-pass` on private corpus triage runs to expand safe glossary candidates and rerun affected chapters, then use manual review for conflicts that remain.
 7. Add acquisition adapters only after the translation-production loop is reliable.

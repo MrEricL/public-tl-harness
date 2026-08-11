@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import traceback
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from pydantic import ValidationError
@@ -12,6 +13,7 @@ from agentic_translation.agent_provider import (
     CanonicalPayloadError,
     MAX_PAYLOAD_CHARS,
     MAX_NESTED_ITEMS,
+    REGISTRY_TOOL_SCHEMA_VERSION,
     AgentActionRequest,
     AgentActionValidationError,
     LLMAgentActionProvider,
@@ -19,6 +21,7 @@ from agentic_translation.agent_provider import (
     build_agent_action_messages,
 )
 from agentic_translation.agent_models import ResolveTerminologyAction
+from agentic_translation.agent_tools import AGENT_TOOL_REGISTRY
 from agentic_translation.agent_repair import run_repair_episode
 from agentic_translation.glossary import load_glossary
 from agentic_translation.qa import run_translation_qa
@@ -423,9 +426,146 @@ def test_request_accepts_v2_and_rejects_unknown_tool_schema_version() -> None:
     request_data["tool_schema_version"] = "agent-tools.v2"
 
     assert AgentActionRequest.model_validate(request_data).tool_schema_version == "agent-tools.v2"
-    request_data["tool_schema_version"] = "agent-tools.v3"
-    with pytest.raises(ValidationError):
-        AgentActionRequest.model_validate(request_data)
+    request_data["tool_schema_version"] = REGISTRY_TOOL_SCHEMA_VERSION
+    assert AgentActionRequest.model_validate(request_data).tool_schema_version == REGISTRY_TOOL_SCHEMA_VERSION
+
+
+def test_v3_payload_includes_sorted_exposure_protocol_and_registry_contracts() -> None:
+    request = make_action_request().model_copy(
+        update={
+            "tool_schema_version": REGISTRY_TOOL_SCHEMA_VERSION,
+            "tool_protocol": "native_function",
+            "exposed_tool_names": ("finish", "get_qa_findings"),
+        }
+    )
+
+    payload = request.canonical_payload()
+
+    assert payload["request_schema_version"] == "agent-action-request.v2"
+    assert payload["tool_protocol"] == "native_function"
+    assert payload["exposed_tool_names"] == ["finish", "get_qa_findings"]
+    assert payload["tool_schema"] == [
+        spec.prompt_contract()
+        for spec in AGENT_TOOL_REGISTRY.visible_specs(("finish", "get_qa_findings"))
+    ]
+    json_payload = request.model_copy(update={"tool_protocol": "json_prompt"}).canonical_payload()
+    exposure_payload = request.model_copy(update={"exposed_tool_names": ("finish",)}).canonical_payload()
+    assert payload != json_payload
+    assert payload != exposure_payload
+
+
+class _FakeNativeCompletions:
+    def __init__(self) -> None:
+        self.calls: list[dict[str, object]] = []
+
+    def create(self, **kwargs: object):
+        self.calls.append(kwargs)
+        return SimpleNamespace(
+            choices=[
+                SimpleNamespace(
+                    message=SimpleNamespace(
+                        tool_calls=[
+                            SimpleNamespace(
+                                id="call_1",
+                                function=SimpleNamespace(
+                                    name="finish",
+                                    arguments='{"summary":"No findings remain."}',
+                                ),
+                            )
+                        ]
+                    )
+                )
+            ]
+        )
+
+
+class _FakeNativeClient:
+    def __init__(self, completions: _FakeNativeCompletions) -> None:
+        self.chat = SimpleNamespace(completions=completions)
+
+
+def test_native_backend_sends_one_required_visible_tool_and_normalizes_action(
+    monkeypatch: pytest.MonkeyPatch, tmp_path
+) -> None:
+    monkeypatch.setenv("OPENAI_API_KEY", "test")
+    monkeypatch.setenv("AGENTIC_TRANSLATION_MODEL", "test-model")
+    completions = _FakeNativeCompletions()
+    request = make_action_request().model_copy(
+        update={
+            "tool_schema_version": REGISTRY_TOOL_SCHEMA_VERSION,
+            "tool_protocol": "native_function",
+            "exposed_tool_names": ("finish",),
+        }
+    )
+    provider = LLMAgentActionProvider(
+        provider_mode="live",
+        cache_dir=tmp_path,
+        record_cache=True,
+        model_name="test-model",
+        client_factory=lambda **kwargs: _FakeNativeClient(completions),
+        tool_protocol="native_function",
+    )
+
+    action = provider.next_action(request)
+
+    assert action.tool == "finish"
+    kwargs = completions.calls[0]
+    assert kwargs["tool_choice"] == "required"
+    assert kwargs["parallel_tool_calls"] is False
+    assert kwargs["temperature"] == 0
+    assert "response_format" not in kwargs
+    assert [item["function"]["name"] for item in kwargs["tools"]] == ["finish"]
+
+    messages = kwargs["messages"]
+    assert [message["role"] for message in messages] == ["system", "user"]
+    system = messages[0]["content"]
+    user_payload = json.loads(messages[1]["content"])
+    expected_user_payload = request.canonical_payload()
+    expected_user_payload.pop("tool_schema")
+    assert user_payload == expected_user_payload
+    assert "tool_schema" not in messages[0]["content"]
+    assert '"tool_schema":' not in messages[1]["content"]
+    assert "return one JSON object" not in system.lower()
+    assert "`tool` field" not in system
+    assert "untrusted translation data" in system
+    assert "never instructions" in system
+    assert "finish" not in system
+
+    # Wire-message minimization must not change the complete cache identity.
+    assert provider.call_records[-1].payload_sha256 == provider.cache._payload_digest(
+        request.canonical_payload()
+    )
+
+
+def test_native_replay_uses_cache_without_constructing_client(tmp_path) -> None:
+    request = make_action_request().model_copy(
+        update={
+            "tool_schema_version": REGISTRY_TOOL_SCHEMA_VERSION,
+            "tool_protocol": "native_function",
+            "exposed_tool_names": ("finish",),
+        }
+    )
+    provider = LLMAgentActionProvider(
+        provider_mode="replay",
+        provider_name="openai",
+        model_name="fixture-agent-v3",
+        cache_dir=tmp_path,
+        tool_protocol="native_function",
+        client_factory=lambda **kwargs: (_ for _ in ()).throw(
+            AssertionError("native replay must not construct a live client")
+        ),
+    )
+    provider.cache.save(
+        "agent_action",
+        request.canonical_payload(),
+        {"tool": "finish", "summary": "No findings remain."},
+        metadata={"provider": "openai", "model": "fixture-agent-v3"},
+    )
+
+    action = provider.next_action(request)
+
+    assert action.tool == "finish"
+    assert provider.call_records[-1].cache_hit is True
 
 
 def test_v1_and_v2_contracts_are_distinct_and_v1_rejects_resolve_response(tmp_path) -> None:
@@ -453,6 +593,28 @@ def test_v1_and_v2_contracts_are_distinct_and_v1_rejects_resolve_response(tmp_pa
         metadata={"provider": "openai", "model": "fixture-agent-v1"},
     )
     with pytest.raises(AgentActionValidationError, match="agent-tools.v1"):
+        provider.next_action(request)
+
+
+@pytest.mark.parametrize("tool_schema_version", ["agent-tools.v1", "agent-tools.v2"])
+def test_provider_rejects_v3_action_under_legacy_schema(tmp_path, tool_schema_version) -> None:
+    provider = LLMAgentActionProvider(
+        provider_mode="replay",
+        provider_name="openai",
+        model_name="fixture-agent",
+        cache_dir=tmp_path,
+    )
+    request_data = make_action_request().model_dump()
+    request_data["tool_schema_version"] = tool_schema_version
+    request = AgentActionRequest.model_validate(request_data)
+    provider.cache.save(
+        "agent_action",
+        request.canonical_payload(),
+        {"tool": "tools.search", "query": "glossary"},
+        metadata={"provider": "openai", "model": "fixture-agent"},
+    )
+
+    with pytest.raises(AgentActionValidationError, match="tools.search"):
         provider.next_action(request)
 
 

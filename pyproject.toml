@@ -1,7 +1,12 @@
 [project]
-name = "agentic-translation-prototype"
-version = "0.1.0"
-description = "Demo-first agentic long-form translation production system prototype"
+name = "agentic-translation-harness"
+version = "0.2.0"
+description = "A bounded agentic repair harness for reliable long-form translation pipelines"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [
+  { name = "MrEricL" },
+]
 requires-python = ">=3.11"
 dependencies = [
   "ebooklib",
@@ -20,6 +25,10 @@ dev = [
 
 [project.scripts]
 agentic-translation = "agentic_translation.cli:app"
+
+[project.urls]
+Repository = "https://github.com/MrEricL/public-tl-harness"
+Issues = "https://github.com/MrEricL/public-tl-harness/issues"
 
 [build-system]
 requires = ["setuptools>=68"]

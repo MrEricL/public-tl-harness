@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+from pydantic import ValidationError
 
 from agentic_translation.agent_models import (
     AgentEpisode,
@@ -8,14 +9,18 @@ from agentic_translation.agent_models import (
     FinishAction,
     GetQAFindingsAction,
     LookupGlossaryAction,
+    NormalizePunctuationAction,
     ReadSourceContextAction,
     ReadTranslationContextAction,
     ResolveTerminologyAction,
+    SearchToolsAction,
     SubmitPatchAction,
+    TextEdit,
 )
 from agentic_translation.agent_provider import (
     AgentActionRequest,
     AgentActionValidationError,
+    REGISTRY_TOOL_SCHEMA_VERSION,
 )
 from agentic_translation.agent_repair import (
     RepairToolExecutor,
@@ -57,6 +62,38 @@ def test_get_qa_findings_returns_current_findings(executor):
     assert result.observation.kind == "qa_findings"
     assert result.observation.data["count"] == 3
     assert result.observation.data["findings"]
+
+
+def test_executor_snapshot_round_trip_restores_episode_state(glossary):
+    executor = RepairToolExecutor(
+        source_text=SOURCE_TEXT,
+        translated_text=TRANSLATED_TEXT,
+        glossary=glossary,
+        run_id="snapshot-run",
+        story_slug="demo",
+        chapter="0001",
+    )
+    executor.current_text = "changed"
+    executor.current_qa = executor._run_qa(executor.current_text)
+    executor.escalated = True
+    executor.finished = False
+
+    snapshot = executor.snapshot()
+    restored = RepairToolExecutor.from_snapshot(
+        snapshot,
+        source_text=SOURCE_TEXT,
+        glossary=glossary,
+        run_id="snapshot-run",
+        story_slug="demo",
+        chapter="0001",
+    )
+
+    assert restored.current_text == "changed"
+    assert restored.current_qa == snapshot.current_qa
+    assert restored.episode_glossary == snapshot.episode_glossary
+    assert restored.escalated is True
+    assert restored.finished is False
+    assert restored.master_glossary is not restored.episode_glossary
 
 
 @pytest.mark.parametrize(
@@ -264,6 +301,20 @@ def test_submit_patch_rejects_duplicate_target(executor):
     assert executor.current_text == "Chapter 1\n\nbad bad"
 
 
+def test_submit_patch_rejects_overlapping_target_matches(executor):
+    executor.current_text = "Chapter 1\n\naaa"
+    before = executor.current_text
+
+    result = executor.execute(
+        SubmitPatchAction(old_text="aa", new_text="bb", rationale="overlapping target")
+    )
+
+    assert result.observation.ok is False
+    assert result.observation.kind == "patch_rejected"
+    assert "exactly once" in result.observation.message
+    assert executor.current_text == before
+
+
 def test_submit_patch_rejects_non_improving_or_regressing_patch_without_mutation(executor):
     before_text = executor.current_text
     result = executor.execute(
@@ -311,6 +362,67 @@ def test_submit_patch_accepts_qa_improving_working_copy(executor):
     assert result.qa_after is not None
     assert result.qa_after.summary.total_findings == 0
     assert executor.current_qa.summary.total_findings == 0
+
+
+def test_submit_patch_applies_multiple_edits_atomically(executor):
+    action = SubmitPatchAction(
+        edits=[
+            TextEdit(old_text="Heart of Dao", new_text="Dao Heart"),
+            TextEdit(old_text="guarded 道心.", new_text="guarded the mountain gate."),
+        ],
+        rationale="apply two narrow edits in one candidate",
+    )
+
+    result = executor.execute(action)
+
+    assert result.observation.ok is True
+    assert result.observation.kind == "patch_accepted"
+    assert executor.current_text.endswith("Dao Heart guarded the mountain gate.")
+
+
+def test_submit_patch_rejects_late_missing_edit_without_partial_mutation(executor):
+    before = executor.current_text
+    result = executor.execute(
+        SubmitPatchAction(
+            edits=[
+                TextEdit(old_text="Heart of Dao", new_text="Dao Heart"),
+                TextEdit(old_text="not present", new_text="replacement"),
+            ],
+            rationale="second target is absent",
+        )
+    )
+
+    assert result.observation.ok is False
+    assert result.observation.kind == "patch_rejected"
+    assert executor.current_text == before
+
+
+def test_submit_patch_rejects_whole_document_target_without_mutating(executor):
+    before = executor.current_text
+    result = executor.execute(
+        SubmitPatchAction(
+            edits=[TextEdit(old_text=before, new_text="replacement")],
+            rationale="whole-document target is outside bounded patch scope",
+        )
+    )
+
+    assert result.observation.ok is False
+    assert result.observation.kind == "patch_rejected"
+    assert "whole" in result.observation.message.lower()
+    assert executor.current_text == before
+
+
+def test_normalize_punctuation_uses_patch_verifier(executor):
+    executor.current_text = TRANSLATED_TEXT.replace(".", "，")
+    executor.current_qa = executor._run_qa(executor.current_text)
+    before = executor.current_text
+
+    result = executor.execute(NormalizePunctuationAction())
+
+    assert result.observation.ok is True
+    assert result.observation.kind == "patch_accepted"
+    assert executor.current_text != before
+    assert "，" not in executor.current_text
 
 
 def test_finish_rejects_while_findings_remain_and_succeeds_after_verified_patch(executor):
@@ -532,6 +644,50 @@ def test_run_repair_episode_follows_bounded_golden_path(tmp_path, glossary):
     assert episode_path.exists()
 
 
+def test_run_repair_episode_rejects_registry_schema_before_provider_call(
+    tmp_path, glossary
+):
+    provider = ScriptedActionProvider([FinishAction(summary="clean")])
+    episode_path = tmp_path / "agent_episode.json"
+
+    with pytest.raises(ValueError, match="run_repair_session"):
+        run_repair_episode(
+            provider=provider,
+            episode_path=episode_path,
+            source_text=SOURCE_TEXT,
+            translated_text=TRANSLATED_TEXT,
+            glossary=glossary,
+            run_id="test-run",
+            story_slug="agentic-demo",
+            chapter="0001",
+            provider_mode="replay",
+            tool_schema_version=REGISTRY_TOOL_SCHEMA_VERSION,
+        )
+
+    assert provider.requests == []
+    assert not episode_path.exists()
+
+
+def test_run_repair_episode_rejects_undeclared_search_action(tmp_path, glossary):
+    provider = ScriptedActionProvider([SearchToolsAction(query="glossary")])
+
+    result = run_repair_episode(
+        provider=provider,
+        episode_path=tmp_path / "agent_episode.json",
+        source_text=SOURCE_TEXT,
+        translated_text=TRANSLATED_TEXT,
+        glossary=glossary,
+        run_id="test-run",
+        story_slug="agentic-demo",
+        chapter="0001",
+        provider_mode="replay",
+        max_steps=1,
+    )
+
+    assert result.episode.steps[0].observation.kind == "invalid_action"
+    assert result.episode.steps[0].action == {"tool": "invalid_action"}
+
+
 def test_run_repair_episode_persists_terminology_resolution_and_auxiliary_call_order(
     tmp_path, glossary
 ):
@@ -748,37 +904,12 @@ def test_run_repair_episode_counts_rejected_patches_and_stops_before_third(tmp_p
 
 def test_run_repair_episode_rejects_oversized_action_before_execution(tmp_path, glossary):
     oversized_text = "Dao Heart guarded the mountain gate." + (" filler" * 400)
-    provider = ScriptedActionProvider(
-        [
-            SubmitPatchAction(
-                old_text="Heart of Dao guarded 道心.",
-                new_text=oversized_text,
-                rationale="oversized candidate",
-            )
-        ]
-    )
-    episode_path = tmp_path / "episode.json"
-
-    result = run_repair_episode(
-        provider=provider,
-        episode_path=episode_path,
-        source_text=SOURCE_TEXT,
-        translated_text=TRANSLATED_TEXT,
-        glossary=glossary,
-        run_id="test-run",
-        story_slug="agentic-demo",
-        chapter="0001",
-        provider_mode="replay",
-        max_steps=1,
-    )
-
-    assert result.final_text == TRANSLATED_TEXT
-    assert result.episode.steps[0].observation.kind == "action_too_large"
-    assert result.episode.steps[0].observation.ok is False
-    persisted_action = result.episode.steps[0].action
-    assert persisted_action["new_text"].endswith("...[truncated]")
-    assert result.episode.steps[0].observation.data["tool"] == "submit_patch"
-    assert episode_path.read_text(encoding="utf-8").count("patch_accepted") == 0
+    with pytest.raises(ValidationError):
+        SubmitPatchAction(
+            old_text="Heart of Dao guarded 道心.",
+            new_text=oversized_text,
+            rationale="oversized candidate",
+        )
 
 
 def test_run_repair_episode_escalates(tmp_path, glossary):

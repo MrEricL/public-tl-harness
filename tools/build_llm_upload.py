@@ -7,8 +7,25 @@ from pathlib import Path
 from typing import Iterable
 
 
-ROOT_FILES = (".gitignore", "DEMO_SCRIPT.md", "README.md", "pyproject.toml")
-CONTENT_DIRS = ("agentic_translation", "samples", "templates", "tests", "tools")
+ROOT_FILES = (
+    ".gitignore",
+    "DATA_NOTICE.md",
+    "DEMO_SCRIPT.md",
+    "LICENSE",
+    "README.md",
+    "USER_GUIDE.md",
+    "pyproject.toml",
+)
+CONTENT_DIRS = (
+    ".github",
+    "agentic_translation",
+    "docs",
+    "experiments",
+    "samples",
+    "templates",
+    "tests",
+    "tools",
+)
 EXCLUDED_PARTS = {
     "__pycache__",
     ".pytest_cache",
@@ -17,6 +34,13 @@ EXCLUDED_PARTS = {
     "build",
     "dist",
     "runs",
+    ".auth",
+    ".sessions",
+    ".notes",
+    "local_fixtures",
+    ".ruff_cache",
+    ".mypy_cache",
+    "htmlcov",
 }
 EXCLUDED_NAMES = {"LLM_UPLOAD_MEGA.txt"}
 TEXT_SUFFIXES = {
@@ -124,10 +148,19 @@ def _is_included(path: Path, project_root: Path, output_path: Path) -> bool:
         return False
 
     relative = path.relative_to(project_root)
-    if path.name in EXCLUDED_NAMES or any(part in EXCLUDED_PARTS for part in relative.parts):
+    if path.name in EXCLUDED_NAMES or any(
+        part in EXCLUDED_PARTS or part.endswith(".egg-info") for part in relative.parts
+    ):
         return False
 
-    return path.name == ".gitignore" or path.suffix.lower() in TEXT_SUFFIXES
+    if path.name not in ROOT_FILES and path.suffix.lower() not in TEXT_SUFFIXES:
+        return False
+
+    try:
+        path.read_text(encoding="utf-8")
+    except (OSError, UnicodeError):
+        return False
+    return True
 
 
 def _included_files(project_root: Path, output_path: Path | None = None) -> list[Path]:
@@ -159,6 +192,11 @@ def _render_bundle(project_root: Path, source_files: Iterable[Path]) -> str:
         "AGENTIC TRANSLATION HARNESS — COMPLETE LLM REVIEW BUNDLE",
         "",
         "Purpose: Review the portable source, fixtures, documentation, and tests.",
+        "Release: public v0.2.0 (PUBLIC VERSION: 0.2.0).",
+        "Evidence: Benchmark results are mixed.",
+        "Provenance: Repair actions originated in Codex runs, were migrated to the "
+        "Harness v3 schema, and re-executed through this codebase — not produced in "
+        "a single end-to-end run.",
         "Important: Bundled replay fixtures are synthetic cache-only evidence.",
         "",
         f"FILE COUNT: {len(source_files)}",
@@ -174,7 +212,7 @@ def _render_bundle(project_root: Path, source_files: Iterable[Path]) -> str:
             lines.append(file_text.rstrip("\n"))
         lines.extend((SEPARATOR, f"END FILE: {relative_name}", SEPARATOR, ""))
 
-    return "\n".join(lines) + "\n"
+    return "\n".join(lines).rstrip("\n") + "\n"
 
 
 def build_llm_upload(project_root: str | Path, output_path: str | Path | None = None) -> Path:
