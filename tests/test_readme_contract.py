@@ -7,8 +7,9 @@ def test_harness_v3_front_door_docs_contract() -> None:
     readme = Path("README.md").read_text(encoding="utf-8")
     normalized_readme = " ".join(readme.split())
     for text in [
-        "The LLM decides what repair to try.",
-        "The model never writes to the final translation directly.",
+        "This is an agent harness for fixing translated text.",
+        "inconsistent names, lines still in the source language, broken punctuation.",
+        "only keeps them when the checks show a real improvement.",
         "Jump to:",
         "harness checklist",
         "### Agent harness checklist",
@@ -46,8 +47,8 @@ def test_harness_v3_front_door_docs_contract() -> None:
         "Reject and return findings",
         "Verify saved session identity",
         "Resume with decision",
-        "Only a human reviewer can approve writing it to the persistent glossary.",
-        "The persistent glossary remains unchanged.",
+        "Only a human reviewer can approve writing it to the persistent run glossary.",
+        "This replay does not write to a glossary.",
         "3 cases × 3 variants",
         "9/9 passed",
         "20 decisions: 4 judges × 5 chapters, with answer order counterbalanced",
@@ -64,7 +65,7 @@ def test_harness_v3_front_door_docs_contract() -> None:
     assert "## Control model" not in readme
     assert readme.count("```mermaid") == 1
     assert "assets/harness-v3-cockpit.png" not in readme
-    assert "run-glossary write held at **PENDING** until a reviewer decides" in readme
+    assert "write to the persistent run glossary held at **PENDING** until a reviewer decides" in normalized_readme
     assert "exact one-shot baseline draft" not in readme
     assert "same `core_worker` class" not in readme
 
@@ -129,7 +130,7 @@ def test_public_readme_keeps_personal_story_before_quickstart() -> None:
     )[0]
 
     assert "Moon-Shadow Step" in story
-    assert "The vision is" in story
+    assert "My goal is to drop in a story" in story
     assert readme.index("## Why I built this") < readme.index(
         "## Quickstart and evidence"
     )

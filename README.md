@@ -6,13 +6,15 @@
 ![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-3776AB)
 [![License: MIT](https://img.shields.io/badge/license-MIT-2ea44f)](LICENSE)
 
-The LLM decides what repair to try. Python validates the action, tests text
-edits on a working copy, and keeps a change only when deterministic QA
-improves. The model never writes to the final translation directly.
+This is an agent harness for fixing translated text. An LLM translates your
+text in a first pass, then this harness goes back over it to clean up the mess:
+inconsistent names, lines still in the source language, broken punctuation. It
+proposes corrections one at a time and only keeps them when the checks show a
+real improvement.
 
-The main demos run without credentials. The package also supports recorded
-provider replay, approval sessions that can pause and resume, and batch
-translation to TXT or EPUB.
+You can run the core demos locally without API credentials. The same runtime
+also supports recorded provider replay, pause-and-resume approvals, and batch
+output to TXT or EPUB.
 
 **Jump to:** [two-minute walkthrough](#run-the-two-minute-harness-v3-walkthrough)
 · [benchmark evidence](#five-chapter-paired-benchmark)
@@ -27,7 +29,7 @@ translation to TXT or EPUB.
   only when needed.
 - Test every proposed edit on a working copy and reject regressions before they
   reach the delivered translation.
-- Require human approval before writing a resolved term to the persistent
+- Require human approval before writing a resolved term to the persistent run
   glossary. A resumed run must match the original source, glossary, provider,
   protocol, and tool definitions.
 
@@ -78,22 +80,18 @@ show up later as the **Blue Cloud School**. The latter is a "taste" problem unde
 Traditionally, this is where a translator has the most influence: choosing the
 language that shapes the feel of the world.
 
-So this project uses a context-aware glossary: each chapter gets the
-established terms that matter for it, and the system looks for places where
-the translation drifted. I built an agentic repair process around that. When a
-term is unclear, the agent checks the source, the current translation, and the
-glossary, gets independent suggestions from two LLMs, and uses a blinded
-evaluator when they disagree — the extra context helps with taste calls like
-**Blue Cloud School**, while the glossary and guardrails keep style decisions
-consistent from chapter to chapter. Python only applies the resulting patch if
-the consistency checks improve without creating a new problem.
+This project uses a context-aware glossary. Each chapter gets the terms it
+needs, and the system flags translation drift. When a term is unclear, two
+model roles compare the source, current translation, and glossary. They suggest
+alternatives, and a blinded evaluator chooses between them. That helps with
+taste calls like **Blue Cloud School** while keeping the chosen language
+consistent across chapters. Every patch is tested on a working copy. The
+system keeps it only if it removes a QA finding without creating another.
 
-The vision is: drop in a story and have a complete English translation
-ready to read on the train. The current demo focuses on Chinese-to-English
-translation because I can personally audit ambiguous cases, but the same
-approach can apply to other languages. The broader workflow also includes
-scraping chapters at the start and binding and formatting the finished
-translation as an EPUB at the end. Those parts are omitted from this demo.
+My goal is to drop in a story and get back an English edition I can read on the
+train. The wider workflow starts by collecting chapters and ends by packaging
+the finished translation as TXT or EPUB. This demo focuses on the repair and
+verification work in between.
 
 ---
 
@@ -131,7 +129,8 @@ The paused run demonstrates three controls:
 - an initial tool set: `escalate`, `finish`, `get_qa_findings`, and
   `tools.search`;
 - one rejected patch followed by an accepted QA-improving patch; and
-- a run-glossary write held at **PENDING** until a reviewer decides.
+- a write to the persistent run glossary held at **PENDING** until a reviewer
+  decides.
 
 #### 3. Approve and resume
 
@@ -139,9 +138,9 @@ The paused run demonstrates three controls:
 python -m agentic_translation harness resume runs/agentic_harness_v3_demo --approve --reviewer demo-reviewer --note "Approve the reviewed run-local glossary promotion."
 ```
 
-The resumed report records `道心 → Dao Heart`, writes it once to the run
-glossary, and ends with final status `verified` and zero deterministic QA
-findings. The original master glossary remains unchanged.
+The resumed report records `道心 → Dao Heart`, writes it once to the persistent
+run glossary, and ends with final status `verified` and zero deterministic QA
+findings. The checked-in master glossary remains unchanged.
 
 #### 4. Run the same path in one command
 
@@ -255,8 +254,9 @@ project applies that pattern to translation repair.
   use the same runtime without calling a live model.
 - [x] **Verification.** Python tests edits on a working copy and keeps only
   changes that improve QA without adding a new finding.
-- [x] **Permissions.** Persistent glossary writes pause for human approval and
-  resume only when the saved session still matches the original run.
+- [x] **Permissions.** Writes to the persistent run glossary pause for human
+  approval and resume only when the saved session still matches the original
+  run.
 - [x] **Observability.** Events, snapshots, reports, provider-call receipts, and
   replay records make each run inspectable.
 
@@ -315,7 +315,7 @@ Episode status:    verified
 
 The agent requests two terminology proposals, and a blinded evaluator chooses
 `Dao Heart` for this run. The agent then proposes a patch. Python keeps it
-because QA falls to zero. The persistent glossary remains unchanged.
+because QA falls to zero. This replay does not write to a glossary.
 
 #### Inspect the evidence
 
@@ -342,9 +342,9 @@ enforces policy and budgets, applies any edit, and runs verification.
 | Boundary | Enforcement |
 | --- | --- |
 | Typed tools | Pydantic schemas reject malformed actions; step and mutation budgets stop open-ended loops. |
-| **Two-model terminology arbitration** | OpenAI and DeepSeek roles receive the same context, and a blinded evaluator selects a term for the current run. Only a human reviewer can approve writing it to the persistent glossary. |
+| **Two-model terminology arbitration** | OpenAI and DeepSeek roles receive the same context, and a blinded evaluator selects a term for the current run. Only a human reviewer can approve writing it to the persistent run glossary. |
 | **QA-gated patch acceptance** | `submit_patch` edits a working copy and reruns the full QA suite. Python rejects the edit if QA does not improve or finds a new problem. |
-| Persistent glossary writes | Python pauses before writing the selected term. It resumes only after a human approves and the saved session matches the original run. |
+| Writes to the persistent run glossary | Python pauses before writing the selected term. It resumes only after a human approves and the saved session matches the original run. |
 | Run evidence | Each run saves events, provider and model details, request and response hashes, snapshots, reports, and cache status. |
 | Replay | Missing or mismatched cache entries fail instead of falling through to a live provider. |
 
@@ -400,7 +400,8 @@ Full batch commands and operator procedures are documented in
 <details>
 <summary>Show batch workflow commands</summary>
 
-The same CLI can run and inspect batch jobs:
+The installed `agentic-translation` command is equivalent to
+`python -m agentic_translation` and can run or inspect batch jobs:
 
 ```bash
 # Run one offline batch chapter
