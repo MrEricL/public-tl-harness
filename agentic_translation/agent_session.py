@@ -14,6 +14,7 @@ import os
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
+from collections.abc import Callable
 from typing import Any, Mapping
 
 from pydantic import BaseModel, TypeAdapter, ValidationError
@@ -27,13 +28,21 @@ from .agent_models import (
     AgentSessionSnapshot,
     ApprovalDecision,
     ApprovalRequest,
+    CompleteReviewAction,
+    DelegateReviewAction,
     GlossaryPromotionProposal,
+    FinishAction,
     NormalizePunctuationAction,
     PromoteGlossaryTermAction,
+    ReadParagraphsAction,
+    ReviewFinding,
     RepairExecutorSnapshot,
     PolicyDecision,
     SearchToolsAction,
+    SelectTermAction,
+    SpecialistReview,
     SubmitPatchAction,
+    TermSuggestion,
     SessionEvent,
 )
 from .agent_policy import DefaultToolPolicy
@@ -43,6 +52,8 @@ from .agent_provider import (
     AgentActionValidationError,
     PriorObservableStep,
     REGISTRY_TOOL_SCHEMA_VERSION,
+    SHOWCASE_TOOL_SCHEMA_VERSION,
+    _bounded_instruction_context,
 )
 from .agent_repair import (
     RepairToolExecutor,
@@ -56,9 +67,15 @@ from .agent_repair import (
     _latest_provider_call,
     _provider_call_records,
 )
-from .agent_tools import AGENT_TOOL_REGISTRY, ToolCallValidationError
-from .models import GlossaryParseResult, ProviderCallRecord, QAReport
+from .agent_tools import (
+    AGENT_TOOL_REGISTRY,
+    SHOWCASE_TOOL_REGISTRY,
+    ToolCallValidationError,
+    ToolRegistry,
+)
+from .models import GlossaryEntry, GlossaryParseResult, ProviderCallRecord, QAReport
 from .terminology import TerminologyResolver
+from .text import split_paragraphs
 
 
 class SessionStore:
@@ -210,6 +227,30 @@ class AgentSessionResult:
 
 _AGENT_ACTION_ADAPTER = TypeAdapter(AgentAction)
 _BOOTSTRAP_TOOLS = ("escalate", "finish", "get_qa_findings", "tools.search")
+_SHOWCASE_BOOTSTRAP_TOOLS = _BOOTSTRAP_TOOLS + (
+    "read_paragraphs",
+    "delegate_review",
+    "select_term",
+)
+MAX_PARAGRAPH_RESULT_CHARS = 4000
+MAX_SPECIALIST_REVIEWS = 16
+_SHOWCASE_OBSERVATION_MAX_DEPTH = 8
+
+ReviewHandler = Callable[..., list[SpecialistReview]]
+
+
+def _registry_for_version(version: str) -> ToolRegistry:
+    """Return the opt-in registry while keeping the v3 default object intact."""
+
+    if version == SHOWCASE_TOOL_SCHEMA_VERSION:
+        return SHOWCASE_TOOL_REGISTRY
+    if version in {
+        REGISTRY_TOOL_SCHEMA_VERSION,
+        "agent-tools.v1",
+        "agent-tools.v2",
+    }:
+        return AGENT_TOOL_REGISTRY
+    raise ValueError(f"Unsupported agent tool schema version: {version}")
 
 
 def _master_glossary(
@@ -330,8 +371,11 @@ def _session_identity_candidate(
     story_slug: str,
     chapter: str,
     provider_mode: str,
+    tool_schema_version: str = REGISTRY_TOOL_SCHEMA_VERSION,
+    registry: ToolRegistry | None = None,
 ) -> AgentSessionIdentity:
     provider_name, model_name = _provider_metadata(provider)
+    active_registry = registry or _registry_for_version(tool_schema_version)
     return AgentSessionIdentity(
         run_id=run_id,
         story_slug=story_slug,
@@ -339,11 +383,11 @@ def _session_identity_candidate(
         provider_mode=provider_mode,
         provider=provider_name,
         model=model_name,
-        tool_schema_version=REGISTRY_TOOL_SCHEMA_VERSION,
+        tool_schema_version=tool_schema_version,
         tool_protocol=_normalized_provider_protocol(provider),
         source_sha256=_sha256_text(source_text),
         master_glossary_sha256=_master_glossary_sha256(master_glossary),
-        registry_sha256=AGENT_TOOL_REGISTRY.contract_sha256(),
+        registry_sha256=active_registry.contract_sha256(),
     )
 
 
@@ -382,6 +426,10 @@ def _initial_snapshot(
     max_patch_attempts: int,
     exposed_tool_names: list[str],
     identity: AgentSessionIdentity | None = None,
+    instruction_context: dict[str, Any] | None = None,
+    require_fidelity_review: bool = False,
+    allow_nonregressing_patches: bool = False,
+    max_delegation_rounds: int = 2,
 ) -> AgentSessionSnapshot:
     initial_qa = RepairToolExecutor._bounded_report(executor.current_qa)
     assert initial_qa is not None
@@ -404,6 +452,10 @@ def _initial_snapshot(
         executor=executor.snapshot(),
         identity=identity,
         exposed_tool_names=list(exposed_tool_names),
+        instruction_context=instruction_context,
+        require_fidelity_review=require_fidelity_review,
+        allow_nonregressing_patches=allow_nonregressing_patches,
+        max_delegation_rounds=max_delegation_rounds,
     )
 
 
@@ -517,6 +569,263 @@ def _promotion_proposal(
     )
 
 
+def _bounded_paragraphs(
+    *,
+    executor: RepairToolExecutor,
+    action: ReadParagraphsAction,
+) -> AgentObservation:
+    """Return at most six indexed paragraphs and 4000 result characters."""
+
+    text = executor.source_text if action.document == "source" else executor.current_text
+    paragraphs = split_paragraphs(text)
+    selected: list[dict[str, Any]] = []
+    used_chars = 0
+    for index in range(action.start, min(action.start + action.count, len(paragraphs))):
+        paragraph = paragraphs[index]
+        separator_chars = 2 if selected else 0
+        remaining = MAX_PARAGRAPH_RESULT_CHARS - used_chars - separator_chars
+        if remaining <= 0:
+            break
+        if len(paragraph) > remaining:
+            marker = "...[truncated]"
+            paragraph = (
+                marker[:remaining]
+                if remaining <= len(marker)
+                else paragraph[: remaining - len(marker)].rstrip() + marker
+            )
+        selected.append({"index": index, "text": paragraph})
+        used_chars += separator_chars + len(paragraph)
+        if len(paragraph) < len(paragraphs[index]):
+            break
+    return AgentObservation(
+        ok=True,
+        kind="paragraphs_read",
+        message=f"Returned {len(selected)} bounded {action.document} paragraph(s).",
+        data={
+            "document": action.document,
+            "start": action.start,
+            "count": action.count,
+            "paragraphs": selected,
+        },
+    )
+
+
+def _bounded_showcase_json_value(value: Any, *, depth: int = 0) -> Any:
+    """Bound v4 observations while retaining typed nested review evidence.
+
+    The legacy repair projection intentionally stops at depth four.  v4
+    coordinator observations contain one additional layer for paragraphs,
+    findings, edits, and term suggestions, so use a deeper bound only for the
+    opt-in showcase projection.  The item and string limits remain the same.
+    """
+
+    if value is None or isinstance(value, (bool, int)):
+        return value
+    if isinstance(value, str):
+        return RepairToolExecutor._bounded_snippet(value) or ""
+    if isinstance(value, float):
+        return value if value == value and value not in {float("inf"), float("-inf")} else None
+    if depth >= _SHOWCASE_OBSERVATION_MAX_DEPTH:
+        return "...[truncated]"
+    if isinstance(value, Mapping):
+        return {
+            key: _bounded_showcase_json_value(item, depth=depth + 1)
+            for key, item in sorted(value.items(), key=lambda item: str(item[0]))[:32]
+            if isinstance(key, str)
+        }
+    if isinstance(value, (list, tuple)):
+        return [
+            _bounded_showcase_json_value(item, depth=depth + 1)
+            for item in list(value)[:32]
+        ]
+    return f"<{type(value).__name__}>"
+
+
+def _bounded_showcase_observation(observation: AgentObservation) -> AgentObservation:
+    """Copy a v4 observation without collapsing review evidence at depth four."""
+
+    return observation.model_copy(
+        update={
+            "message": RepairToolExecutor._bounded_snippet(observation.message) or "",
+            "data": _bounded_showcase_json_value(observation.data),
+        },
+        deep=True,
+    )
+
+
+def _review_observation_payload(review: SpecialistReview) -> dict[str, Any]:
+    """Project a child result into safe coordinator-visible evidence.
+
+    Provider call metadata and child artifact paths are durable diagnostics but
+    are intentionally absent from the next model context.  They are retained
+    in the typed snapshot instead.
+    """
+
+    return {
+        "role": review.role,
+        "status": review.status,
+        "summary": review.summary,
+        "findings": [finding.model_dump(mode="json") for finding in review.findings],
+        "proposed_edits": [edit.model_dump(mode="json") for edit in review.proposed_edits],
+        "term_suggestions": [
+            suggestion.model_dump(mode="json") for suggestion in review.term_suggestions
+        ],
+        "draft_sha256": review.draft_sha256,
+    }
+
+
+def _coerce_specialist_reviews(
+    value: Any,
+    *,
+    requested_roles: list[str],
+) -> list[SpecialistReview]:
+    if not isinstance(value, (list, tuple)):
+        raise ValueError("review_handler must return a list of SpecialistReview values")
+    reviews: list[SpecialistReview] = []
+    seen_roles: set[str] = set()
+    for raw_review in value:
+        review = (
+            raw_review
+            if isinstance(raw_review, SpecialistReview)
+            else SpecialistReview.model_validate(raw_review)
+        )
+        if review.role not in requested_roles:
+            raise ValueError(f"review returned unrequested specialist role: {review.role}")
+        if review.role in seen_roles:
+            raise ValueError(f"review returned duplicate specialist role: {review.role}")
+        seen_roles.add(review.role)
+        reviews.append(review)
+    if not reviews:
+        raise ValueError("review_handler must return at least one SpecialistReview")
+    missing_roles = set(requested_roles) - seen_roles
+    if missing_roles:
+        raise ValueError(
+            "review_handler omitted requested specialist role(s): "
+            + ", ".join(sorted(missing_roles))
+        )
+    return reviews
+
+
+def _select_term_from_reviews(
+    *,
+    executor: RepairToolExecutor,
+    snapshot: AgentSessionSnapshot,
+    action: SelectTermAction,
+) -> tuple[AgentObservation, QAReport | None, QAReport | None]:
+    current_digest = _sha256_text(executor.current_text)
+    suggestion: TermSuggestion | None = None
+    for review in reversed(snapshot.specialist_reviews):
+        if review.role != "terminology" or review.status != "completed":
+            continue
+        if review.draft_sha256 != current_digest:
+            continue
+        for candidate in review.term_suggestions:
+            if candidate.term == action.term and candidate.target == action.target:
+                suggestion = candidate
+                break
+        if suggestion is not None:
+            break
+    if suggestion is None:
+        return (
+            AgentObservation(
+                ok=False,
+                kind="term_selection_rejected",
+                message="Term selection must exactly match a current completed terminology suggestion.",
+                data={"term": action.term, "target": action.target, "draft_sha256": current_digest},
+            ),
+            None,
+            None,
+        )
+
+    matching_index = next(
+        (
+            index
+            for index, entry in enumerate(executor.episode_glossary.entries)
+            if entry.source == action.term or entry.source.casefold() == action.term.casefold()
+        ),
+        None,
+    )
+    if matching_index is None:
+        executor.episode_glossary.entries.append(
+            GlossaryEntry(source=action.term, target=action.target, candidates=[action.target])
+        )
+    else:
+        entry = executor.episode_glossary.entries[matching_index]
+        candidates = list(entry.candidates)
+        if action.target not in candidates:
+            candidates.insert(0, action.target)
+        executor.episode_glossary.entries[matching_index] = entry.model_copy(
+            update={"target": action.target, "candidates": candidates}
+        )
+    executor.glossary = executor.episode_glossary
+    before_qa = executor.current_qa
+    executor.current_qa = executor._run_qa(executor.current_text)
+    return (
+        AgentObservation(
+            ok=True,
+            kind="term_selected",
+            message="Terminology suggestion selected as an episode-local glossary override.",
+            data={
+                "term": action.term,
+                "target": action.target,
+                "rationale": action.rationale,
+                "draft_sha256": current_digest,
+                "persistent_write": False,
+            },
+        ),
+        RepairToolExecutor._bounded_report(before_qa),
+        RepairToolExecutor._bounded_report(executor.current_qa),
+    )
+
+
+def _fidelity_gate_observation(
+    *,
+    snapshot: AgentSessionSnapshot,
+    current_text: str,
+) -> AgentObservation | None:
+    """Return a blocking finish observation when a fresh fidelity review is absent or unsafe."""
+
+    current_digest = _sha256_text(current_text)
+    current_reviews = [
+        review
+        for review in snapshot.specialist_reviews
+        if review.role == "fidelity"
+        and review.status == "completed"
+        and review.draft_sha256 == current_digest
+    ]
+    if not current_reviews:
+        return AgentObservation(
+            ok=False,
+            kind="fidelity_review_required",
+            message=(
+                "Cannot finish until a completed fidelity review covers the current draft; "
+                "delegate a fresh review or escalate if the issue is unrepairable."
+            ),
+            data={"draft_sha256": current_digest, "action": "delegate_review_or_escalate"},
+        )
+    blocking = [
+        finding.model_dump(mode="json")
+        for review in current_reviews
+        for finding in review.findings
+        if finding.category == "fidelity" and finding.blocking
+    ]
+    if blocking:
+        return AgentObservation(
+            ok=False,
+            kind="fidelity_findings_blocking",
+            message=(
+                f"Cannot finish while {len(blocking)} blocking fidelity finding(s) remain; "
+                "repair them or escalate for human review."
+            ),
+            data={
+                "draft_sha256": current_digest,
+                "blocking_findings": blocking,
+                "action": "repair_or_escalate",
+            },
+        )
+    return None
+
+
 def _atomic_write_text(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary_name: str | None = None
@@ -570,10 +879,33 @@ def _continue_v3_session(
     canonical_glossary_path: Path | None,
     terminology_source_context_chars: int,
     terminology_translation_context_chars: int,
+    tool_schema_version: str = REGISTRY_TOOL_SCHEMA_VERSION,
+    registry: ToolRegistry | None = None,
+    instruction_context: dict[str, Any] | None = None,
+    review_handler: ReviewHandler | None = None,
+    require_fidelity_review: bool = False,
+    allow_nonregressing_patches: bool = False,
+    max_delegation_rounds: int = 2,
 ) -> AgentSessionResult:
-    """Continue a v3 projection until terminal, budget, or approval pause."""
+    """Continue a bounded session until terminal, budget, interruption, or approval pause."""
+
+    active_registry = registry or _registry_for_version(tool_schema_version)
 
     episode = snapshot.episode
+    # Persisted showcase policy is authoritative on continuation.  The
+    # arguments remain useful for fresh sessions and for callers that invoke
+    # this private continuation helper directly.
+    require_fidelity_review = snapshot.require_fidelity_review
+    allow_nonregressing_patches = snapshot.allow_nonregressing_patches
+    max_delegation_rounds = snapshot.max_delegation_rounds
+    if allow_nonregressing_patches and tool_schema_version != SHOWCASE_TOOL_SCHEMA_VERSION:
+        raise ValueError(
+            "allow_nonregressing_patches is supported only for showcase sessions"
+        )
+    if allow_nonregressing_patches and not require_fidelity_review:
+        raise ValueError(
+            "allow_nonregressing_patches requires require_fidelity_review=True"
+        )
     executor = RepairToolExecutor.from_snapshot(
         snapshot.executor,
         source_text=source_text,
@@ -584,6 +916,7 @@ def _continue_v3_session(
         terminology_resolver=terminology_resolver,
         terminology_source_context_chars=terminology_source_context_chars,
         terminology_translation_context_chars=terminology_translation_context_chars,
+        allow_nonregressing_patches=allow_nonregressing_patches,
     )
     policy = DefaultToolPolicy()
     prior_steps: list[PriorObservableStep] = []
@@ -606,9 +939,14 @@ def _continue_v3_session(
             remaining_steps=episode.max_steps - len(episode.steps),
             remaining_patch_attempts=max(episode.max_patch_attempts - snapshot.patch_attempts, 0),
             prior_steps=list(prior_steps[-24:]),
-            tool_schema_version=REGISTRY_TOOL_SCHEMA_VERSION,
+            tool_schema_version=tool_schema_version,
             tool_protocol=tool_protocol,
             exposed_tool_names=tuple(snapshot.exposed_tool_names),
+            instruction_context=(
+                snapshot.instruction_context
+                if tool_schema_version == SHOWCASE_TOOL_SCHEMA_VERSION
+                else None
+            ),
         )
         _append_event(
             store,
@@ -622,7 +960,27 @@ def _continue_v3_session(
         before_call_count = len(_provider_call_records(provider))
         try:
             proposed = provider.next_action(request)
+            if proposed is None:
+                _append_event(
+                    store,
+                    "session_interrupted",
+                    {"step": step_number, "reason": "provider_returned_no_decision"},
+                )
+                snapshot.executor = executor.snapshot()
+                _write_checkpoint(store, snapshot)
+                return _session_result(
+                    store,
+                    snapshot,
+                    canonical_glossary_path=canonical_glossary_path,
+                )
             action = _action_from_provider(proposed)
+        except KeyboardInterrupt:
+            # The previous checkpoint contains all completed actions.  Record
+            # the current projection before allowing the interruption to
+            # propagate so a later resume can continue from that boundary.
+            snapshot.executor = executor.snapshot()
+            _write_checkpoint(store, snapshot)
+            raise
         except AgentActionValidationError as exc:
             call = _latest_provider_call(provider, before_call_count)
             _append_event(store, "tool_proposed", {"step": step_number, "tool": "invalid_action"})
@@ -651,7 +1009,7 @@ def _continue_v3_session(
         persisted_action = _bounded_action_payload(action)
         _append_event(store, "tool_proposed", {"step": step_number, "action": persisted_action})
         try:
-            spec = AGENT_TOOL_REGISTRY.spec(action.tool)
+            spec = active_registry.spec(action.tool)
         except ToolCallValidationError:
             spec = None
         exposed = action.tool in set(snapshot.exposed_tool_names)
@@ -695,7 +1053,7 @@ def _continue_v3_session(
             _append_event(store, "tool_rejected", {"step": step_number, "tool": action.tool, "reason": decision.reason})
             execution = ToolExecutionResult(observation=observation)
         elif isinstance(action, SearchToolsAction):
-            matches = AGENT_TOOL_REGISTRY.search(action.query, limit=action.limit)
+            matches = active_registry.search(action.query, limit=action.limit)
             names = sorted({*snapshot.exposed_tool_names, *(spec.name for spec in matches)})
             if "tools.search" not in names:
                 names.append("tools.search")
@@ -708,6 +1066,115 @@ def _continue_v3_session(
             )
             execution = ToolExecutionResult(observation=observation)
             _append_event(store, "tool_executed", {"step": step_number, "tool": action.tool, "matches": [item.name for item in matches]})
+        elif isinstance(action, ReadParagraphsAction):
+            execution = ToolExecutionResult(observation=_bounded_paragraphs(executor=executor, action=action))
+            _append_event(
+                store,
+                "tool_executed",
+                {"step": step_number, "tool": action.tool, "kind": execution.observation.kind},
+            )
+        elif isinstance(action, DelegateReviewAction):
+            if snapshot.delegation_rounds >= snapshot.max_delegation_rounds:
+                execution = ToolExecutionResult(
+                    observation=AgentObservation(
+                        ok=False,
+                        kind="delegation_budget_exhausted",
+                        message="Delegation round budget is exhausted; no specialist was invoked.",
+                        data={
+                            "max_delegation_rounds": snapshot.max_delegation_rounds,
+                            "delegation_rounds": snapshot.delegation_rounds,
+                        },
+                    )
+                )
+            else:
+                snapshot.delegation_rounds += 1
+                if review_handler is None:
+                    execution = ToolExecutionResult(
+                        observation=AgentObservation(
+                            ok=False,
+                            kind="review_unavailable",
+                            message="No review handler is configured for specialist delegation.",
+                            data={"specialists": list(action.specialists)},
+                        )
+                    )
+                else:
+                    try:
+                        raw_reviews = review_handler(
+                            action,
+                            source_text=source_text,
+                            translated_text=executor.current_text,
+                            glossary=executor.episode_glossary.model_copy(deep=True),
+                            chapter=episode.chapter,
+                            session_dir=store.session_dir,
+                            step_number=step_number,
+                        )
+                        reviews = _coerce_specialist_reviews(
+                            raw_reviews,
+                            requested_roles=list(action.specialists),
+                        )
+                    except Exception as exc:  # noqa: BLE001 - child boundary is fail-closed.
+                        execution = ToolExecutionResult(
+                            observation=AgentObservation(
+                                ok=False,
+                                kind="review_failed",
+                                message="Specialist review failed; no review result was accepted.",
+                                data={
+                                    "specialists": list(action.specialists),
+                                    "error_type": type(exc).__name__,
+                                },
+                            )
+                        )
+                    else:
+                        snapshot.specialist_reviews.extend(reviews)
+                        snapshot.specialist_reviews = snapshot.specialist_reviews[-MAX_SPECIALIST_REVIEWS:]
+                        public_reviews = [_review_observation_payload(review) for review in reviews]
+                        execution = ToolExecutionResult(
+                            observation=AgentObservation(
+                                ok=True,
+                                kind="specialist_reviews_received",
+                                message=f"Received {len(reviews)} bounded specialist review(s).",
+                                data={
+                                    "round": snapshot.delegation_rounds,
+                                    "objective": action.objective,
+                                    "reviews": public_reviews,
+                                },
+                            )
+                        )
+                        _append_event(
+                            store,
+                            "specialist_reviews_received",
+                            {
+                                "step": step_number,
+                                "round": snapshot.delegation_rounds,
+                                "reviews": public_reviews,
+                            },
+                        )
+            _append_event(
+                store,
+                "tool_executed",
+                {
+                    "step": step_number,
+                    "tool": action.tool,
+                    "kind": execution.observation.kind,
+                    "round": snapshot.delegation_rounds,
+                },
+            )
+        elif isinstance(action, SelectTermAction):
+            observation, qa_before, qa_after = _select_term_from_reviews(
+                executor=executor,
+                snapshot=snapshot,
+                action=action,
+            )
+            execution = ToolExecutionResult(
+                observation=observation,
+                qa_before=qa_before,
+                qa_after=qa_after,
+            )
+            _append_event(
+                store,
+                "tool_executed",
+                {"step": step_number, "tool": action.tool, "kind": observation.kind},
+            )
         elif decision.outcome == "require_approval" and isinstance(action, PromoteGlossaryTermAction):
             proposal, observation = _promotion_proposal(
                 executor=executor,
@@ -746,10 +1213,38 @@ def _continue_v3_session(
                 {"step": step_number, "tool": action.tool, "kind": execution.observation.kind},
             )
         else:
-            execution = executor.execute(action)
-            _append_event(store, "tool_executed", {"step": step_number, "tool": action.tool, "kind": execution.observation.kind})
+            fidelity_gate = (
+                _fidelity_gate_observation(
+                    snapshot=snapshot,
+                    current_text=executor.current_text,
+                )
+                if isinstance(action, FinishAction) and require_fidelity_review
+                else None
+            )
+            if fidelity_gate is not None:
+                execution = ToolExecutionResult(
+                    observation=fidelity_gate,
+                    qa_before=RepairToolExecutor._bounded_report(executor.current_qa),
+                    qa_after=RepairToolExecutor._bounded_report(executor.current_qa),
+                )
+                _append_event(
+                    store,
+                    "tool_executed",
+                    {"step": step_number, "tool": action.tool, "kind": fidelity_gate.kind},
+                )
+            else:
+                execution = executor.execute(action)
+            _append_event(
+                store,
+                "tool_executed",
+                {"step": step_number, "tool": action.tool, "kind": execution.observation.kind},
+            )
 
-        bounded_observation = _bounded_observation(execution.observation)
+        bounded_observation = (
+            _bounded_showcase_observation(execution.observation)
+            if tool_schema_version == SHOWCASE_TOOL_SCHEMA_VERSION
+            else _bounded_observation(execution.observation)
+        )
         step = AgentStep(
             sequence=step_number,
             action=persisted_action,
@@ -823,11 +1318,35 @@ def run_repair_session(
     terminology_resolver: TerminologyResolver | None = None,
     terminology_source_context_chars: int = 800,
     terminology_translation_context_chars: int = 800,
+    tool_schema_version: str = REGISTRY_TOOL_SCHEMA_VERSION,
+    instruction_context: dict[str, Any] | None = None,
+    review_handler: ReviewHandler | None = None,
+    require_fidelity_review: bool = False,
+    allow_nonregressing_patches: bool = False,
+    max_delegation_rounds: int = 2,
 ) -> AgentSessionResult:
-    """Run a durable Harness v3 session with registry/policy enforcement."""
+    """Run a durable session with registry/policy enforcement."""
 
     if max_steps < 1 or max_patch_attempts < 1:
         raise ValueError("max_steps and max_patch_attempts must be at least 1")
+    if max_delegation_rounds < 0 or max_delegation_rounds > 8:
+        raise ValueError("max_delegation_rounds must be between 0 and 8")
+    if allow_nonregressing_patches and tool_schema_version != SHOWCASE_TOOL_SCHEMA_VERSION:
+        raise ValueError(
+            "allow_nonregressing_patches is supported only for showcase sessions"
+        )
+    if allow_nonregressing_patches and not require_fidelity_review:
+        raise ValueError(
+            "allow_nonregressing_patches requires require_fidelity_review=True"
+        )
+    registry = _registry_for_version(tool_schema_version)
+    if tool_schema_version != SHOWCASE_TOOL_SCHEMA_VERSION:
+        # Showcase instructions and specialist policy are deliberately opt-in.
+        instruction_context = None
+        review_handler = None
+        require_fidelity_review = False
+    else:
+        instruction_context = _bounded_instruction_context(instruction_context)
     master = _master_glossary(glossary, master_glossary)
     canonical_path = Path(canonical_glossary_path) if canonical_glossary_path is not None else None
     store = SessionStore(session_dir)
@@ -852,6 +1371,7 @@ def run_repair_session(
         terminology_resolver=terminology_resolver,
         terminology_source_context_chars=terminology_source_context_chars,
         terminology_translation_context_chars=terminology_translation_context_chars,
+        allow_nonregressing_patches=allow_nonregressing_patches,
     )
     identity = _session_identity_candidate(
         provider=provider,
@@ -861,8 +1381,18 @@ def run_repair_session(
         story_slug=story_slug,
         chapter=chapter,
         provider_mode=provider_mode,
+        tool_schema_version=tool_schema_version,
+        registry=registry,
     )
-    exposed = list(AGENT_TOOL_REGISTRY.visible_specs().__iter__()) if not dynamic_tools else list(_BOOTSTRAP_TOOLS)
+    if not dynamic_tools:
+        exposed = list(registry.visible_specs())
+    else:
+        exposed = list(
+            _SHOWCASE_BOOTSTRAP_TOOLS
+            if tool_schema_version == SHOWCASE_TOOL_SCHEMA_VERSION
+            else _BOOTSTRAP_TOOLS
+        )
+        exposed = [name for name in exposed if name in {spec.name for spec in registry.visible_specs()}]
     # Store logical names, not ToolSpec instances, in the public projection.
     exposed_names = [item.name if hasattr(item, "name") else str(item) for item in exposed]
     snapshot = _initial_snapshot(
@@ -876,6 +1406,10 @@ def run_repair_session(
         max_patch_attempts=max_patch_attempts,
         exposed_tool_names=sorted(set(exposed_names)),
         identity=identity,
+        instruction_context=instruction_context,
+        require_fidelity_review=require_fidelity_review,
+        allow_nonregressing_patches=allow_nonregressing_patches,
+        max_delegation_rounds=max_delegation_rounds,
     )
     _append_event(store, "run_started", {"run_id": run_id, "episode_id": snapshot.episode.episode_id})
     _append_event(store, "tools_exposed", {"dynamic_tools": dynamic_tools, "tool_names": snapshot.exposed_tool_names})
@@ -891,6 +1425,13 @@ def run_repair_session(
         canonical_glossary_path=canonical_path,
         terminology_source_context_chars=terminology_source_context_chars,
         terminology_translation_context_chars=terminology_translation_context_chars,
+        tool_schema_version=tool_schema_version,
+        registry=registry,
+        instruction_context=instruction_context,
+        review_handler=review_handler,
+        require_fidelity_review=require_fidelity_review,
+        allow_nonregressing_patches=allow_nonregressing_patches,
+        max_delegation_rounds=max_delegation_rounds,
     )
 
 
@@ -901,19 +1442,25 @@ def resume_repair_session(
     source_text: str,
     glossary: GlossaryParseResult | None = None,
     master_glossary: GlossaryParseResult | None = None,
-    canonical_glossary_path: str | Path,
+    canonical_glossary_path: str | Path | None = None,
     terminology_resolver: TerminologyResolver | None = None,
     run_id: str | None = None,
     story_slug: str | None = None,
     chapter: str | None = None,
     provider_mode: str | None = None,
-    decision: str,
-    reviewer: str,
-    note: str,
+    decision: str | None = None,
+    reviewer: str = "operator",
+    note: str = "",
     terminology_source_context_chars: int = 800,
     terminology_translation_context_chars: int = 800,
+    tool_schema_version: str | None = None,
+    instruction_context: dict[str, Any] | None = None,
+    review_handler: ReviewHandler | None = None,
+    require_fidelity_review: bool | None = None,
+    allow_nonregressing_patches: bool | None = None,
+    max_delegation_rounds: int | None = None,
 ) -> AgentSessionResult:
-    """Apply a pending approval/rejection and continue a paused session."""
+    """Continue a session, applying a decision when approval is pending."""
 
     store = SessionStore(session_dir)
     snapshot = store.load_snapshot()
@@ -926,6 +1473,13 @@ def resume_repair_session(
     effective_provider_mode = (
         snapshot.episode.provider_mode if provider_mode is None else provider_mode
     )
+    # The legacy resume API implicitly means v3.  Callers resuming an opt-in
+    # showcase run pass v4 explicitly; keeping the implicit default at v3 is
+    # what lets us detect a tampered persisted identity instead of trusting it.
+    effective_tool_schema_version = (
+        REGISTRY_TOOL_SCHEMA_VERSION if tool_schema_version is None else tool_schema_version
+    )
+    registry = _registry_for_version(effective_tool_schema_version)
     candidate = _session_identity_candidate(
         provider=provider,
         source_text=source_text,
@@ -934,17 +1488,91 @@ def resume_repair_session(
         story_slug=effective_story_slug,
         chapter=effective_chapter,
         provider_mode=effective_provider_mode,
+        tool_schema_version=effective_tool_schema_version,
+        registry=registry,
     )
     _validate_session_identity(snapshot, candidate)
-    canonical_path = Path(canonical_glossary_path).resolve()
+    if effective_tool_schema_version == SHOWCASE_TOOL_SCHEMA_VERSION:
+        if (
+            instruction_context is not None
+            and _bounded_instruction_context(instruction_context) != snapshot.instruction_context
+        ):
+            raise SessionIdentityMismatchError("Session instruction context mismatch")
+        if (
+            require_fidelity_review is not None
+            and require_fidelity_review != snapshot.require_fidelity_review
+        ):
+            raise SessionIdentityMismatchError("Session fidelity-review policy mismatch")
+        if (
+            allow_nonregressing_patches is not None
+            and allow_nonregressing_patches != snapshot.allow_nonregressing_patches
+        ):
+            raise SessionIdentityMismatchError("Session nonregressing-patch policy mismatch")
+        if snapshot.allow_nonregressing_patches and not snapshot.require_fidelity_review:
+            raise SessionIdentityMismatchError(
+                "Session nonregressing-patch policy requires fidelity review"
+            )
+        if (
+            max_delegation_rounds is not None
+            and max_delegation_rounds != snapshot.max_delegation_rounds
+        ):
+            raise SessionIdentityMismatchError("Session delegation budget mismatch")
+        effective_instruction_context = snapshot.instruction_context
+        effective_review_handler = review_handler
+        effective_require_fidelity_review = snapshot.require_fidelity_review
+        effective_allow_nonregressing_patches = snapshot.allow_nonregressing_patches
+        effective_max_delegation_rounds = snapshot.max_delegation_rounds
+    else:
+        if snapshot.allow_nonregressing_patches:
+            raise SessionIdentityMismatchError(
+                "Session nonregressing-patch policy is unsupported outside showcase sessions"
+            )
+        if allow_nonregressing_patches:
+            raise ValueError(
+                "allow_nonregressing_patches is supported only for showcase sessions"
+            )
+        effective_instruction_context = None
+        effective_review_handler = None
+        effective_require_fidelity_review = False
+        effective_allow_nonregressing_patches = False
+        effective_max_delegation_rounds = snapshot.max_delegation_rounds
+    canonical_path = (
+        Path(canonical_glossary_path).resolve()
+        if canonical_glossary_path is not None
+        else None
+    )
     # Terminal sessions are deliberately idempotent: no event, provider call,
     # or filesystem write is performed for a repeated decision.
+    if snapshot.status == "running" and decision is None:
+        return _continue_v3_session(
+            store=store,
+            snapshot=snapshot,
+            provider=provider,
+            source_text=source_text,
+            master_glossary=master,
+            provider_mode=effective_provider_mode,
+            terminology_resolver=terminology_resolver,
+            canonical_glossary_path=canonical_path,
+            terminology_source_context_chars=terminology_source_context_chars,
+            terminology_translation_context_chars=terminology_translation_context_chars,
+            tool_schema_version=effective_tool_schema_version,
+            registry=registry,
+            instruction_context=effective_instruction_context,
+            review_handler=effective_review_handler,
+            require_fidelity_review=effective_require_fidelity_review,
+            allow_nonregressing_patches=effective_allow_nonregressing_patches,
+            max_delegation_rounds=effective_max_delegation_rounds,
+        )
     if snapshot.status != "awaiting_approval":
         return _session_result(store, snapshot, canonical_glossary_path=canonical_path)
+    if decision is None:
+        raise ValueError("An explicit approved/rejected decision is required for pending approval")
     if decision not in {"approved", "rejected"}:
         raise ValueError("decision must be 'approved' or 'rejected'")
     if snapshot.pending_approval is None or snapshot.pending_proposal is None:
         raise ValueError("session is awaiting approval without a pending proposal")
+    if decision == "approved" and canonical_path is None:
+        raise ValueError("canonical_glossary_path is required to approve a pending promotion")
     receipt = ApprovalDecision(
         proposal_id=snapshot.pending_approval.proposal_id,
         decision=decision,
@@ -1054,6 +1682,13 @@ def resume_repair_session(
         canonical_glossary_path=canonical_path,
         terminology_source_context_chars=terminology_source_context_chars,
         terminology_translation_context_chars=terminology_translation_context_chars,
+        tool_schema_version=effective_tool_schema_version,
+        registry=registry,
+        instruction_context=effective_instruction_context,
+        review_handler=effective_review_handler,
+        require_fidelity_review=effective_require_fidelity_review,
+        allow_nonregressing_patches=effective_allow_nonregressing_patches,
+        max_delegation_rounds=effective_max_delegation_rounds,
     )
     return result
 
@@ -1069,6 +1704,7 @@ __all__ = [
     "SessionStore",
     "SessionIdentityMismatchError",
     "AgentSessionResult",
+    "ReviewHandler",
     "run_repair_session",
     "resume_repair_session",
 ]

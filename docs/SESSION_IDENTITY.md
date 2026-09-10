@@ -45,6 +45,13 @@ The canonical glossary write retains its separate path and before/after digest
 checks. Those checks bind the approved filesystem effect; session identity
 binds the task and runtime that are allowed to reach that effect.
 
+Showcase snapshots also persist the instruction context, fidelity-review
+requirement, nonregressing-patch policy, and delegation/review-round limit. Resume derives
+omitted policy arguments from the snapshot and rejects explicit mismatches.
+Automatic repair requires fidelity review; a resumed session cannot silently
+turn that requirement off. Completion reviews must match the current draft's
+SHA-256, so editing text invalidates its earlier review.
+
 ## Deliberate scope
 
 This contract does not add event hash chains, crash recovery, session locking,

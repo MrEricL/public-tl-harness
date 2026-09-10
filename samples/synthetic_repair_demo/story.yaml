@@ -1,0 +1,26 @@
+slug: synthetic_control_demo
+title: Synthetic Control Sequence
+language: zh
+public_safe: true
+chapter_ids:
+  - "0001"
+  - "0002"
+paths:
+  source_dir: source
+  glossary_path: terms/master_glossary.txt
+  expected_dir: expected
+  runs_dir: runs
+translation:
+  # Offline scripted fixture; no live-model quality claim is implied.
+  provider: offline
+  model: synthetic-fixture-v1
+qa:
+  max_repairs: 3
+report:
+  mode: full
+  max_source_chars: 800
+  max_translation_chars: 800
+package:
+  formats:
+    - txt
+    - epub

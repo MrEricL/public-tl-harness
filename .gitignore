@@ -25,4 +25,12 @@ htmlcov/
 .ruff_cache/
 .DS_Store
 LLM_UPLOAD_MEGA*.txt
+condensed_code.txt
+review_bundle.txt
+portable/
+samples/showcase/
+samples/showcase_compare/
+samples/automatic_repair_eval/
+experiments/live_comparison_2026_09/
+experiments/automatic_repair_2026_09/
 export.txt

@@ -120,6 +120,87 @@ class PromoteGlossaryTermAction(AgentActionBase):
     rationale: str = Field(min_length=1, max_length=1200)
 
 
+class ReadParagraphsAction(AgentActionBase):
+    """Read a small, indexed paragraph window from the source or draft."""
+
+    tool: Literal["read_paragraphs"] = "read_paragraphs"
+    document: Literal["source", "translation"]
+    start: int = Field(default=0, ge=0)
+    count: int = Field(default=3, ge=1, le=6)
+
+
+class DelegateReviewAction(AgentActionBase):
+    """Request one bounded batch of independent specialist reviews."""
+
+    tool: Literal["delegate_review"] = "delegate_review"
+    specialists: list[Literal["terminology", "fidelity"]] = Field(
+        min_length=1,
+        max_length=2,
+    )
+    objective: str = Field(min_length=1, max_length=1000)
+
+    @model_validator(mode="after")
+    def _require_unique_specialists(self) -> "DelegateReviewAction":
+        if len(set(self.specialists)) != len(self.specialists):
+            raise ValueError("specialists must be unique")
+        return self
+
+
+class SelectTermAction(AgentActionBase):
+    """Select an exact term/target pair from a completed terminology review."""
+
+    tool: Literal["select_term"] = "select_term"
+    term: str = Field(min_length=1, max_length=200)
+    target: str = Field(min_length=1, max_length=200)
+    rationale: str = Field(min_length=1, max_length=1200)
+
+
+class ReviewFinding(AgentActionBase):
+    """One bounded specialist finding with source and draft evidence."""
+
+    category: Literal["terminology", "fidelity"]
+    message: str = Field(min_length=1, max_length=1000)
+    source_excerpt: str = Field(default="", max_length=1000)
+    translation_excerpt: str = Field(default="", max_length=1000)
+    blocking: bool = True
+
+
+class TermSuggestion(AgentActionBase):
+    """A bounded terminology proposal returned by a specialist."""
+
+    term: str = Field(min_length=1, max_length=200)
+    target: str = Field(min_length=1, max_length=200)
+    rationale: str = Field(min_length=1, max_length=1200)
+
+
+class CompleteReviewAction(AgentActionBase):
+    """Complete a child review with evidence and proposed bounded changes."""
+
+    tool: Literal["complete_review"] = "complete_review"
+    summary: str = Field(min_length=1, max_length=1500)
+    findings: list[ReviewFinding] = Field(default_factory=list, max_length=8)
+    proposed_edits: list[TextEdit] = Field(default_factory=list, max_length=4)
+    term_suggestions: list[TermSuggestion] = Field(default_factory=list, max_length=4)
+
+
+class SpecialistReview(AgentActionBase):
+    """Durable, bounded result returned by one delegated specialist."""
+
+    role: Literal["terminology", "fidelity"]
+    status: Literal["completed", "failed"]
+    summary: str = Field(min_length=1, max_length=1500)
+    findings: list[ReviewFinding] = Field(default_factory=list, max_length=8)
+    proposed_edits: list[TextEdit] = Field(default_factory=list, max_length=4)
+    term_suggestions: list[TermSuggestion] = Field(default_factory=list, max_length=4)
+    steps: list[dict[str, Any]] = Field(default_factory=list, max_length=24)
+    provider_calls: list[ProviderCallRecord] = Field(default_factory=list, max_length=24)
+    draft_sha256: str = Field(
+        min_length=64,
+        max_length=64,
+        pattern=r"^[0-9a-f]{64}$",
+    )
+
+
 AgentAction = Annotated[
     GetQAFindingsAction
     | ReadSourceContextAction
@@ -131,7 +212,11 @@ AgentAction = Annotated[
     | NormalizePunctuationAction
     | EscalateAction
     | FinishAction
-    | PromoteGlossaryTermAction,
+    | PromoteGlossaryTermAction
+    | ReadParagraphsAction
+    | DelegateReviewAction
+    | SelectTermAction
+    | CompleteReviewAction,
     Field(discriminator="tool"),
 ]
 
@@ -306,3 +391,12 @@ class AgentSessionSnapshot(BaseModel):
     pending_proposal: GlossaryPromotionProposal | None = None
     pending_decision: ApprovalDecision | None = None
     last_event_sequence: int = Field(default=0, ge=0)
+    # Showcase-only state is defaulted so snapshots written by v1-v3 sessions
+    # remain readable and continue to serialize byte-for-byte as before when
+    # these fields are omitted by their caller.
+    instruction_context: dict[str, Any] | None = Field(default=None, max_length=16)
+    specialist_reviews: list[SpecialistReview] = Field(default_factory=list, max_length=16)
+    delegation_rounds: int = Field(default=0, ge=0, le=8)
+    require_fidelity_review: bool = False
+    allow_nonregressing_patches: bool = False
+    max_delegation_rounds: int = Field(default=2, ge=0, le=8)

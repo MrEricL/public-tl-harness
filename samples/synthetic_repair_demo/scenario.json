@@ -1,0 +1,192 @@
+{
+  "fixture_notice": "Synthetic technical test material authored for this public demonstration.",
+  "translations": {
+    "0001": "Chapter 1: Technical Check\n\nThe controller records three readings before opening the valve。 Each 采样周期 lasts two seconds。\n",
+    "0002": "Chapter 2: Technical Check\n\nThe controller closes the valve during the second {{采样周期}} and saves all six readings.\n"
+  },
+  "actions": {
+    "0001": [
+      {
+        "tool": "delegate_review",
+        "specialists": ["terminology", "fidelity"],
+        "objective": "Compare the synthetic source and draft for operation order, quantities, and terminology."
+      },
+      {
+        "tool": "select_term",
+        "term": "采样周期",
+        "target": "sampling cycle",
+        "rationale": "Use the standard concise technical term in both checks."
+      },
+      {
+        "tool": "submit_patch",
+        "edits": [
+          {
+            "old_text": "The controller records three readings before opening the valve",
+            "new_text": "The controller opens the valve before recording three readings"
+          },
+          {
+            "old_text": "采样周期",
+            "new_text": "sampling cycle"
+          }
+        ],
+        "rationale": "Restore the source operation order and apply the reviewed technical term."
+      },
+      {
+        "tool": "normalize_punctuation"
+      },
+      {
+        "tool": "delegate_review",
+        "specialists": ["fidelity"],
+        "objective": "Review the corrected synthetic draft against the exact current source."
+      },
+      {
+        "tool": "promote_glossary_term",
+        "term": "采样周期",
+        "rationale": "Persist the reviewed technical term for the second check."
+      },
+      {
+        "tool": "finish",
+        "summary": "The operation order, quantity, punctuation, and terminology are verified."
+      }
+    ],
+    "0002": [
+      {
+        "tool": "delegate_review",
+        "specialists": ["fidelity"],
+        "objective": "Confirm the second synthetic statement preserves operation, timing, and quantity."
+      },
+      {
+        "tool": "finish",
+        "summary": "The second technical statement is faithful and uses the approved term."
+      }
+    ]
+  },
+  "reviews": {
+    "0001": {
+      "1": {
+        "terminology": [
+          {
+            "tool": "read_paragraphs",
+            "document": "source",
+            "start": 0,
+            "count": 2
+          },
+          {
+            "tool": "read_paragraphs",
+            "document": "translation",
+            "start": 0,
+            "count": 2
+          },
+          {
+            "tool": "complete_review",
+            "summary": "One technical term should be translated consistently.",
+            "findings": [
+              {
+                "category": "terminology",
+                "message": "The draft leaves the sampling-cycle term untranslated.",
+                "source_excerpt": "每个采样周期持续两秒。",
+                "translation_excerpt": "Each 采样周期 lasts two seconds。",
+                "blocking": true
+              }
+            ],
+            "proposed_edits": [
+              {
+                "old_text": "采样周期",
+                "new_text": "sampling cycle"
+              }
+            ],
+            "term_suggestions": [
+              {
+                "term": "采样周期",
+                "target": "sampling cycle",
+                "rationale": "This is the conventional neutral technical label."
+              }
+            ]
+          }
+        ],
+        "fidelity": [
+          {
+            "tool": "read_paragraphs",
+            "document": "source",
+            "start": 0,
+            "count": 2
+          },
+          {
+            "tool": "read_paragraphs",
+            "document": "translation",
+            "start": 0,
+            "count": 2
+          },
+          {
+            "tool": "complete_review",
+            "summary": "The draft reverses the stated operation order.",
+            "findings": [
+              {
+                "category": "fidelity",
+                "message": "The source opens the valve before recording readings, but the draft reverses those actions.",
+                "source_excerpt": "控制器先打开阀门，然后记录三个读数。",
+                "translation_excerpt": "The controller records three readings before opening the valve。",
+                "blocking": true
+              }
+            ],
+            "proposed_edits": [
+              {
+                "old_text": "The controller records three readings before opening the valve",
+                "new_text": "The controller opens the valve before recording three readings"
+              }
+            ],
+            "term_suggestions": []
+          }
+        ]
+      },
+      "5": {
+        "fidelity": [
+          {
+            "tool": "read_paragraphs",
+            "document": "source",
+            "start": 0,
+            "count": 2
+          },
+          {
+            "tool": "read_paragraphs",
+            "document": "translation",
+            "start": 0,
+            "count": 2
+          },
+          {
+            "tool": "complete_review",
+            "summary": "The corrected draft preserves operation order, quantity, and duration.",
+            "findings": [],
+            "proposed_edits": [],
+            "term_suggestions": []
+          }
+        ]
+      }
+    },
+    "0002": {
+      "1": {
+        "fidelity": [
+          {
+            "tool": "read_paragraphs",
+            "document": "source",
+            "start": 0,
+            "count": 2
+          },
+          {
+            "tool": "read_paragraphs",
+            "document": "translation",
+            "start": 0,
+            "count": 2
+          },
+          {
+            "tool": "complete_review",
+            "summary": "The draft preserves the second cycle, valve closure, and six-reading total.",
+            "findings": [],
+            "proposed_edits": [],
+            "term_suggestions": []
+          }
+        ]
+      }
+    }
+  }
+}

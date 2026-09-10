@@ -14,6 +14,7 @@ on:
       - "pyproject.toml"
       - "LICENSE"
       - "DATA_NOTICE.md"
+      - "CHANGELOG.md"
       - "README.md"
       - "USER_GUIDE.md"
       - "DEMO_SCRIPT.md"
@@ -30,6 +31,7 @@ on:
       - "pyproject.toml"
       - "LICENSE"
       - "DATA_NOTICE.md"
+      - "CHANGELOG.md"
       - "README.md"
       - "USER_GUIDE.md"
       - "DEMO_SCRIPT.md"
@@ -64,3 +66,9 @@ jobs:
 
       - name: Smoke Harness v3 contract bench (synthetic, no provider)
         run: python -m agentic_translation harness bench --suite samples/harness_eval/v3_cases.json --out "${{ runner.temp }}/harness-v3-bench" --overwrite
+
+      - name: Smoke automatic repair (synthetic, no provider)
+        run: python -m agentic_translation harness run --story samples/synthetic_repair_demo/story.yaml --out "${{ runner.temp }}/automatic-repair" --auto-approve
+
+      - name: Smoke automatic replay (cache only)
+        run: python -m agentic_translation harness replay "${{ runner.temp }}/automatic-repair" --out "${{ runner.temp }}/automatic-repair-replay"

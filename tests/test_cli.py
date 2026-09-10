@@ -11,6 +11,15 @@ from agentic_translation.models import AgentAttempt, AgenticEvidence, ArtifactQA
 from agentic_translation.providers_llm import LiveProviderProbeResult, ResponseCache
 
 
+def test_harness_cli_exposes_run_and_replay_without_comparison() -> None:
+    result = CliRunner().invoke(app, ["harness", "--help"])
+
+    assert result.exit_code == 0
+    assert "run" in result.output
+    assert "replay" in result.output
+    assert "compare" not in result.output
+
+
 def test_batch_cli_does_not_expose_glossary_bridge() -> None:
     result = CliRunner().invoke(app, ["batch", "--help"])
 

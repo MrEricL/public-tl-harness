@@ -70,7 +70,7 @@ app = typer.Typer(help="Agentic long-form translation production system prototyp
 demo_app = typer.Typer(help="Demo commands.")
 batch_app = typer.Typer(help="Batch corpus-production commands.")
 cache_app = typer.Typer(help="Live/replay cache commands.")
-harness_app = typer.Typer(help="Deterministic Harness v3 operational proof commands.")
+harness_app = typer.Typer(help="Source-to-book workflow, review, and replay.")
 app.add_typer(demo_app, name="demo")
 app.add_typer(batch_app, name="batch")
 app.add_typer(cache_app, name="cache")
@@ -129,15 +129,22 @@ def harness_golden(
 
 @harness_app.command("resume")
 def harness_resume(
-    run_dir: Path = typer.Argument(..., help="Existing golden run directory."),
+    run_dir: Path = typer.Argument(..., help="Existing showcase or golden run directory."),
     approve: bool = typer.Option(False, "--approve", help="Approve the pending persistent glossary promotion."),
     reject: bool = typer.Option(False, "--reject", help="Reject the pending persistent glossary promotion."),
     reviewer: str = typer.Option("demo-reviewer", "--reviewer", help="Reviewer identity recorded in the approval receipt."),
     note: str = typer.Option("Approved in the Harness v3 review flow.", "--note", help="Bounded review note recorded in the receipt."),
 ) -> None:
-    """Resume a paused golden run with one explicit approval decision."""
+    """Continue a saved run, optionally deciding a pending glossary proposal."""
 
     try:
+        if (run_dir / "run_manifest.json").exists():
+            from .showcase import resume_showcase
+            if approve and reject:
+                raise ValueError("Choose only one of --approve or --reject")
+            result = resume_showcase(run_dir, decision="approved" if approve else ("rejected" if reject else None), reviewer=reviewer, note=note)
+            _print_showcase_result(result)
+            return
         if approve == reject:
             raise ValueError("Choose exactly one of --approve or --reject")
         decision = "approved" if approve else "rejected"
@@ -151,6 +158,54 @@ def harness_resume(
         console.print(f"[red]Error:[/red] {exc}")
         raise typer.Exit(1) from exc
     _print_harness_result(result)
+
+
+def _print_showcase_result(result) -> None:
+    console.print(f"Status: {result.manifest['status']}")
+    console.print(f"Run: {result.run_dir}")
+    console.print(f"Report: {result.run_dir / 'report.html'}")
+    if result.manifest["status"] == "awaiting_approval":
+        console.print("Review the term proposal in the report, then use harness resume --approve or --reject.")
+    elif result.manifest["status"] == "completed":
+        console.print(f"EPUB: {result.run_dir / 'delivery/book.epub'}")
+    elif result.manifest["status"] == "failed":
+        raise typer.Exit(1)
+
+
+@harness_app.command("run")
+def harness_run(
+    story: Path = typer.Option(Path("samples/synthetic_repair_demo/story.yaml"), "--story"),
+    out: Path = typer.Option(..., "--out", "--output-dir"),
+    provider_mode: str = typer.Option("offline", "--provider-mode", help="offline (scripted) or live"),
+    profile: str = typer.Option("openai", "--profile", help="openai or deepseek"),
+    model: str | None = typer.Option(None, "--model"),
+    draft_dir: Path | None = typer.Option(None, "--draft-dir", help="Use supplied chapter drafts instead of translating."),
+    strategy: str = typer.Option("automatic", "--strategy", help="automatic (meaning repair + source review), specialists, single, or deterministic"),
+    auto_approve: bool = typer.Option(False, "--auto-approve", help="Explicitly approve run-local glossary proposals for unattended demos."),
+) -> None:
+    """Translate chapters, review repairs, reuse approved terms, and export a book."""
+    from .showcase import run_showcase
+    try:
+        result = run_showcase(story, out, provider_mode=provider_mode, profile=profile, model=model, draft_dir=draft_dir, strategy=strategy, auto_approve=auto_approve)
+    except (OSError, ValueError, RuntimeError, TypeError, KeyError) as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        raise typer.Exit(1) from exc
+    _print_showcase_result(result)
+
+
+@harness_app.command("replay")
+def harness_replay(
+    run_dir: Path = typer.Argument(...),
+    out: Path = typer.Option(..., "--out", "--output-dir"),
+) -> None:
+    """Re-execute saved inputs and decisions in a fresh directory without API calls."""
+    from .showcase import replay_showcase
+    try:
+        result = replay_showcase(run_dir, out)
+    except (OSError, ValueError, RuntimeError, TypeError, KeyError) as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        raise typer.Exit(1) from exc
+    _print_showcase_result(result)
 
 
 @harness_app.command("bench")

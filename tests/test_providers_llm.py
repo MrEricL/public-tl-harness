@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import sys
+from types import SimpleNamespace
+
 import pytest
 from pydantic import ValidationError
 
@@ -438,3 +441,31 @@ def test_deepseek_provider_probe_reports_missing_key(monkeypatch: pytest.MonkeyP
             cache_dir=tmp_path / "cache",
             model_name="deepseek-chat",
         )
+
+
+def test_live_provider_api_errors_are_wrapped_as_unavailable(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
+    class FakeStatusError(Exception):
+        status_code = 402
+
+        def __str__(self) -> str:
+            return "Error code: 402 - Insufficient Balance"
+
+    class FakeCompletions:
+        def create(self, **kwargs):  # noqa: ANN003, ANN202
+            raise FakeStatusError()
+
+    class FakeClient:
+        chat = SimpleNamespace(completions=FakeCompletions())
+
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "test-key")
+    monkeypatch.setitem(sys.modules, "openai", SimpleNamespace(OpenAI=lambda **kwargs: FakeClient()))
+
+    provider = _OpenAIJSONProvider(
+        provider_mode="live",
+        cache_dir=tmp_path / "cache",
+        provider_name="deepseek",
+        model_name="deepseek-chat",
+    )
+
+    with pytest.raises(LLMProviderUnavailable, match="Live provider call failed"):
+        provider._call_json(namespace="judge", payload={"task": "test"}, messages=[{"role": "user", "content": "{}"}])

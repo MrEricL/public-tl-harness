@@ -333,6 +333,12 @@ class ProviderCallRecord(BaseModel):
     response_sha256: str
     cache_file: str
     cache_hit: bool = False
+    input_tokens: int | None = Field(default=None, ge=0)
+    output_tokens: int | None = Field(default=None, ge=0)
+    cached_input_tokens: int | None = Field(default=None, ge=0)
+    total_tokens: int | None = Field(default=None, ge=0)
+    elapsed_ms: float | None = Field(default=None, ge=0)
+    recorded_elapsed_ms: float | None = Field(default=None, ge=0)
 
 
 class ToolAgentRunRecord(BaseModel):

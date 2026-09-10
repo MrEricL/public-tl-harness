@@ -15,3 +15,9 @@ limitations, and two short sanitized comparisons that cannot reconstruct the
 underlying chapters. These materials document what was measured; they do not
 make the private corpus independently reproducible or establish a general
 translation-quality improvement.
+
+`samples/synthetic_repair_demo/` is newly authored synthetic test material. Its
+short statements describe a controller, a valve, sampling cycles, and numeric
+readings solely to exercise operation-order repair, terminology approval,
+current-text review, and replay. It is not copied or derived from a novel,
+scraped source, private glossary, or provider output.

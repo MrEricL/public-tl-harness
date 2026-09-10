@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import os
@@ -122,6 +123,17 @@ class ResponseCache:
         digest = self._payload_digest(payload)
         return self.cache_dir / f"{namespace}_{digest}.json"
 
+    def _usage_path(self, namespace: str, payload: dict[str, Any]) -> Path:
+        """Return the optional usage receipt path for one request identity.
+
+        Usage is deliberately kept outside the response cache and its
+        content-addressed index.  This lets telemetry evolve without changing
+        response bytes or the hashes that make replay auditable.
+        """
+
+        digest = self._payload_digest(payload)
+        return self.cache_dir / f"usage_{namespace}_{digest}.json"
+
     @property
     def index_path(self) -> Path:
         return self.cache_dir / self.index_filename
@@ -172,6 +184,49 @@ class ResponseCache:
         )
         self._record_index_entry(entry)
         return entry
+
+    def save_usage_receipt(
+        self,
+        namespace: str,
+        payload: dict[str, Any],
+        *,
+        input_tokens: int | None = None,
+        output_tokens: int | None = None,
+        cached_input_tokens: int | None = None,
+        total_tokens: int | None = None,
+        elapsed_ms: float | None = None,
+    ) -> Path:
+        """Persist optional provider usage without changing cached response data."""
+
+        payload_sha256 = self._payload_digest(payload)
+        receipt = {
+            "namespace": namespace,
+            "payload_sha256": payload_sha256,
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "cached_input_tokens": cached_input_tokens,
+            "total_tokens": total_tokens,
+            "elapsed_ms": elapsed_ms,
+        }
+        path = self._usage_path(namespace, payload)
+        path.write_text(json.dumps(receipt, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
+        return path
+
+    def load_usage_receipt(self, namespace: str, payload: dict[str, Any]) -> dict[str, Any] | None:
+        """Load one optional usage receipt, tolerating caches created before telemetry."""
+
+        path = self._usage_path(namespace, payload)
+        if not path.exists():
+            return None
+        try:
+            receipt = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return None
+        if not isinstance(receipt, dict):
+            return None
+        if receipt.get("namespace") != namespace or receipt.get("payload_sha256") != self._payload_digest(payload):
+            return None
+        return receipt
 
     def _record_index_entry(self, entry: CacheIndexEntry) -> None:
         entries = [
@@ -274,6 +329,126 @@ def inspect_response_cache(cache_dir: Path) -> CacheIndexReport:
     )
 
 
+def _value(obj: Any, key: str, default: Any = None) -> Any:
+    if isinstance(obj, dict):
+        return obj.get(key, default)
+    return getattr(obj, key, default)
+
+
+def _nonnegative_int(value: Any) -> int | None:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        return None
+    return value
+
+
+def _nonnegative_float(value: Any) -> float | None:
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or value < 0:
+        return None
+    return float(value)
+
+
+def _extract_usage(response: Any) -> dict[str, int | None]:
+    """Normalize OpenAI-compatible usage objects without touching response JSON."""
+
+    usage = _value(response, "usage")
+    if usage is None:
+        return {
+            "input_tokens": None,
+            "output_tokens": None,
+            "cached_input_tokens": None,
+            "total_tokens": None,
+        }
+
+    prompt_details = _value(usage, "prompt_tokens_details")
+    input_details = _value(usage, "input_token_details")
+    cached_candidates = (
+        _value(usage, "cached_input_tokens"),
+        _value(usage, "prompt_cache_hit_tokens"),
+        _value(usage, "prompt_cache_read_tokens"),
+        _value(prompt_details, "cached_tokens"),
+        _value(input_details, "cached_tokens"),
+    )
+    cached_input_tokens = next(
+        (candidate for candidate in cached_candidates if candidate is not None),
+        None,
+    )
+    return {
+        "input_tokens": _nonnegative_int(
+            _value(usage, "prompt_tokens", _value(usage, "input_tokens"))
+        ),
+        "output_tokens": _nonnegative_int(
+            _value(usage, "completion_tokens", _value(usage, "output_tokens"))
+        ),
+        "cached_input_tokens": _nonnegative_int(cached_input_tokens),
+        "total_tokens": _nonnegative_int(_value(usage, "total_tokens")),
+    }
+
+
+def _elapsed_ms(started_at: float) -> float:
+    return max(0.0, (time.perf_counter() - started_at) * 1000.0)
+
+
+_SENSITIVE_EXTRA_BODY_KEY_SUFFIXES = frozenset(
+    {
+        "apikey",
+        "authorization",
+        "clientsecret",
+        "password",
+        "secret",
+        "accesstoken",
+        "refreshtoken",
+    }
+)
+
+
+def _copy_request_extra_body(extra_body: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Validate and detach optional provider request extensions.
+
+    Profiles are persisted in run manifests, so request extensions must be
+    ordinary JSON data and must not be used as a back door for credentials.
+    """
+
+    if extra_body is None:
+        return None
+    if not isinstance(extra_body, dict):
+        raise ValueError("extra_body must be a JSON object when supplied")
+
+    def validate_keys(value: Any) -> None:
+        if isinstance(value, dict):
+            for key, item in value.items():
+                if not isinstance(key, str):
+                    raise ValueError("extra_body object keys must be strings")
+                normalized_key = "".join(
+                    character for character in key.casefold() if character.isalnum()
+                )
+                if normalized_key == "token" or any(
+                    normalized_key.endswith(suffix)
+                    for suffix in _SENSITIVE_EXTRA_BODY_KEY_SUFFIXES
+                ):
+                    raise ValueError(f"extra_body must not contain credential field {key!r}")
+                validate_keys(item)
+        elif isinstance(value, list):
+            for item in value:
+                validate_keys(item)
+        elif value is not None and not isinstance(value, (str, int, float, bool)):
+            raise ValueError("extra_body must contain only JSON-compatible values")
+
+    validate_keys(extra_body)
+    try:
+        encoded = json.dumps(
+            extra_body,
+            ensure_ascii=False,
+            sort_keys=True,
+            allow_nan=False,
+        )
+        copied = json.loads(encoded)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("extra_body must contain only finite JSON-compatible values") from exc
+    if not isinstance(copied, dict):  # pragma: no cover - guarded above.
+        raise ValueError("extra_body must be a JSON object when supplied")
+    return copied
+
+
 class _OpenAIJSONProvider:
     provider_name = "openai"
     model_name = ""
@@ -293,6 +468,10 @@ class _OpenAIJSONProvider:
         client_factory: Callable[..., Any] | None = None,
         sleep: Callable[[float], None] = time.sleep,
         max_retries: int = 2,
+        max_output_tokens: int | None = None,
+        temperature: float | None = 0,
+        request_timeout_seconds: float = 60,
+        extra_body: dict[str, Any] | None = None,
     ) -> None:
         self.provider_mode = provider_mode
         self.cache = ResponseCache(cache_dir)
@@ -307,9 +486,40 @@ class _OpenAIJSONProvider:
         self.client_factory = client_factory
         self.sleep = sleep
         self.max_retries = max(0, max_retries)
+        self.max_output_tokens = max_output_tokens
+        self.temperature = temperature
+        self.request_timeout_seconds = request_timeout_seconds
+        self.extra_body = _copy_request_extra_body(extra_body)
         self.call_records: list[ProviderCallRecord] = []
 
-    def _record_call(self, *, namespace: str, payload: dict[str, Any], response: dict[str, Any], cache_hit: bool) -> None:
+    def _call_payload(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """Return the content-cache identity for the effective provider call.
+
+        Existing providers keep their historical payload byte-for-byte.  When
+        an extension changes the HTTP request, the extension is bound to the
+        cached content so replay cannot silently use a response produced with
+        different provider behavior.
+        """
+
+        if self.extra_body is None:
+            return payload
+        return {
+            "payload": payload,
+            "provider_request": {"extra_body": copy.deepcopy(self.extra_body)},
+        }
+
+    def _record_call(
+        self,
+        *,
+        namespace: str,
+        payload: dict[str, Any],
+        response: dict[str, Any],
+        cache_hit: bool,
+        usage: dict[str, Any] | None = None,
+        elapsed_ms: float | None = None,
+        recorded_elapsed_ms: float | None = None,
+    ) -> None:
+        usage = usage or {}
         self.call_records.append(
             ProviderCallRecord(
                 role=namespace,
@@ -320,13 +530,30 @@ class _OpenAIJSONProvider:
                 response_sha256=self.cache._response_digest(response),
                 cache_file=self.cache._path(namespace, payload).name,
                 cache_hit=cache_hit,
+                input_tokens=_nonnegative_int(usage.get("input_tokens")),
+                output_tokens=_nonnegative_int(usage.get("output_tokens")),
+                cached_input_tokens=_nonnegative_int(usage.get("cached_input_tokens")),
+                total_tokens=_nonnegative_int(usage.get("total_tokens")),
+                elapsed_ms=_nonnegative_float(elapsed_ms),
+                recorded_elapsed_ms=_nonnegative_float(recorded_elapsed_ms),
             )
         )
 
     def _call_json(self, *, namespace: str, payload: dict[str, Any], messages: list[dict[str, str]]) -> dict[str, Any]:
-        cached = self.cache.load(namespace, payload)
+        started_at = time.perf_counter()
+        call_payload = self._call_payload(payload)
+        cached = self.cache.load(namespace, call_payload)
         if cached is not None:
-            self._record_call(namespace=namespace, payload=payload, response=cached, cache_hit=True)
+            receipt = self.cache.load_usage_receipt(namespace, call_payload)
+            self._record_call(
+                namespace=namespace,
+                payload=call_payload,
+                response=cached,
+                cache_hit=True,
+                usage=receipt,
+                elapsed_ms=_elapsed_ms(started_at),
+                recorded_elapsed_ms=receipt.get("elapsed_ms") if receipt else None,
+            )
             return cached
         if self.provider_mode == "replay":
             raise LLMProviderUnavailable(f"No replay cache entry for {namespace}. Run live with --record-cache first.")
@@ -346,32 +573,58 @@ class _OpenAIJSONProvider:
         except Exception as exc:  # pragma: no cover - environment guard
             raise LLMProviderUnavailable("The openai package is required for live providers.") from exc
 
-        client_kwargs: dict[str, str] = {"api_key": api_key}
+        client_kwargs: dict[str, Any] = {"api_key": api_key}
         base_url = os.environ.get(self.base_url_env) or self.default_base_url
         if base_url:
             client_kwargs["base_url"] = str(base_url)
         client_factory = self.client_factory or OpenAI
+        # Keep injected legacy test doubles' constructor shape stable at the
+        # default while always configuring the real OpenAI client.  A custom
+        # factory using a non-default timeout receives that explicit timeout.
+        if self.client_factory is None or self.request_timeout_seconds != 60:
+            client_kwargs["timeout"] = self.request_timeout_seconds
         last_error: Exception | None = None
         stopped_without_retry = False
         for attempt in range(self.max_retries + 1):
             try:
                 client = client_factory(**client_kwargs)
-                response = client.chat.completions.create(
-                    model=model,
-                    messages=messages,  # type: ignore[arg-type]
-                    response_format={"type": "json_object"},
-                    temperature=0,
-                )
+                request_kwargs: dict[str, Any] = {
+                    "model": model,
+                    "messages": messages,  # type: ignore[arg-type]
+                    "response_format": {"type": "json_object"},
+                }
+                if self.max_output_tokens is not None:
+                    request_kwargs["max_tokens"] = self.max_output_tokens
+                if self.temperature is not None:
+                    request_kwargs["temperature"] = self.temperature
+                if self.extra_body is not None:
+                    request_kwargs["extra_body"] = copy.deepcopy(self.extra_body)
+                response = client.chat.completions.create(**request_kwargs)
                 content = response.choices[0].message.content or "{}"
                 parsed = json.loads(content)
+                usage = _extract_usage(response)
+                elapsed_ms = _elapsed_ms(started_at)
                 if self.record_cache:
                     self.cache.save(
                         namespace,
-                        payload,
+                        call_payload,
                         parsed,
                         metadata={"provider": self.provider_name, "model": model},
                     )
-                self._record_call(namespace=namespace, payload=payload, response=parsed, cache_hit=False)
+                    self.cache.save_usage_receipt(
+                        namespace,
+                        call_payload,
+                        **usage,
+                        elapsed_ms=elapsed_ms,
+                    )
+                self._record_call(
+                    namespace=namespace,
+                    payload=call_payload,
+                    response=parsed,
+                    cache_hit=False,
+                    usage=usage,
+                    elapsed_ms=elapsed_ms,
+                )
                 return parsed
             except Exception as exc:  # noqa: BLE001 - provider clients raise heterogeneous exceptions.
                 last_error = exc
@@ -401,9 +654,20 @@ class _OpenAIJSONProvider:
         map provider-native names to logical action names before caching.
         """
 
-        cached = self.cache.load(namespace, payload)
+        started_at = time.perf_counter()
+        call_payload = self._call_payload(payload)
+        cached = self.cache.load(namespace, call_payload)
         if cached is not None:
-            self._record_call(namespace=namespace, payload=payload, response=cached, cache_hit=True)
+            receipt = self.cache.load_usage_receipt(namespace, call_payload)
+            self._record_call(
+                namespace=namespace,
+                payload=call_payload,
+                response=cached,
+                cache_hit=True,
+                usage=receipt,
+                elapsed_ms=_elapsed_ms(started_at),
+                recorded_elapsed_ms=receipt.get("elapsed_ms") if receipt else None,
+            )
             return cached
         if self.provider_mode == "replay":
             raise LLMProviderUnavailable(f"No replay cache entry for {namespace}. Run live with --record-cache first.")
@@ -423,11 +687,13 @@ class _OpenAIJSONProvider:
         except Exception as exc:  # pragma: no cover - environment guard
             raise LLMProviderUnavailable("The openai package is required for live providers.") from exc
 
-        client_kwargs: dict[str, str] = {"api_key": api_key}
+        client_kwargs: dict[str, Any] = {"api_key": api_key}
         base_url = os.environ.get(self.base_url_env) or self.default_base_url
         if base_url:
             client_kwargs["base_url"] = str(base_url)
         client_factory = self.client_factory or OpenAI
+        if self.client_factory is None or self.request_timeout_seconds != 60:
+            client_kwargs["timeout"] = self.request_timeout_seconds
         last_error: Exception | None = None
         stopped_without_retry = False
 
@@ -439,14 +705,20 @@ class _OpenAIJSONProvider:
         for attempt in range(self.max_retries + 1):
             try:
                 client = client_factory(**client_kwargs)
-                response = client.chat.completions.create(
-                    model=model,
-                    messages=messages,  # type: ignore[arg-type]
-                    tools=tools,
-                    tool_choice="required",
-                    parallel_tool_calls=False,
-                    temperature=0,
-                )
+                request_kwargs: dict[str, Any] = {
+                    "model": model,
+                    "messages": messages,  # type: ignore[arg-type]
+                    "tools": tools,
+                    "tool_choice": "required",
+                    "parallel_tool_calls": False,
+                }
+                if self.max_output_tokens is not None:
+                    request_kwargs["max_tokens"] = self.max_output_tokens
+                if self.temperature is not None:
+                    request_kwargs["temperature"] = self.temperature
+                if self.extra_body is not None:
+                    request_kwargs["extra_body"] = copy.deepcopy(self.extra_body)
+                response = client.chat.completions.create(**request_kwargs)
                 choices = value(response, "choices", [])
                 message = value(choices[0], "message") if choices else None
                 tool_calls = value(message, "tool_calls", [])
@@ -465,14 +737,29 @@ class _OpenAIJSONProvider:
                     call_id=value(tool_calls[0], "id"),
                 )
                 parsed = normalize_call(call) if normalize_call else call.as_action_payload()
+                usage = _extract_usage(response)
+                elapsed_ms = _elapsed_ms(started_at)
                 if self.record_cache:
                     self.cache.save(
                         namespace,
-                        payload,
+                        call_payload,
                         parsed,
                         metadata={"provider": self.provider_name, "model": model},
                     )
-                self._record_call(namespace=namespace, payload=payload, response=parsed, cache_hit=False)
+                    self.cache.save_usage_receipt(
+                        namespace,
+                        call_payload,
+                        **usage,
+                        elapsed_ms=elapsed_ms,
+                    )
+                self._record_call(
+                    namespace=namespace,
+                    payload=call_payload,
+                    response=parsed,
+                    cache_hit=False,
+                    usage=usage,
+                    elapsed_ms=elapsed_ms,
+                )
                 return parsed
             except Exception as exc:  # noqa: BLE001 - provider clients raise heterogeneous exceptions.
                 last_error = exc

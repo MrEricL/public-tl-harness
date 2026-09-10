@@ -131,6 +131,7 @@ class RepairToolExecutor:
         terminology_resolver: TerminologyResolver | None = None,
         terminology_source_context_chars: int = 800,
         terminology_translation_context_chars: int = 800,
+        allow_nonregressing_patches: bool = False,
     ) -> None:
         self.source_text = source_text
         # Each episode receives an isolated glossary copy.  Resolution can
@@ -146,6 +147,7 @@ class RepairToolExecutor:
         self.terminology_translation_context_chars = max(
             100, min(int(terminology_translation_context_chars), 4000)
         )
+        self.allow_nonregressing_patches = allow_nonregressing_patches
         self.run_id = run_id
         self.story_slug = story_slug
         self.chapter = chapter
@@ -185,6 +187,7 @@ class RepairToolExecutor:
         terminology_resolver: TerminologyResolver | None = None,
         terminology_source_context_chars: int = 800,
         terminology_translation_context_chars: int = 800,
+        allow_nonregressing_patches: bool = False,
     ) -> "RepairToolExecutor":
         """Restore an executor from a durable snapshot.
 
@@ -206,6 +209,7 @@ class RepairToolExecutor:
             terminology_resolver=terminology_resolver,
             terminology_source_context_chars=terminology_source_context_chars,
             terminology_translation_context_chars=terminology_translation_context_chars,
+            allow_nonregressing_patches=allow_nonregressing_patches,
         )
         executor.current_text = snapshot.current_text
         executor.current_qa = snapshot.current_qa.model_copy(deep=True)
@@ -625,7 +629,16 @@ class RepairToolExecutor:
             before_report=before_report,
             after_report=candidate_report,
         )
-        accepted = improves and not new_keys
+        changed = candidate_text != self.current_text
+        accepted_by_nonregression = (
+            not improves
+            and mutation_tool == "submit_patch"
+            and self.allow_nonregressing_patches
+            and changed
+            and candidate_report.score >= before_report.score
+            and not new_keys
+        )
+        accepted = (improves and not new_keys) or accepted_by_nonregression
 
         evidence = {
             "before_score": before_report.score,
@@ -654,6 +667,27 @@ class RepairToolExecutor:
 
         self.current_text = candidate_text
         self.current_qa = candidate_report
+        if accepted_by_nonregression:
+            observation = self._observation(
+                ok=True,
+                kind="patch_accepted",
+                message=(
+                    "Patch accepted because deterministic QA did not regress; "
+                    "a fresh source-fidelity review is required before completion."
+                ),
+                data={
+                    **evidence,
+                    "accepted": True,
+                    "changed": True,
+                    "acceptance_basis": "qa_nonregression",
+                    "source_review_required": True,
+                },
+            )
+            return self._result(
+                observation,
+                qa_before=before_report,
+                qa_after=candidate_report,
+            )
         observation = self._observation(
             ok=True,
             kind="patch_accepted",

@@ -20,18 +20,25 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from .agent_models import (
     AgentAction,
     AgentActionBase,
+    CompleteReviewAction,
+    DelegateReviewAction,
     EscalateAction,
     FinishAction,
     GetQAFindingsAction,
     LookupGlossaryAction,
     NormalizePunctuationAction,
     PromoteGlossaryTermAction,
+    ReadParagraphsAction,
     ReadSourceContextAction,
     ReadTranslationContextAction,
     ResolveTerminologyAction,
     SearchToolsAction,
+    SelectTermAction,
     SubmitPatchAction,
 )
+
+
+SHOWCASE_TOOL_SCHEMA_VERSION = "agent-tools.v4"
 
 
 class ToolCallValidationError(ValueError):
@@ -73,6 +80,15 @@ class ToolCall(BaseModel):
             if "tool" not in payload:
                 raise ToolCallValidationError("JSON action is missing tool")
             name = payload.pop("tool")
+            if "arguments" in payload:
+                arguments = payload.pop("arguments")
+                if payload:
+                    raise ToolCallValidationError(
+                        "JSON action must not mix nested arguments with flattened fields"
+                    )
+                if not isinstance(arguments, Mapping):
+                    raise ToolCallValidationError("JSON action arguments must be an object")
+                payload = dict(arguments)
             return cls.model_validate(
                 {"name": name, "arguments": payload, "call_id": call_id}
             )
@@ -463,10 +479,67 @@ AGENT_TOOL_SPECS: tuple[ToolSpec, ...] = (
 
 AGENT_TOOL_REGISTRY = ToolRegistry(AGENT_TOOL_SPECS)
 
+# Showcase v4 keeps the canonical v3 registry object above unchanged.  The
+# additional coordinator actions are opt-in so v1-v3 payloads and exposure
+# behavior retain their historical identities.
+SHOWCASE_TOOL_SPECS: tuple[ToolSpec, ...] = AGENT_TOOL_SPECS + (
+    _spec(
+        ReadParagraphsAction,
+        "Read a bounded indexed window of source or translated paragraphs.",
+        side_effect="none",
+        risk="low",
+        timeout_seconds=5.0,
+        tags=("context", "paragraph", "source", "translation", "read"),
+    ),
+    _spec(
+        DelegateReviewAction,
+        "Delegate one bounded batch of terminology or source-fidelity specialist reviews.",
+        side_effect="none",
+        risk="medium",
+        timeout_seconds=60.0,
+        tags=("review", "delegation", "specialist", "terminology", "fidelity"),
+    ),
+    _spec(
+        SelectTermAction,
+        "Select an exact terminology suggestion into the episode-local glossary.",
+        side_effect="working_copy",
+        risk="medium",
+        timeout_seconds=15.0,
+        tags=("terminology", "glossary", "selection", "working-copy"),
+    ),
+)
+
+SHOWCASE_TOOL_REGISTRY = ToolRegistry(SHOWCASE_TOOL_SPECS)
+
+# Child agents receive a deliberately smaller surface.  They can inspect
+# bounded context and report evidence, but cannot mutate the coordinator's
+# working translation or persist glossary changes.
+SHOWCASE_CHILD_TOOL_SPECS: tuple[ToolSpec, ...] = (
+    next(spec for spec in SHOWCASE_TOOL_SPECS if spec.name == "read_paragraphs"),
+    next(spec for spec in AGENT_TOOL_SPECS if spec.name == "lookup_glossary"),
+    _spec(
+        CompleteReviewAction,
+        "Return one bounded specialist review with evidence and proposed changes.",
+        side_effect="none",
+        risk="low",
+        timeout_seconds=15.0,
+        tags=("review", "specialist", "result", "evidence"),
+    ),
+)
+SHOWCASE_CHILD_TOOL_REGISTRY = ToolRegistry(SHOWCASE_CHILD_TOOL_SPECS)
+# Friendly alias for callers that refer to delegated workers as specialists.
+SPECIALIST_TOOL_REGISTRY = SHOWCASE_CHILD_TOOL_REGISTRY
+
 
 __all__ = [
     "AGENT_TOOL_REGISTRY",
     "AGENT_TOOL_SPECS",
+    "SHOWCASE_CHILD_TOOL_REGISTRY",
+    "SHOWCASE_CHILD_TOOL_SPECS",
+    "SHOWCASE_TOOL_REGISTRY",
+    "SHOWCASE_TOOL_SCHEMA_VERSION",
+    "SHOWCASE_TOOL_SPECS",
+    "SPECIALIST_TOOL_REGISTRY",
     "ToolCall",
     "ToolCallValidationError",
     "ToolRegistry",

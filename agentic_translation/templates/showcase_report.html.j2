@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Translation showcase — {{ title }}</title>
+  <style>
+    :root {
+      --press-sheet: #eeece6;
+      --paper: #fbfaf6;
+      --paper-strong: #fffefa;
+      --ink: #1d2623;
+      --ink-soft: #59625e;
+      --rule: #d0d1ca;
+      --rule-strong: #858c86;
+      --proof-blue: #2f58bd;
+      --proof-blue-soft: #e8edfb;
+      --verified: #17634f;
+      --verified-soft: #e4f1eb;
+      --pending: #8a5b0a;
+      --pending-soft: #f4ead3;
+      --rejected: #963d43;
+      --rejected-soft: #f5e4e4;
+      --display: "Avenir Next", Avenir, "Helvetica Neue", "Segoe UI", sans-serif;
+      --body: "Avenir Next", Avenir, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --reading: Charter, "Bitstream Charter", Cambria, Georgia, serif;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    * { box-sizing: border-box; }
+    html { background: var(--press-sheet); scroll-behavior: smooth; }
+    body {
+      max-width: 82rem;
+      margin: 0 auto;
+      padding: clamp(1rem, 3vw, 2.75rem) clamp(1rem, 4vw, 3.75rem) 4rem;
+      color: var(--ink);
+      background: var(--paper);
+      font: 400 1.02rem/1.5 var(--body);
+      text-rendering: optimizeLegibility;
+    }
+    h1, h2, h3, h4, p, dl, dd { margin-top: 0; }
+    h1, h2, h3, h4, .utility, .status-badge, .folio-mark { font-family: var(--display); }
+    h1 { margin-bottom: .65rem; font-size: clamp(2.25rem, 4vw, 3.2rem); line-height: .98; letter-spacing: -.035em; font-weight: 600; }
+    h2 { margin-bottom: .48rem; font-size: clamp(1.4rem, 2vw, 1.85rem); line-height: 1.12; letter-spacing: -.02em; font-weight: 600; }
+    h3 { margin-bottom: .4rem; font-size: 1.05rem; line-height: 1.25; letter-spacing: -.01em; font-weight: 600; }
+    h4 { margin-bottom: .35rem; font-size: .98rem; line-height: 1.25; font-weight: 600; }
+    p { margin-bottom: .6rem; }
+    a { color: var(--proof-blue); }
+    code, pre, .mono { font-family: var(--mono); }
+    code { overflow-wrap: anywhere; font-size: .88em; }
+    pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+    :focus-visible { outline: 3px solid var(--proof-blue); outline-offset: 4px; }
+    .skip-link { position: fixed; top: .75rem; left: .75rem; z-index: 2; transform: translateY(-200%); padding: .65rem .85rem; background: var(--ink); color: white; font-weight: 700; }
+    .skip-link:focus { transform: translateY(0); }
+    .utility { color: var(--proof-blue); font: 600 .75rem/1.25 var(--display); letter-spacing: .06em; text-transform: uppercase; }
+    .muted { color: var(--ink-soft); }
+    .masthead { padding-bottom: 1.4rem; border-bottom: 1px solid var(--ink); }
+    .record-line { margin-bottom: 1.15rem; color: var(--ink-soft); font-size: .88rem; }
+    .masthead-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(19rem, .95fr); gap: clamp(2rem, 4vw, 4rem); align-items: end; }
+    .dek { max-width: 52rem; margin-bottom: .7rem; color: var(--ink-soft); font-size: 1.1rem; }
+    .provenance { max-width: 58rem; margin: 1.15rem 0 0; padding: .75rem .9rem; border-left: 2px solid var(--pending); color: var(--ink-soft); font-size: .92rem; }
+    .facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; align-self: stretch; }
+    .fact { display: flex; flex-direction: column; gap: .3rem; min-width: 0; padding-left: .8rem; border-left: 2px solid var(--rule-strong); }
+    .fact.verified { border-left-color: var(--verified); }
+    .fact.pending { border-left-color: var(--pending); }
+    .fact.rejected { border-left-color: var(--rejected); }
+    .fact strong { font: 600 1.08rem/1.18 var(--display); overflow-wrap: anywhere; }
+    .fact small { color: var(--ink-soft); font-size: .78rem; line-height: 1.35; }
+    .verified { color: var(--verified); }
+    .pending { color: var(--pending); }
+    .rejected { color: var(--rejected); }
+    .neutral { color: var(--ink-soft); }
+    main { display: block; }
+    .section { padding-top: clamp(1.75rem, 3vw, 2.75rem); }
+    .section-heading { display: grid; grid-template-columns: 5rem minmax(0, 1fr); gap: 1rem; align-items: baseline; margin-bottom: 1rem; }
+    .folio-mark { color: var(--proof-blue); font: 600 .75rem/1.25 var(--display); letter-spacing: .06em; }
+    .section-heading p { max-width: 52rem; margin: .35rem 0 0; color: var(--ink-soft); }
+    .stage-rail { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border-top: 1px solid var(--rule-strong); border-bottom: 1px solid var(--rule-strong); }
+    .stage { min-width: 0; padding: .8rem .75rem .85rem; border-right: 1px solid var(--rule); }
+    .stage:last-child { border-right: 0; }
+    .stage strong { display: block; margin-bottom: .25rem; font: 600 .92rem/1.2 var(--display); }
+    .stage small { color: var(--ink-soft); font-size: .78rem; }
+    .stage .dot { display: inline-block; width: .55rem; height: .55rem; margin-right: .35rem; border-radius: 50%; background: var(--rule-strong); }
+    .stage.complete .dot { background: var(--verified); }
+    .stage.pending .dot, .stage.running .dot { background: var(--pending); }
+    .stage.rejected .dot { background: var(--rejected); }
+    .chapter-nav { display: flex; flex-wrap: wrap; gap: .5rem; margin: 1rem 0 0; }
+    .chapter-nav a { display: inline-block; padding: .3rem .55rem; border: 1px solid var(--rule-strong); text-decoration: none; font: 600 .8rem/1.2 var(--mono); }
+    .chapter-nav a:hover { background: var(--proof-blue-soft); }
+    .workflow { margin: 0; padding-left: 1.4rem; }
+    .workflow li { margin-bottom: .35rem; }
+    .chapter { scroll-margin-top: 1rem; padding-top: 2.2rem; border-top: 1px solid var(--rule-strong); }
+    .chapter + .chapter { margin-top: 2.5rem; }
+    .chapter-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .75rem; margin-bottom: .95rem; }
+    .chapter-head h3 { margin-bottom: 0; font-size: 1.35rem; }
+    .status-badge { display: inline-block; padding: .22rem .5rem; border: 1px solid currentColor; font: 600 .72rem/1.2 var(--display); letter-spacing: .05em; text-transform: uppercase; }
+    .chapter-summary { margin-bottom: 1.15rem; color: var(--ink-soft); }
+    .text-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; align-items: start; }
+    .text-card { min-width: 0; padding: 1rem 1.1rem 1.1rem; border-top: .25rem solid var(--rule-strong); background: var(--paper-strong); }
+    .text-card.initial { border-top-color: var(--pending); }
+    .text-card.final { border-top-color: var(--verified); }
+    .text-card h4 { display: flex; justify-content: space-between; gap: .6rem; align-items: baseline; }
+    .text-card h4 span { color: var(--ink-soft); font: 600 .7rem/1.2 var(--display); letter-spacing: .05em; text-transform: uppercase; }
+    .text-card pre { min-height: 7rem; max-height: 28rem; margin: .65rem 0 0; overflow: auto; color: var(--ink); font: 400 .98rem/1.55 var(--reading); }
+    .text-card.initial pre { color: var(--ink-soft); }
+    .text-path { margin: .55rem 0 0; color: var(--ink-soft); font-size: .78rem; }
+    .text-path a { overflow-wrap: anywhere; }
+    .evidence-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(19rem, .9fr); gap: clamp(1.5rem, 3vw, 3rem); align-items: start; margin-top: 1.4rem; }
+    .trace, .receipts { min-width: 0; border-top: 1px solid var(--rule-strong); }
+    .column-heading { margin: 0; padding: .7rem 0 .65rem; color: var(--proof-blue); font: 600 .78rem/1.25 var(--display); letter-spacing: .06em; text-transform: uppercase; }
+    .event { padding: .8rem 0 .95rem; border-bottom: 1px solid var(--rule); }
+    .event:last-child { border-bottom: 0; }
+    .event-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: .45rem; }
+    .event-head code { font-weight: 700; }
+    .event-body { margin: .25rem 0 0; color: var(--ink-soft); }
+    .event-status { font: 600 .7rem/1.25 var(--display); letter-spacing: .05em; }
+    .event-status.ok, .event-status.accepted { color: var(--verified); }
+    .event-status.pending { color: var(--pending); }
+    .event-status.rejected { color: var(--rejected); }
+    .change-set { margin: .65rem 0 0; padding-top: .55rem; border-top: 1px solid var(--rule); }
+    .change-set figcaption { margin-bottom: .35rem; color: var(--verified); font: 600 .72rem/1.25 var(--display); letter-spacing: .05em; text-transform: uppercase; }
+    .change-pair { display: grid; grid-template-columns: 4.3rem minmax(0, 1fr); gap: .25rem .65rem; padding: .34rem 0; border-bottom: 1px solid var(--rule); }
+    .change-pair:last-child { border-bottom: 0; }
+    .change-label { color: var(--ink-soft); font: 600 .7rem/1.35 var(--display); letter-spacing: .03em; text-transform: uppercase; }
+    .change-pair code { color: var(--ink); font-size: .8rem; line-height: 1.4; }
+    .receipt { padding: .8rem 0 .9rem; border-bottom: 1px solid var(--rule); }
+    .receipt:last-child { border-bottom: 0; }
+    .receipt h4 { display: flex; justify-content: space-between; gap: .7rem; align-items: baseline; }
+    .receipt p:last-child { margin-bottom: 0; }
+    .receipt-list { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .3rem .7rem; margin: .5rem 0 0; font-size: .83rem; }
+    .receipt-list dt { color: var(--ink-soft); }
+    .receipt-list dd { min-width: 0; margin: 0; overflow-wrap: anywhere; }
+    .evidence { margin: .7rem 0 0; padding: .55rem .7rem; border-left: 2px solid var(--proof-blue); background: var(--proof-blue-soft); }
+    .evidence p { margin-bottom: .35rem; font-size: .88rem; }
+    .evidence p:last-child { margin-bottom: 0; }
+    .finding { margin-top: .55rem; padding-top: .5rem; border-top: 1px solid var(--rule); }
+    .finding strong { font: 600 .75rem/1.25 var(--display); letter-spacing: .04em; text-transform: uppercase; }
+    .finding p { margin: .25rem 0 0; color: var(--ink-soft); font-size: .88rem; }
+    .finding blockquote { margin: .4rem 0 0; padding-left: .65rem; border-left: 2px solid var(--rule-strong); color: var(--ink-soft); font: .88rem/1.4 var(--reading); }
+    .overlap { margin-top: .65rem; padding: .55rem .7rem; border-left: 2px solid var(--pending); background: var(--pending-soft); color: var(--ink-soft); font-size: .86rem; }
+    .overlap ul { margin: .25rem 0 0; padding-left: 1.15rem; }
+    .approval-box { margin: 1.2rem 0 0; padding: 1rem 1.1rem; border: 1px solid var(--pending); border-top: .25rem solid var(--pending); background: var(--pending-soft); }
+    .approval-box h3 { color: var(--pending); }
+    .approval-box dl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .32rem .8rem; margin: .7rem 0 0; font-size: .9rem; }
+    .approval-box dt { color: var(--ink-soft); }
+    .approval-box dd { margin: 0; overflow-wrap: anywhere; }
+    .glossary-table, .usage-table, .artifact-table, .approval-table { width: 100%; border-collapse: collapse; font-size: .86rem; }
+    th { color: var(--ink-soft); font: 600 .72rem/1.3 var(--display); letter-spacing: .05em; text-align: left; text-transform: uppercase; }
+    th, td { padding: .55rem .45rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+    td { overflow-wrap: anywhere; }
+    .glossary-table td:first-child, .usage-table td:first-child { font-family: var(--mono); }
+    .small-note { color: var(--ink-soft); font-size: .86rem; }
+    .review-required { padding: .8rem .9rem; border-left: 2px solid var(--rejected); background: var(--rejected-soft); color: var(--rejected); }
+    .artifact-table a { overflow-wrap: anywhere; }
+    footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--ink); color: var(--ink-soft); font-size: .82rem; }
+    @media (max-width: 62rem) {
+      .masthead-grid, .evidence-grid { grid-template-columns: 1fr; }
+      .text-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 45rem) {
+      .stage-rail { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .stage:nth-child(2n) { border-right: 0; }
+      .stage:nth-child(n + 3) { border-top: 1px solid var(--rule); }
+      .section-heading { grid-template-columns: 1fr; gap: .3rem; }
+      .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      th, td { padding-left: .25rem; padding-right: .25rem; }
+    }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to report</a>
+  <header class="masthead" aria-labelledby="page-title">
+    <p class="record-line utility">Translation showcase · {{ schema }} · run <code>{{ run_id }}</code></p>
+    <div class="masthead-grid">
+      <div>
+        <p class="utility">Source → translation → review → approval → export</p>
+        <h1 id="page-title">{{ title }}</h1>
+        <p class="dek">A persisted editorial record of the agentic translation harness. Every chapter keeps the draft, bounded tool activity, specialist evidence, approval state, and artifact gate together.</p>
+      </div>
+      <div class="facts" aria-label="Run facts">
+        <div class="fact {{ status_class }}">
+          <strong>{{ status }}</strong>
+          <small>Run status</small>
+        </div>
+        <div class="fact">
+          <strong>{{ completed_count }} / {{ chapter_ids|length }}</strong>
+          <small>Chapters complete</small>
+        </div>
+        <div class="fact">
+          <strong>{{ total_initial }} → {{ total_final }}</strong>
+          <small>Recorded findings</small>
+        </div>
+        <div class="fact">
+          <strong>{{ total_reviews }}</strong>
+          <small>Specialist receipts</small>
+        </div>
+      </div>
+    </div>
+    <p class="provenance">{{ provenance }}</p>
+    <p class="record-line">Provider mode: <strong>{{ provider_mode }}</strong> · Execution mode: <strong>{{ execution_mode }}</strong> · Strategy: <strong>{{ strategy }}</strong> · Profile: <code>{{ profile.provider or "unavailable" }}</code> / <code>{{ profile.model or "unavailable" }}</code>{% if profile.tool_protocol %} · {{ profile.tool_protocol }}{% endif %}</p>
+  </header>
+
+  <main id="main">
+    <section class="section" aria-labelledby="flow-heading">
+      <div class="section-heading">
+        <span class="folio-mark">01 / flow</span>
+        <div>
+          <h2 id="flow-heading">One end-to-end harness loop</h2>
+          <p>The report makes the control surface visible: deterministic checks create work, the coordinator delegates bounded review, approvals gate durable glossary changes, and only then does the next chapter inherit the result.</p>
+        </div>
+      </div>
+      <div class="stage-rail" aria-label="Run stages">
+        {% for stage in stages %}
+          <div class="stage {{ stage.status }}">
+            <strong><span class="dot" aria-hidden="true"></span>{{ stage.label }}</strong>
+            <small>{{ stage.status }}</small>
+          </div>
+        {% endfor %}
+      </div>
+      <nav class="chapter-nav" aria-label="Chapters">
+        {% for link in chapter_links %}<a href="{{ link.href }}">Chapter {{ link.chapter }} · <span class="{{ link.status_class }}">{{ link.status }}</span></a>{% endfor %}
+      </nav>
+      {% if current_chapter %}
+        <p class="small-note">Current stop: Chapter {{ current_chapter.chapter }} is <strong class="{{ current_chapter.status_class }}">{{ current_chapter.status }}</strong>. The page reflects the persisted boundary; it does not imply work after that point.</p>
+      {% endif %}
+      <ol class="workflow">
+        <li><strong>Read the source and draft.</strong> The coordinator receives bounded context and records the initial deterministic findings.</li>
+        <li><strong>Review in fresh child contexts.</strong> Terminology and fidelity specialists return typed findings, excerpts, and proposed edits.</li>
+        <li><strong>Apply only bounded changes.</strong> Exact patches are rechecked; rejected proposals stay in the audit trail.</li>
+        <li><strong>Pause at durable approval.</strong> A selected term can update the shared glossary only after the review boundary is approved.</li>
+        <li><strong>Reuse the glossary and export.</strong> Later chapters capture their start glossary, and TXT/EPUB links appear only when the artifact gate records them.</li>
+      </ol>
+    </section>
+
+    {% if pending_approval %}
+      <section class="approval-box" aria-labelledby="approval-heading">
+        <h3 id="approval-heading">Approval boundary is still open</h3>
+        <p>The run is waiting on a concrete term decision before it can make the glossary change durable.</p>
+        <dl>
+          <dt>Chapter</dt><dd>{{ pending_approval.chapter or "unassigned" }}</dd>
+          <dt>Source term</dt><dd><code>{{ pending_approval.term or "unavailable" }}</code></dd>
+          <dt>Proposed target</dt><dd><strong>{{ pending_approval.target or "unavailable" }}</strong></dd>
+          <dt>Rationale</dt><dd>{{ pending_approval.rationale or "No rationale was persisted." }}</dd>
+          {% if pending_approval.proposal_id %}<dt>Proposal</dt><dd><code>{{ pending_approval.proposal_id }}</code></dd>{% endif %}
+          <dt>Decision</dt><dd class="pending">{{ pending_approval.decision }}</dd>
+        </dl>
+      </section>
+    {% endif %}
+
+    {% if status == "review_required" %}
+      <p class="review-required">Semantic review remains unresolved. The working translation is shown for diagnosis, while delivery artifacts are withheld until the recorded review boundary is cleared.</p>
+    {% endif %}
+
+    <section class="section" aria-labelledby="chapters-heading">
+      <div class="section-heading">
+        <span class="folio-mark">02 / chapters</span>
+        <div>
+          <h2 id="chapters-heading">Chapter evidence</h2>
+          <p>Before and after text sits beside the actual trace. Child evidence stays close to the chapter that consumed it, so a reviewer can follow one decision without reconstructing the run from logs.</p>
+        </div>
+      </div>
+      {% for chapter in chapters %}
+        <article class="chapter" id="chapter-{{ chapter.chapter }}" aria-labelledby="chapter-heading-{{ chapter.chapter }}">
+          <div class="chapter-head">
+            <h3 id="chapter-heading-{{ chapter.chapter }}">Chapter {{ chapter.chapter }}</h3>
+            <span class="status-badge {{ chapter.status_class }}">{{ chapter.status }}</span>
+          </div>
+          <p class="chapter-summary">{{ chapter.initial_finding_count }} intake finding(s) · {{ chapter.final_finding_count }} final finding(s) · {{ chapter.reviews|length }} specialist receipt(s) · {{ chapter.steps|length }} coordinator step(s){% if chapter.elapsed_ms is not none %} · {{ chapter.elapsed_ms }} ms chapter elapsed{% endif %}</p>
+          <div class="text-grid">
+            <div class="text-card">
+              <h4>Source <span>input</span></h4>
+              <pre>{{ chapter.source.text }}</pre>
+              <p class="text-path">{% if chapter.source.href %}<a href="{{ chapter.source.href }}">{{ chapter.source.path }}</a>{% else %}{{ chapter.source.path }}{% endif %}</p>
+            </div>
+            <div class="text-card initial">
+              <h4>Initial translation <span>working draft</span></h4>
+              <pre>{{ chapter.draft.text }}</pre>
+              <p class="text-path">{% if chapter.draft.href %}<a href="{{ chapter.draft.href }}">{{ chapter.draft.path }}</a>{% else %}{{ chapter.draft.path }}{% endif %}</p>
+            </div>
+            <div class="text-card final">
+              <h4>Final translation <span>{% if chapter.final.text %}recorded{% else %}withheld{% endif %}</span></h4>
+              <pre>{{ chapter.final.text or "No delivery text was recorded at this boundary." }}</pre>
+              <p class="text-path">{% if chapter.final.href %}<a href="{{ chapter.final.href }}">{{ chapter.final.path }}</a>{% else %}{{ chapter.final.path }}{% endif %}</p>
+            </div>
+          </div>
+
+          <div class="evidence-grid">
+            <div class="trace">
+              <h4 class="column-heading">Coordinator trace</h4>
+              {% for step in chapter.steps %}
+                <div class="event">
+                  <div class="event-head"><code>{{ step.sequence }} · {{ step.tool }}</code><span class="event-status {{ "accepted" if step.status == "ACCEPTED" or step.ok else ("rejected" if step.status == "REJECTED" else "pending") }}">{{ step.status }}</span></div>
+                  {% if step.message %}<p class="event-body">{{ step.message }}</p>{% endif %}
+                  {% if step.action.objective %}<p class="event-body"><strong>Objective:</strong> {{ step.action.objective }}</p>{% endif %}
+                  {% if step.action.specialists %}<p class="event-body"><strong>Delegated:</strong> {{ step.action.specialists|join(", ") }}</p>{% endif %}
+                  {% if step.edits %}
+                    <figure class="change-set"><figcaption>Bounded edit proposal</figcaption>
+                      {% for edit in step.edits %}<div class="change-pair"><span class="change-label">Before</span><code>{{ edit.old_text }}</code><span class="change-label">After</span><code>{{ edit.new_text }}</code></div>{% endfor %}
+                    </figure>
+                  {% endif %}
+                </div>
+              {% else %}
+                <p class="small-note">No coordinator steps have been persisted yet.</p>
+              {% endfor %}
+            </div>
+            <div class="receipts">
+              <h4 class="column-heading">Specialist evidence</h4>
+              {% for review in chapter.reviews %}
+                <div class="receipt">
+                  <h4>{{ review.role }} <span class="{{ "verified" if review.status == "COMPLETED" else "rejected" }}">{{ review.status }}</span></h4>
+                  {% if review.child_id %}<p class="small-note">Child <code>{{ review.child_id }}</code></p>{% endif %}
+                  <p>{{ review.summary or "No summary was persisted." }}</p>
+                  {% for finding in review.findings %}
+                    <div class="finding">
+                      <strong class="{{ "rejected" if finding.blocking else "pending" }}">{{ finding.category }} · {{ "blocking" if finding.blocking else "advisory" }}</strong>
+                      <p>{{ finding.message }}</p>
+                      {% if finding.source_excerpt %}<blockquote>Source: {{ finding.source_excerpt }}</blockquote>{% endif %}
+                      {% if finding.translation_excerpt %}<blockquote>Draft: {{ finding.translation_excerpt }}</blockquote>{% endif %}
+                    </div>
+                  {% endfor %}
+                  {% if review.proposed_edits %}
+                    <figure class="change-set"><figcaption>Proposed patches</figcaption>
+                      {% for edit in review.proposed_edits %}<div class="change-pair"><span class="change-label">Before</span><code>{{ edit.old_text }}</code><span class="change-label">After</span><code>{{ edit.new_text }}</code></div>{% endfor %}
+                    </figure>
+                  {% endif %}
+                  {% for term in review.term_suggestions %}<div class="evidence"><p><strong>Term suggestion:</strong> <code>{{ term.term }}</code> → <strong>{{ term.target }}</strong></p><p>{{ term.rationale }}</p></div>{% endfor %}
+                  {% if review.draft_sha256 %}<p class="small-note">Draft digest: <code>{{ review.draft_sha256 }}</code></p>{% endif %}
+                  {% if review.steps %}<p class="small-note">Child tools: {% for child_step in review.steps %}<code>{{ child_step.tool }}</code>{% if not loop.last %}, {% endif %}{% endfor %}</p>{% endif %}
+                </div>
+              {% else %}
+                <p class="small-note">No specialist child receipt has been persisted yet.</p>
+              {% endfor %}
+              {% if chapter.overlaps %}
+                <div class="overlap"><strong>Overlapping evidence</strong><ul>{% for overlap in chapter.overlaps %}<li>{{ overlap }}</li>{% endfor %}</ul></div>
+              {% endif %}
+            </div>
+          </div>
+
+          {% if chapter.initial_finding_count or chapter.final_finding_count %}
+            <div class="evidence"><strong>Deterministic QA</strong><p>Intake: {{ chapter.initial_finding_count }} finding(s) · final: {{ chapter.final_finding_count }} finding(s). Findings are compliance evidence from the persisted run, not a claim of general semantic quality.</p></div>
+          {% endif %}
+          <p class="text-path">Session receipts: {% if chapter.snapshot.href %}<a href="{{ chapter.snapshot.href }}">snapshot</a>{% else %}snapshot unavailable{% endif %} · {% if chapter.episode.href %}<a href="{{ chapter.episode.href }}">episode</a>{% else %}episode unavailable{% endif %} · {% if chapter.events.href %}<a href="{{ chapter.events.href }}">events</a>{% else %}events unavailable{% endif %} · glossary: {% if chapter.glossary_href %}<a href="{{ chapter.glossary_href }}">chapter start</a>{% else %}unavailable{% endif %}</p>
+        </article>
+      {% else %}
+        <p class="small-note">No chapter has been recorded yet.</p>
+      {% endfor %}
+    </section>
+
+    <section class="section" aria-labelledby="glossary-heading">
+      <div class="section-heading">
+        <span class="folio-mark">03 / continuity</span>
+        <div>
+          <h2 id="glossary-heading">Glossary continuity</h2>
+          <p>Each chapter records the glossary it started with. The handoff is visible here so a later term is evidence of durable state reuse rather than an unexplained repeated prompt.</p>
+        </div>
+      </div>
+      {% if glossary_rows %}
+        <table class="glossary-table">
+          <thead><tr><th>Boundary</th><th>Reuse</th><th>Terms</th><th>Receipt</th></tr></thead>
+          <tbody>
+            {% for row in glossary_rows %}
+              <tr><td><strong>{{ row.label }}</strong><br><span class="small-note">{{ row.line_count }} non-empty line(s)</span></td><td>{{ row.reuse }}</td><td>{% for term in row.terms %}<code>{{ term.source }}</code> → {{ term.target }}{% if not loop.last %}<br>{% endif %}{% else %}<span class="small-note">No parsed term rows.</span>{% endfor %}</td><td>{% if row.href %}<a href="{{ row.href }}">{{ row.path }}</a>{% else %}{{ row.path }} unavailable{% endif %}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="small-note">No glossary snapshots were recorded.</p>
+      {% endif %}
+    </section>
+
+    <section class="section" aria-labelledby="usage-heading">
+      <div class="section-heading">
+        <span class="folio-mark">04 / receipts</span>
+        <div>
+          <h2 id="usage-heading">Provider usage and cache timing</h2>
+          <p>Usage is shown only when the provider receipt supplied it. Offline fixtures do not pretend to have token economics; replay separates historical provider usage from the current replay path.</p>
+        </div>
+      </div>
+      {% if usage_available %}
+        <p class="small-note">Recorded provider totals: {% for key, value in token_totals.items() %}<code>{{ key }}</code> {{ value }}{% if not loop.last %} · {% endif %}{% endfor %}.</p>
+      {% elif provider_mode == "offline" or execution_mode == "offline" %}
+        <p class="small-note">Unavailable — offline fixture; provider usage is not measured.</p>
+      {% else %}
+        <p class="small-note">Unavailable — no token usage fields were supplied in the persisted provider receipts.</p>
+      {% endif %}
+      {% if execution_mode == "replay" %}<p class="small-note">Replay timing: current replay latency is displayed separately from recorded provider elapsed time when the receipts provide both{% if not replay_current_latency_available %}; current replay latency was not persisted{% endif %}.</p>{% endif %}
+      {% if provider_records %}
+        <table class="usage-table">
+          <thead><tr><th>Provider / model</th><th>Calls</th><th>Cache hits</th><th>Recorded provider usage</th><th>Current replay latency</th></tr></thead>
+          <tbody>
+            {% for summary in usage_summaries %}
+              <tr><td><code>{{ summary.provider }}</code> / <code>{{ summary.model }}</code></td><td>{{ summary.calls }}</td><td>{{ summary.cache_hits }}</td><td>{% if summary.has_tokens %}{{ summary.total_tokens }} token(s){% else %}unavailable{% endif %}{% if summary.has_recorded_elapsed %} · {{ summary.recorded_elapsed_ms }} ms{% endif %}</td><td>{% if summary.has_current_elapsed %}{{ summary.current_elapsed_ms }} ms{% else %}separate timing unavailable{% endif %}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <details><summary>Show individual provider receipts ({{ provider_records|length }})</summary>
+          <table class="usage-table">
+            <thead><tr><th>Chapter</th><th>Provider / model</th><th>Cache</th><th>Recorded usage</th><th>Current replay latency</th></tr></thead>
+            <tbody>
+              {% for record in provider_records %}
+                <tr><td>{{ record.chapter }}</td><td><code>{{ record.provider or "unavailable" }}</code> / <code>{{ record.model or "unavailable" }}</code><br><span class="small-note">{{ record.namespace or "call" }}</span></td><td>{{ "hit" if record.cache_hit else "miss" }}</td><td>{% if record.has_tokens %}{{ record.total_tokens or "tokens unavailable" }} token(s){% if record.recorded_elapsed_ms is not none %} · {{ record.recorded_elapsed_ms }} ms{% endif %}{% elif record.recorded_elapsed_ms is not none %}{{ record.recorded_elapsed_ms }} ms{% else %}unavailable{% endif %}</td><td>{% if record.current_elapsed_ms is not none %}{{ record.current_elapsed_ms }} ms{% else %}separate timing unavailable{% endif %}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </details>
+      {% else %}
+        <p class="small-note">No provider call receipts have been recorded at this boundary.</p>
+      {% endif %}
+    </section>
+
+    <section class="section" aria-labelledby="artifacts-heading">
+      <div class="section-heading">
+        <span class="folio-mark">05 / delivery</span>
+        <div>
+          <h2 id="artifacts-heading">Delivery artifacts</h2>
+          <p>Exports are linked from the run directory and retain the same evidence boundary as the report.</p>
+        </div>
+      </div>
+      {% if artifacts %}
+        <table class="artifact-table"><thead><tr><th>Artifact</th><th>Status</th><th>Path</th></tr></thead><tbody>
+          {% for artifact in artifacts %}<tr><td><strong>{{ artifact.name }}</strong></td><td class="{{ "verified" if artifact.status in ["passed", "pass", "complete", "completed"] else "neutral" }}">{{ artifact.status or "recorded" }}</td><td>{% if artifact.href %}<a href="{{ artifact.href }}">{{ artifact.path }}</a>{% else %}{{ artifact.path or "path unavailable" }}{% endif %}</td></tr>{% endfor %}
+        </tbody></table>
+      {% else %}
+        <p class="small-note">No delivery artifacts are recorded. A stopped or review-required run can still be inspected above without implying export.</p>
+      {% endif %}
+    </section>
+
+    {% if approvals %}
+      <section class="section" aria-labelledby="approvals-heading">
+        <div class="section-heading"><span class="folio-mark">06 / decisions</span><div><h2 id="approvals-heading">Approval record</h2><p>Approval decisions are receipts in the run history; they do not rewrite the original child evidence.</p></div></div>
+        <table class="approval-table"><thead><tr><th>Chapter</th><th>Decision</th><th>Reviewer</th><th>Note</th></tr></thead><tbody>
+          {% for approval in approvals %}<tr><td>{{ approval.chapter or "run" }}</td><td class="{{ "verified" if approval.decision in ["approved", "applied"] else ("rejected" if approval.decision == "rejected" else "pending") }}">{{ approval.decision or approval.status or "pending" }}</td><td>{{ approval.reviewer or approval.actor or "unavailable" }}</td><td>{{ approval.note or approval.rationale or "" }}</td></tr>{% endfor %}
+        </tbody></table>
+      </section>
+    {% endif %}
+  </main>
+
+  <footer>
+    <p><strong>Translation showcase receipt.</strong> The page is generated from the local run manifest and saved chapter evidence. It reports harness behavior and deterministic gates; it does not claim that an offline fixture or a compliance pass measures general translation quality.</p>
+  </footer>
+</body>
+</html>
