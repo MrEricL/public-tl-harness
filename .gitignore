@@ -34,3 +34,6 @@ samples/automatic_repair_eval/
 experiments/live_comparison_2026_09/
 experiments/automatic_repair_2026_09/
 export.txt
+
+# Local repository map for agents; never publish machine-specific paths.
+/AGENT_REPO_README.md
