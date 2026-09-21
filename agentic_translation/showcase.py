@@ -18,6 +18,8 @@ from .agent_repair import RepairToolExecutor
 from .agent_session import resume_repair_session, run_repair_session
 from .glossary import load_glossary
 from .models import StoryConfig
+from .semantic_models import JevPolicy
+from .semantic_provider import GatewayJudgmentProvider, ReplayJudgmentProvider
 from .package import (
     build_epub_collection, build_txt_collection,
     verify_epub_artifact, verify_txt_artifact,
@@ -149,6 +151,7 @@ def run_showcase(
     draft_dir: str | Path | None = None,
     strategy: str = "automatic",
     auto_approve: bool = False,
+    jev_policy: JevPolicy | None = None,
 ) -> ShowcaseResult:
     """Capture inputs, then run until delivery, review, or a glossary approval."""
     from .showcase_providers import fixture_profile, resolve_profile
@@ -157,6 +160,9 @@ def run_showcase(
         raise ValueError("Use offline or live; use harness replay for saved runs")
     if strategy not in {"automatic", "specialists", "single", "deterministic"}:
         raise ValueError("Unknown strategy")
+    effective_jev_policy = jev_policy or JevPolicy()
+    if effective_jev_policy.mode != "off" and provider_mode != "live":
+        raise ValueError("An enabled Jev policy requires live showcase mode; use replay for saved Jev records")
     original = Path(story_path).resolve()
     story = load_story_config(original)
     if not story.chapter_ids or len(set(story.chapter_ids)) != len(story.chapter_ids):
@@ -195,6 +201,7 @@ def run_showcase(
         "chapter_ids": story.chapter_ids, "chapters": {}, "approvals": [], "artifacts": {},
         "story": story.model_dump(mode="json", exclude={"paths"}),
         "supplied_drafts": bool(drafts), "elapsed_ms": 0,
+        "jev_policy": effective_jev_policy.model_dump(mode="json"),
         "provenance": "Scripted contract demonstration; not a measured model-quality result." if provider_mode == "offline" else "Live provider responses recorded for replay.",
     }
     _save(run_dir, manifest)
@@ -289,6 +296,10 @@ def _capture_result(directory: Path, state: dict, result, provider) -> None:
     reviews = result.snapshot.specialist_reviews
     # Derive calls from durable steps, including actions before an interruption.
     state["coordinator_calls"] = [step.provider_call.model_dump(mode="json") for step in steps if step.provider_call is not None]
+    jev_reports = [
+        report.model_dump(mode="json")
+        for report in result.snapshot.semantic_signal_reports
+    ]
     state.update(
         final_findings=len(result.final_qa.findings), steps=len(steps),
         patch_attempts=len(mutations),
@@ -299,6 +310,12 @@ def _capture_result(directory: Path, state: dict, result, provider) -> None:
         status="awaiting_approval" if result.snapshot.status == "awaiting_approval" else ({"verified": "completed", "failed": "failed"}.get(result.episode.final_status, "review_required")),
         final_status=result.episode.final_status,
         pending_proposal_id=result.snapshot.pending_approval.proposal_id if result.snapshot.pending_approval else None,
+        jev={
+            "policy": result.snapshot.jev_policy.model_dump(mode="json"),
+            "reports": jev_reports,
+            "statuses": [report["status"] for report in jev_reports],
+            "requests": [request for report in jev_reports for request in report["requests"]],
+        },
     )
 
 
@@ -348,6 +365,7 @@ def _continue(run_dir: Path, manifest: dict, *, auto_approve=False, decision=Non
     story = _story(run_dir, manifest)
     style = _read(run_dir / "inputs/style_guide.md")
     scenario = _scenario(run_dir, manifest["strategy"])
+    jev_policy = JevPolicy.model_validate(manifest.get("jev_policy", {}))
     manifest["status"] = "running"
     try:
         for chapter in manifest["chapter_ids"]:
@@ -383,7 +401,15 @@ def _continue(run_dir: Path, manifest: dict, *, auto_approve=False, decision=Non
                     chapter=chapter, provider_mode=manifest["provider_mode"], tool_schema_version=SHOWCASE_TOOL_SCHEMA_VERSION,
                     instruction_context={"instructions": instructions, "style_guide": style, "profile": manifest["profile"], "strategy": manifest["strategy"]},
                     review_handler=specialists if reviewed else None,
-                    require_fidelity_review=reviewed, max_delegation_rounds=2)
+                    require_fidelity_review=reviewed, max_delegation_rounds=2,
+                    jev_policy=jev_policy)
+                if jev_policy.mode != "off":
+                    jev_record_dir = run_dir / f"cache/{chapter}/jev"
+                    common["judgment_provider"] = (
+                        ReplayJudgmentProvider(jev_record_dir, policy=jev_policy)
+                        if manifest["execution_mode"] == "replay"
+                        else GatewayJudgmentProvider(jev_policy, record_dir=jev_record_dir)
+                    )
                 if automatic:
                     common["allow_nonregressing_patches"] = True
                 if (directory / "session_snapshot.json").exists():

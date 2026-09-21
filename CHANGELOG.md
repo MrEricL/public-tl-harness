@@ -9,6 +9,26 @@ Starting point: [`8bf860e`](https://github.com/MrEricL/public-tl-harness/tree/8b
   replay, reports, batch workflows, and TXT/EPUB packaging.
 - The original repair policy required strict mechanical QA improvement.
 
+## Optional Jev sensing and public evidence
+
+- Adds an optional Jev semantic-sensing path through the native Vercel AI
+  Gateway evaluation route for `typesafe-ai/jev`.
+- Keeps Jev off by default and supports focused or dense questions, shadow or
+  advisory delivery, initial or after-edit schedules, and cache-only replay.
+- Adds a public synthetic live-command example using separate
+  `AI_GATEWAY_API_KEY` and `DEEPSEEK_API_KEY` environment variables. No key
+  values are included.
+- Documents aggregate pilot and follow-up results, including costs, coverage,
+  execution failures, and review limits. These are historical summaries of a
+  private development study, not a public benchmark or a claim of general Jev
+  quality improvement.
+- Explains the verifier fix for a nested glossary occurrence and the withdrawn
+  breathing-label comparison without distributing source text, private
+  translations, raw provider payloads, or private run artifacts.
+
+See [JEV_EXTENSION.md](docs/JEV_EXTENSION.md) for the public contract and
+evidence notes.
+
 ## Curated automatic-repair release
 
 - Makes source-grounded automatic repair the default for new showcase runs.

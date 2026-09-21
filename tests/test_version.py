@@ -16,8 +16,8 @@ def test_public_version_is_synchronized() -> None:
     assert __version__ == "0.2.0"
 
 
-def test_public_package_metadata_and_license_contract() -> None:
-    """Published metadata identifies the harness and ships its code license."""
+def test_private_package_metadata_and_license_contract() -> None:
+    """Package metadata identifies the harness and ships its code license."""
     root = Path(__file__).parents[1]
     pyproject = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
     project = pyproject["project"]

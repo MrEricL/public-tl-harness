@@ -20,7 +20,7 @@ def _request(step_number: int, protocol: str) -> AgentActionRequest:
     return AgentActionRequest(
         episode_id="showcase-0001",
         step_number=step_number,
-        story_slug="synthetic-control-demo",
+        story_slug="translation-showcase",
         chapter="0001",
         current_findings=[],
         remaining_steps=8 - step_number,
@@ -79,21 +79,21 @@ def test_fixture_action_without_scripted_step_fails_closed(tmp_path: Path) -> No
 
 def test_fixture_translation_record_then_replay_is_network_free(tmp_path: Path) -> None:
     story = StoryConfig(
-        slug="synthetic-control-demo",
-        title="Synthetic Control Sequence",
+        slug="translation-showcase",
+        title="Starstream Crossing",
         paths=StoryPaths(source_dir=tmp_path, glossary_path=tmp_path / "terms.txt"),
     )
-    context = {"style_guide": "Keep operation names consistent.", "profile": fixture_profile()}
+    context = {"style_guide": "Keep names consistent.", "profile": fixture_profile()}
     recorded = make_translation_provider(
         mode="offline",
         profile=fixture_profile(),
         cache_dir=tmp_path / "translation-cache",
-        translation="The valve opened.",
+        translation="The river gate opened.",
         instruction_context=context,
     )
     glossary = GlossaryParseResult(entries=[])
-    assert recorded.translate("阀门开启。", story=story, glossary=glossary, mode="offline") == (
-        "The valve opened."
+    assert recorded.translate("河门开启。", story=story, glossary=glossary, mode="offline") == (
+        "The river gate opened."
     )
     assert recorded.call_records[0].cache_hit is False
 
@@ -105,8 +105,8 @@ def test_fixture_translation_record_then_replay_is_network_free(tmp_path: Path) 
     )
     # The translation task's original mode is part of the canonical payload;
     # replay changes transport mode, while the logical task mode stays stable.
-    assert replay.translate("阀门开启。", story=story, glossary=glossary, mode="offline") == (
-        "The valve opened."
+    assert replay.translate("河门开启。", story=story, glossary=glossary, mode="offline") == (
+        "The river gate opened."
     )
     assert replay.call_records[0].cache_hit is True
 
@@ -118,7 +118,7 @@ def test_fixture_translation_record_then_replay_is_network_free(tmp_path: Path) 
         instruction_context=changed_context,
     )
     with pytest.raises(LLMProviderUnavailable, match="No replay cache entry"):
-        changed_replay.translate("阀门开启。", story=story, glossary=glossary, mode="offline")
+        changed_replay.translate("河门开启。", story=story, glossary=glossary, mode="offline")
 
 
 def test_resolve_profile_uses_provider_environment_and_redacts_credentials(monkeypatch) -> None:

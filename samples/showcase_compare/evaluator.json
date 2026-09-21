@@ -1,0 +1,125 @@
+{
+  "schema_version": "translation-showcase-evaluator.v1",
+  "cases": [
+    {
+      "id": "0001",
+      "category": "mechanical",
+      "expected": {
+        "deterministic": "surface_clear",
+        "single": "surface_clear",
+        "specialists": "surface_clear"
+      },
+      "surface_target": "english_punctuation"
+    },
+    {
+      "id": "0002",
+      "category": "mechanical",
+      "expected": {
+        "deterministic": "surface_clear",
+        "single": "surface_clear",
+        "specialists": "surface_clear"
+      },
+      "surface_target": "english_punctuation"
+    },
+    {
+      "id": "0003",
+      "category": "mechanical",
+      "expected": {
+        "deterministic": "surface_clear",
+        "single": "surface_clear",
+        "specialists": "surface_clear"
+      },
+      "surface_target": "english_punctuation"
+    },
+    {
+      "id": "0004",
+      "category": "mechanical",
+      "expected": {
+        "deterministic": "surface_clear",
+        "single": "surface_clear",
+        "specialists": "surface_clear"
+      },
+      "surface_target": "english_punctuation"
+    },
+    {
+      "id": "0005",
+      "category": "terminology",
+      "expected": {
+        "deterministic": "surface_clear",
+        "single": "surface_clear",
+        "specialists": "surface_clear"
+      },
+      "surface_target": "青云宗 -> Azure Cloud Sect"
+    },
+    {
+      "id": "0006",
+      "category": "terminology",
+      "expected": {
+        "deterministic": "surface_clear",
+        "single": "surface_clear",
+        "specialists": "surface_clear"
+      },
+      "surface_target": "星河步 -> Starstream Step"
+    },
+    {
+      "id": "0007",
+      "category": "terminology",
+      "expected": {
+        "deterministic": "surface_clear",
+        "single": "surface_clear",
+        "specialists": "surface_clear"
+      },
+      "surface_target": "镜湖镇 -> Mirror Lake Town"
+    },
+    {
+      "id": "0008",
+      "category": "terminology",
+      "expected": {
+        "deterministic": "surface_clear",
+        "single": "surface_clear",
+        "specialists": "surface_clear"
+      },
+      "surface_target": "潮汐镜 -> Tidal Mirror"
+    },
+    {
+      "id": "0009",
+      "category": "semantic",
+      "expected": {
+        "deterministic": "unreviewed_semantic_risk",
+        "single": "unreviewed_semantic_risk",
+        "specialists": "review_required"
+      },
+      "hidden_risk": "The key moves from the boatman to Bailu before Bailu opens the gate."
+    },
+    {
+      "id": "0010",
+      "category": "semantic",
+      "expected": {
+        "deterministic": "unreviewed_semantic_risk",
+        "single": "unreviewed_semantic_risk",
+        "specialists": "review_required"
+      },
+      "hidden_risk": "The bells ring before the rope reaches the platform, and the draft reverses that order."
+    },
+    {
+      "id": "0011",
+      "category": "semantic",
+      "expected": {
+        "deterministic": "unreviewed_semantic_risk",
+        "single": "unreviewed_semantic_risk",
+        "specialists": "review_required"
+      },
+      "hidden_risk": "Gu Yao leaves the jewel on the altar; the draft says she takes it."
+    },
+    {
+      "id": "0012",
+      "category": "semantic",
+      "expected": {
+        "deterministic": "unreviewed_semantic_risk",
+        "single": "unreviewed_semantic_risk",
+        "specialists": "review_required"
+      },
+      "hidden_risk": "Bailu burns the map to prevent the pursuers from finding the village; the draft reverses that purpose."
+    }
+  ]
+}

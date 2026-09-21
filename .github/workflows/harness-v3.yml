@@ -1,40 +1,34 @@
-name: Harness v3
+name: Translation harness
 
 on:
   push:
     paths:
       - ".github/workflows/harness-v3.yml"
       - "agentic_translation/**"
-      - "experiments/mid_corpus_harness_benchmark/**"
+      - "assets/**"
+      - "docs/**"
+      - "experiments/**"
       - "samples/**"
       - "tests/**"
       - "tools/**"
-      - "docs/**"
-      - "assets/**"
+      - "*.md"
       - "pyproject.toml"
-      - "LICENSE"
-      - "DATA_NOTICE.md"
-      - "CHANGELOG.md"
-      - "README.md"
-      - "USER_GUIDE.md"
-      - "DEMO_SCRIPT.md"
+      - "public-release-manifest.json"
+      - "release/**"
   pull_request:
     paths:
       - ".github/workflows/harness-v3.yml"
       - "agentic_translation/**"
-      - "experiments/mid_corpus_harness_benchmark/**"
+      - "assets/**"
+      - "docs/**"
+      - "experiments/**"
       - "samples/**"
       - "tests/**"
       - "tools/**"
-      - "docs/**"
-      - "assets/**"
+      - "*.md"
       - "pyproject.toml"
-      - "LICENSE"
-      - "DATA_NOTICE.md"
-      - "CHANGELOG.md"
-      - "README.md"
-      - "USER_GUIDE.md"
-      - "DEMO_SCRIPT.md"
+      - "public-release-manifest.json"
+      - "release/**"
 
 permissions:
   contents: read
@@ -58,17 +52,20 @@ jobs:
         run: python -m pytest -q
 
       - name: Run the focused experiment benchmark tests
-        working-directory: experiments/mid_corpus_harness_benchmark
+        working-directory: "experiments/mid_corpus_harness_benchmark"
         run: python -m pytest -q test_benchmark.py
 
       - name: Smoke golden auto-approve (synthetic, no provider)
         run: python -m agentic_translation harness golden --runs-dir "${{ runner.temp }}/harness-v3-runs" --auto-approve --overwrite
 
+      - name: Smoke translation showcase auto-approve (synthetic, no provider)
+        run: python -m agentic_translation harness run --story samples/showcase/story.yaml --out "${{ runner.temp }}/translation-showcase" --auto-approve
+
+      - name: Smoke translation showcase replay (synthetic, no provider)
+        run: python -m agentic_translation harness replay "${{ runner.temp }}/translation-showcase" --out "${{ runner.temp }}/translation-showcase-replay"
+
+      - name: Smoke translation showcase comparison (synthetic, one trial)
+        run: python -m agentic_translation harness compare --out "${{ runner.temp }}/translation-showcase-comparison" --provider-mode offline --trials 1
+
       - name: Smoke Harness v3 contract bench (synthetic, no provider)
         run: python -m agentic_translation harness bench --suite samples/harness_eval/v3_cases.json --out "${{ runner.temp }}/harness-v3-bench" --overwrite
-
-      - name: Smoke automatic repair (synthetic, no provider)
-        run: python -m agentic_translation harness run --story samples/synthetic_repair_demo/story.yaml --out "${{ runner.temp }}/automatic-repair" --auto-approve
-
-      - name: Smoke automatic replay (cache only)
-        run: python -m agentic_translation harness replay "${{ runner.temp }}/automatic-repair" --out "${{ runner.temp }}/automatic-repair-replay"

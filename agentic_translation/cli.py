@@ -49,6 +49,7 @@ from .batch import (
     write_batch_triage_artifacts,
 )
 from .models import TerminologyConsensusConfig
+from .semantic_models import JevPolicy
 from .env_config import load_cli_env
 from .agent_provider import LLMAgentActionProvider
 from .agent_provider import TERMINOLOGY_TOOL_SCHEMA_VERSION
@@ -70,7 +71,7 @@ app = typer.Typer(help="Agentic long-form translation production system prototyp
 demo_app = typer.Typer(help="Demo commands.")
 batch_app = typer.Typer(help="Batch corpus-production commands.")
 cache_app = typer.Typer(help="Live/replay cache commands.")
-harness_app = typer.Typer(help="Source-to-book workflow, review, and replay.")
+harness_app = typer.Typer(help="Source-to-book workflow, review, replay, and harness comparisons.")
 app.add_typer(demo_app, name="demo")
 app.add_typer(batch_app, name="batch")
 app.add_typer(cache_app, name="cache")
@@ -174,7 +175,7 @@ def _print_showcase_result(result) -> None:
 
 @harness_app.command("run")
 def harness_run(
-    story: Path = typer.Option(Path("samples/synthetic_repair_demo/story.yaml"), "--story"),
+    story: Path = typer.Option(Path("samples/showcase/story.yaml"), "--story"),
     out: Path = typer.Option(..., "--out", "--output-dir"),
     provider_mode: str = typer.Option("offline", "--provider-mode", help="offline (scripted) or live"),
     profile: str = typer.Option("openai", "--profile", help="openai or deepseek"),
@@ -182,11 +183,31 @@ def harness_run(
     draft_dir: Path | None = typer.Option(None, "--draft-dir", help="Use supplied chapter drafts instead of translating."),
     strategy: str = typer.Option("automatic", "--strategy", help="automatic (meaning repair + source review), specialists, single, or deterministic"),
     auto_approve: bool = typer.Option(False, "--auto-approve", help="Explicitly approve run-local glossary proposals for unattended demos."),
+    jev_policy: Path | None = typer.Option(
+        None,
+        "--jev-policy",
+        help="JSON file defining an optional off, shadow, or advisory Jev policy.",
+    ),
 ) -> None:
     """Translate chapters, review repairs, reuse approved terms, and export a book."""
     from .showcase import run_showcase
     try:
-        result = run_showcase(story, out, provider_mode=provider_mode, profile=profile, model=model, draft_dir=draft_dir, strategy=strategy, auto_approve=auto_approve)
+        semantic_policy = (
+            JevPolicy.model_validate_json(jev_policy.read_text(encoding="utf-8"))
+            if jev_policy is not None
+            else None
+        )
+        result = run_showcase(
+            story,
+            out,
+            provider_mode=provider_mode,
+            profile=profile,
+            model=model,
+            draft_dir=draft_dir,
+            strategy=strategy,
+            auto_approve=auto_approve,
+            jev_policy=semantic_policy,
+        )
     except (OSError, ValueError, RuntimeError, TypeError, KeyError) as exc:
         console.print(f"[red]Error:[/red] {exc}")
         raise typer.Exit(1) from exc
@@ -206,6 +227,24 @@ def harness_replay(
         console.print(f"[red]Error:[/red] {exc}")
         raise typer.Exit(1) from exc
     _print_showcase_result(result)
+
+
+@harness_app.command("compare")
+def harness_compare(
+    out: Path = typer.Option(..., "--out", "--output-dir"),
+    provider_mode: str = typer.Option("offline", "--provider-mode"),
+    profile: str = typer.Option("openai", "--profile"),
+    model: str | None = typer.Option(None, "--model"),
+    trials: int | None = typer.Option(None, "--trials", min=1),
+) -> None:
+    """Compare three harness strategies on the same twelve authored drafts."""
+    from .showcase_compare import run_comparison
+    try:
+        run_comparison(out, provider_mode=provider_mode, profile=profile, model=model, trials=trials)
+    except (OSError, ValueError, RuntimeError, TypeError, KeyError) as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        raise typer.Exit(1) from exc
+    console.print(f"Comparison: {out.resolve() / 'report.md'}")
 
 
 @harness_app.command("bench")

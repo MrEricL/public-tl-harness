@@ -26,9 +26,9 @@ from agentic_translation.agent_session import (
 from agentic_translation.glossary import parse_glossary_text
 
 
-SOURCE = "第一章：技术检查\n\n控制器先打开阀门，然后记录三个读数。"
-DRAFT = "Chapter 1: Technical Check\n\nThe controller records three readings before opening the valve."
-CORRECTED = "Chapter 1: Technical Check\n\nThe controller opens the valve before recording three readings."
+SOURCE = "第一章\n\n他守住了山门。"
+DRAFT = "Chapter 1\n\nShe guarded the mountain gate."
+CORRECTED = "Chapter 1\n\nHe guarded the mountain gate."
 GLOSSARY = parse_glossary_text("")
 
 
@@ -63,9 +63,9 @@ def _executor(*, allow_nonregressing_patches: bool = False) -> RepairToolExecuto
 
 def _meaning_patch() -> SubmitPatchAction:
     return SubmitPatchAction(
-        old_text="The controller records three readings before opening the valve.",
-        new_text="The controller opens the valve before recording three readings.",
-        rationale="Correct the operation order after checking the source.",
+        old_text="She guarded the mountain gate.",
+        new_text="He guarded the mountain gate.",
+        rationale="Correct the subject after checking the source.",
     )
 
 
@@ -78,9 +78,9 @@ def _review(
         [
             ReviewFinding(
                 category="fidelity",
-                message="The operation order still conflicts with the source.",
-                source_excerpt="控制器先打开阀门，然后记录三个读数。",
-                translation_excerpt="The controller records three readings before opening the valve.",
+                message="The subject still conflicts with the source.",
+                source_excerpt="他守住了山门。",
+                translation_excerpt="She guarded the mountain gate.",
                 blocking=True,
             )
         ]
@@ -147,8 +147,8 @@ def test_opt_in_still_rejects_noop_and_qa_regression() -> None:
     no_op = _executor(allow_nonregressing_patches=True)
     no_op_result = no_op.execute(
         SubmitPatchAction(
-            old_text="The controller records three readings before opening the valve.",
-            new_text="The controller records three readings before opening the valve.",
+            old_text="She guarded the mountain gate.",
+            new_text="She guarded the mountain gate.",
             rationale="No effective change.",
         )
     )
@@ -158,8 +158,8 @@ def test_opt_in_still_rejects_noop_and_qa_regression() -> None:
     regression = _executor(allow_nonregressing_patches=True)
     regression_result = regression.execute(
         SubmitPatchAction(
-            old_text="the valve",
-            new_text="阀门",
+            old_text="the mountain gate",
+            new_text="山门",
             rationale="Introduce a deterministic regression.",
         )
     )

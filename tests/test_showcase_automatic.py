@@ -6,10 +6,7 @@ from agentic_translation.showcase import replay_showcase, run_showcase
 
 
 def test_automatic_showcase_selects_policy_and_replays(tmp_path):
-    story = (
-        Path(__file__).resolve().parents[1]
-        / "samples/synthetic_repair_demo/story.yaml"
-    )
+    story = Path(__file__).resolve().parents[1] / "samples/showcase/story.yaml"
     original = tmp_path / "automatic"
     result = run_showcase(story, original, auto_approve=True)
     assert result.manifest["status"] == "completed"

@@ -251,6 +251,7 @@ class SpecialistRunner:
         chapter: str,
         session_dir: str | Path,
         step_number: int,
+        evidence_context: str | None = None,
     ) -> list[SpecialistReview]:
         if not isinstance(action, DelegateReviewAction):
             action = DelegateReviewAction.model_validate(action)
@@ -271,6 +272,7 @@ class SpecialistRunner:
             "step_number": step_number,
             "objective": action.objective,
             "session_dir": session_dir,
+            "evidence_context": evidence_context,
         }
         worker_count = min(self.max_workers, len(roles)) if roles else 1
         results: dict[str, SpecialistReview] = {}
@@ -312,6 +314,7 @@ class SpecialistRunner:
         step_number: int,
         objective: str,
         session_dir: str | Path | None = None,
+        evidence_context: str | None = None,
     ) -> SpecialistReview:
         child_id = f"{chapter}-{step_number}-{role}"
         draft_sha256 = _sha256(translated_text)
@@ -335,6 +338,7 @@ class SpecialistRunner:
                     translated_text=translated_text,
                     glossary=glossary,
                     prior_steps=prior_steps,
+                    evidence_context=evidence_context,
                 )
                 before_calls = len(_provider_records(provider))
                 try:
@@ -518,6 +522,7 @@ class SpecialistRunner:
         translated_text: str,
         glossary: GlossaryParseResult,
         prior_steps: list[PriorObservableStep],
+        evidence_context: str | None = None,
     ) -> AgentActionRequest:
         source_paragraphs = split_paragraphs(source_text)
         translation_paragraphs = split_paragraphs(translated_text)
@@ -545,6 +550,7 @@ class SpecialistRunner:
             tool_protocol=_provider_protocol(provider),
             exposed_tool_names=_SPECIALIST_TOOL_NAMES,
             instruction_context=instruction_context,
+            evidence_context=evidence_context,
         )
 
     @staticmethod

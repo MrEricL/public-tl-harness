@@ -1,0 +1,34 @@
+slug: translation_showcase_compare
+title: Translation Harness Comparison
+language: zh
+public_safe: true
+chapter_ids:
+  - "0001"
+  - "0002"
+  - "0003"
+  - "0004"
+  - "0005"
+  - "0006"
+  - "0007"
+  - "0008"
+  - "0009"
+  - "0010"
+  - "0011"
+  - "0012"
+paths:
+  source_dir: source
+  glossary_path: terms/master_glossary.txt
+  runs_dir: runs
+translation:
+  provider: offline
+  model: showcase-compare-fixture-v1
+qa:
+  max_repairs: 3
+report:
+  mode: full
+  max_source_chars: 1800
+  max_translation_chars: 1800
+package:
+  formats:
+    - txt
+    - epub

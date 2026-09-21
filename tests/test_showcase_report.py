@@ -21,23 +21,23 @@ def _run_fixture(tmp_path: Path, *, status: str = "completed") -> tuple[Path, di
     (run_dir / "chapters/0001/children").mkdir(parents=True)
     (run_dir / "delivery").mkdir()
     (run_dir / "inputs/master_glossary.txt").write_text(
-        "校准模式 -> calibration mode\n", encoding="utf-8"
+        "青云宗 -> Azure Cloud Sect\n", encoding="utf-8"
     )
     (run_dir / "glossary.txt").write_text(
-        "校准模式 -> calibration mode\n采样周期 -> sampling cycle\n", encoding="utf-8"
+        "青云宗 -> Azure Cloud Sect\n星河步 -> Starstream Step\n", encoding="utf-8"
     )
     (run_dir / "chapters/0001/chapter_glossary.txt").write_text(
-        "校准模式 -> calibration mode\n采样周期 -> sampling cycle\n", encoding="utf-8"
+        "青云宗 -> Azure Cloud Sect\n星河步 -> Starstream Step\n", encoding="utf-8"
     )
     (run_dir / "chapters/0001/source.txt").write_text(
-        "控制器使用校准模式检查阀门。", encoding="utf-8"
+        "雨落在青云宗的石阶上。", encoding="utf-8"
     )
     (run_dir / "chapters/0001/draft.txt").write_text(
-        "The controller used calibration state。 <script>alert('{{bad}}')</script>",
+        "Night rain fell over the Blue Cloud School。 <script>alert('{{bad}}')</script>",
         encoding="utf-8",
     )
     (run_dir / "chapters/0001/translated_final.txt").write_text(
-        "The controller used calibration mode.", encoding="utf-8"
+        "Night rain fell over the Azure Cloud Sect.", encoding="utf-8"
     )
     (run_dir / "delivery/book.txt").write_text("Chapter: 0001\n", encoding="utf-8")
     (run_dir / "delivery/book.epub").write_bytes(b"fixture")
@@ -59,7 +59,7 @@ def _run_fixture(tmp_path: Path, *, status: str = "completed") -> tuple[Path, di
                 "action": {
                     "tool": "submit_patch",
                     "edits": [
-                        {"old_text": "calibration state", "new_text": "calibration mode"}
+                        {"old_text": "Blue Cloud School", "new_text": "Azure Cloud Sect"}
                     ],
                 },
                 "observation": {
@@ -79,24 +79,24 @@ def _run_fixture(tmp_path: Path, *, status: str = "completed") -> tuple[Path, di
                 "child_id": "0001-1-terminology",
                 "role": "terminology",
                 "status": "completed",
-                "summary": "Choose one stable target for the technical term.",
+                "summary": "Choose one stable target for the technique.",
                 "findings": [
                     {
                         "category": "terminology",
-                        "message": "The technical term is inconsistent in the draft.",
-                        "source_excerpt": "采样周期",
-                        "translation_excerpt": "the 采样周期",
+                        "message": "The technique term is inconsistent in the draft.",
+                        "source_excerpt": "星河步",
+                        "translation_excerpt": "the 星河步",
                         "blocking": True,
                     }
                 ],
                 "proposed_edits": [
-                    {"old_text": "采样周期", "new_text": "sampling cycle"}
+                    {"old_text": "星河步", "new_text": "Starstream Step"}
                 ],
                 "term_suggestions": [
                     {
-                        "term": "采样周期",
-                        "target": "sampling cycle",
-                        "rationale": "Keep the named technical term stable across chapters.",
+                        "term": "星河步",
+                        "target": "Starstream Step",
+                        "rationale": "Keep the named technique stable across chapters.",
                     }
                 ],
                 "steps": [{"action": {"tool": "read_paragraphs"}}],
@@ -107,13 +107,13 @@ def _run_fixture(tmp_path: Path, *, status: str = "completed") -> tuple[Path, di
                 "child_id": "0001-1-fidelity",
                 "role": "fidelity",
                 "status": "completed",
-                "summary": "The statement remains faithful after the bounded repair.",
+                "summary": "The scene remains faithful after the bounded repair.",
                 "findings": [],
                 "proposed_edits": [
-                    {"old_text": "calibration state", "new_text": "calibration mode"}
+                    {"old_text": "Blue Cloud School", "new_text": "Azure Cloud Sect"}
                 ],
                 "term_suggestions": [],
-                "overlaps": ["Both specialists touched the opening mode name."],
+                "overlaps": ["Both specialists touched the opening sect name."],
                 "steps": [{"action": {"tool": "read_paragraphs"}}],
                 "provider_calls": [],
                 "draft_sha256": "a" * 64,
@@ -121,8 +121,8 @@ def _run_fixture(tmp_path: Path, *, status: str = "completed") -> tuple[Path, di
         ],
         "pending_proposal": (
             {
-                "term": "采样周期",
-                "proposed_target": "sampling cycle",
+                "term": "星河步",
+                "proposed_target": "Starstream Step",
                 "proposal_id": "term-0001",
                 "decision": "pending",
                 "rationale": "The term will be reused by the next chapter.",
@@ -139,8 +139,8 @@ def _run_fixture(tmp_path: Path, *, status: str = "completed") -> tuple[Path, di
     manifest = {
         "schema": "translation-showcase.v1",
         "run_id": "showcase-run",
-        "title": "Synthetic <Control>",
-        "slug": "synthetic_control_demo",
+        "title": "Starstream <Crossing>",
+        "slug": "translation_showcase",
         "provider_mode": "offline",
         "execution_mode": "offline",
         "profile": {
@@ -196,7 +196,7 @@ def test_showcase_report_renders_workflow_and_child_evidence(tmp_path: Path) -> 
         "Coordinator trace",
         "Specialist evidence",
         "Choose one stable target",
-        "sampling cycle",
+        "Starstream Step",
         "Overlapping evidence",
         "Captured from the master glossary at chapter start.",
         "delivery/book.epub",
@@ -260,7 +260,7 @@ def test_showcase_report_escapes_source_and_model_text(tmp_path: Path) -> None:
     assert "{{bad}}" not in rendered
     assert "&lt;script&gt;" in rendered
     assert "&#123;&#123;bad&#125;&#125;" in rendered
-    assert "Synthetic &lt;Control&gt;" in rendered
+    assert "Starstream &lt;Crossing&gt;" in rendered
 
 
 def test_showcase_report_explains_pending_term_and_review_boundary(tmp_path: Path) -> None:
@@ -269,8 +269,8 @@ def test_showcase_report_explains_pending_term_and_review_boundary(tmp_path: Pat
     render_showcase_report(run_dir, manifest)
     rendered = (run_dir / "report.html").read_text(encoding="utf-8")
     assert "Approval boundary is still open" in rendered
-    assert "<code>采样周期</code>" in rendered
-    assert "sampling cycle" in rendered
+    assert "<code>星河步</code>" in rendered
+    assert "Starstream Step" in rendered
     assert "Current stop: Chapter 0001 is" in rendered
 
 

@@ -99,16 +99,74 @@ def _find_observed_glossary_alias(translated_text: str, entry_source: str, alias
     return None
 
 
+def _literal_occurrence_spans(text: str, needle: str) -> list[tuple[int, int]]:
+    """Return every literal occurrence, including overlapping occurrences."""
+    if not needle:
+        return []
+    spans: list[tuple[int, int]] = []
+    start = 0
+    while (match_start := text.find(needle, start)) >= 0:
+        spans.append((match_start, match_start + len(needle)))
+        start = match_start + 1
+    return spans
+
+
+def _glossary_source_spans(
+    source_text: str,
+    glossary: GlossaryParseResult,
+) -> tuple[dict[str, list[tuple[int, int]]], dict[str, list[tuple[int, int]]]]:
+    """Return literal and independently significant glossary-source spans.
+
+    A source occurrence is suppressed only when its complete span is contained
+    by an occurrence of a strictly longer glossary source. Partial overlaps and
+    separate occurrences remain independently significant.
+    """
+    sources = {entry.source for entry in glossary.entries if entry.source}
+    literal = {
+        source: _literal_occurrence_spans(source_text, source)
+        for source in sources
+    }
+    independent: dict[str, list[tuple[int, int]]] = {}
+    for source, spans in literal.items():
+        containing_spans = [
+            span
+            for other_source, other_spans in literal.items()
+            if len(other_source) > len(source)
+            for span in other_spans
+        ]
+        independent[source] = [
+            (start, end)
+            for start, end in spans
+            if not any(
+                containing_start <= start and end <= containing_end
+                for containing_start, containing_end in containing_spans
+            )
+        ]
+    return literal, independent
+
+
+def _paragraph_index_at_offset(text: str, offset: int) -> int | None:
+    search_start = 0
+    for index, paragraph in enumerate(split_paragraphs(text)):
+        paragraph_start = text.find(paragraph, search_start)
+        if paragraph_start < 0:
+            continue
+        if paragraph_start <= offset < paragraph_start + len(paragraph):
+            return index
+        search_start = paragraph_start + len(paragraph)
+    return None
+
+
 def _observed_alias_conflicts_with_present_source(
     *,
     observed_alias: str,
-    source_text: str,
+    independent_source_spans: dict[str, list[tuple[int, int]]],
     glossary: GlossaryParseResult,
     entry_source: str,
 ) -> bool:
     observed_lower = observed_alias.lower()
     for other in glossary.entries:
-        if other.source == entry_source or other.source not in source_text:
+        if other.source == entry_source or not independent_source_spans.get(other.source):
             continue
         for candidate in [other.target, *other.candidates]:
             if candidate.lower() == observed_lower:
@@ -132,7 +190,7 @@ def _alias_stems(text: str) -> set[str]:
 
 def _cross_glossary_aliases(
     *,
-    source_text: str,
+    literal_source_spans: dict[str, list[tuple[int, int]]],
     glossary: GlossaryParseResult,
     entry_source: str,
     entry_target: str,
@@ -142,7 +200,9 @@ def _cross_glossary_aliases(
         return []
     aliases: list[str] = []
     for other in glossary.entries:
-        if other.source == entry_source or other.source in source_text:
+        # Do not borrow an alias from any source text that is literally present,
+        # even when that source is suppressed because it is nested in this term.
+        if other.source == entry_source or literal_source_spans.get(other.source):
             continue
         for alias in [other.target, *other.candidates]:
             if alias.lower() == entry_target.lower():
@@ -282,6 +342,10 @@ def run_translation_qa(
             )
 
     translated_lower = translated_text.lower()
+    literal_source_spans, independent_source_spans = _glossary_source_spans(
+        source_text,
+        glossary,
+    )
     for entry in glossary.entries:
         for variant in entry.blocked_variants:
             if variant and variant.lower() in translated_lower:
@@ -299,11 +363,12 @@ def run_translation_qa(
                 )
 
     for entry in glossary.entries:
-        if entry.source in source_text and entry.target.lower() not in translated_lower:
+        entry_source_spans = independent_source_spans.get(entry.source, [])
+        if entry_source_spans and entry.target.lower() not in translated_lower:
             aliases = [candidate for candidate in entry.candidates if candidate != entry.target]
             aliases.extend(
                 _cross_glossary_aliases(
-                    source_text=source_text,
+                    literal_source_spans=literal_source_spans,
                     glossary=glossary,
                     entry_source=entry.source,
                     entry_target=entry.target,
@@ -318,12 +383,15 @@ def run_translation_qa(
                 observed_alias
                 and _observed_alias_conflicts_with_present_source(
                     observed_alias=observed_alias[0],
-                    source_text=source_text,
+                    independent_source_spans=independent_source_spans,
                     glossary=glossary,
                     entry_source=entry.source,
                 )
             )
-            source_paragraph_index = find_paragraph_index(source_text, entry.source)
+            source_paragraph_index = _paragraph_index_at_offset(
+                source_text,
+                entry_source_spans[0][0],
+            )
             found = observed_alias[0] if observed_alias else entry.source
             findings.append(
                 _finding(

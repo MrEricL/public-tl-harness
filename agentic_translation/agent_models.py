@@ -6,6 +6,7 @@ from typing import Annotated, Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from .models import GlossaryParseResult, ProviderCallRecord, QAReport
+from .semantic_models import JevPolicy, SemanticSignalReport
 from .terminology_models import TerminologyResolution
 
 
@@ -366,6 +367,21 @@ class AgentSessionIdentity(BaseModel):
         pattern=r"^[0-9a-f]{64}$",
     )
     tool_protocol: Literal["json_prompt", "native_function"]
+    # ``None`` is the historical/no-Jev identity.  Keeping the version at v1
+    # lets existing snapshots validate while still making an enabled semantic
+    # policy an explicit, resume-checked part of new session identity.
+    semantic_config_sha256: str | None = Field(
+        default=None,
+        min_length=64,
+        max_length=64,
+        pattern=r"^[0-9a-f]{64}$",
+    )
+    evidence_context_sha256: str | None = Field(
+        default=None,
+        min_length=64,
+        max_length=64,
+        pattern=r"^[0-9a-f]{64}$",
+    )
 
 
 class AgentSessionSnapshot(BaseModel):
@@ -400,3 +416,9 @@ class AgentSessionSnapshot(BaseModel):
     require_fidelity_review: bool = False
     allow_nonregressing_patches: bool = False
     max_delegation_rounds: int = Field(default=2, ge=0, le=8)
+    jev_policy: JevPolicy = Field(default_factory=JevPolicy)
+    semantic_signal_reports: list[SemanticSignalReport] = Field(
+        default_factory=list,
+        max_length=64,
+    )
+    evidence_context: str | None = Field(default=None, max_length=24_000)

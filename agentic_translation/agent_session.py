@@ -74,6 +74,17 @@ from .agent_tools import (
     ToolRegistry,
 )
 from .models import GlossaryEntry, GlossaryParseResult, ProviderCallRecord, QAReport
+from .semantic_models import JevPolicy, SemanticSignalReport, SemanticSnapshot
+from .semantic_provider import (
+    GatewayJudgmentProvider,
+    JudgmentProvider,
+    ReplayJudgmentProvider,
+    ReplayMissError,
+    semantic_config_digest,
+    semantic_snapshot_digest,
+    unavailable_report,
+)
+from .semantic_signals import QUESTION_VERSION, render_signal_report
 from .terminology import TerminologyResolver
 from .text import split_paragraphs
 
@@ -373,6 +384,8 @@ def _session_identity_candidate(
     provider_mode: str,
     tool_schema_version: str = REGISTRY_TOOL_SCHEMA_VERSION,
     registry: ToolRegistry | None = None,
+    semantic_config_sha256: str | None = None,
+    evidence_context_sha256: str | None = None,
 ) -> AgentSessionIdentity:
     provider_name, model_name = _provider_metadata(provider)
     active_registry = registry or _registry_for_version(tool_schema_version)
@@ -388,6 +401,8 @@ def _session_identity_candidate(
         source_sha256=_sha256_text(source_text),
         master_glossary_sha256=_master_glossary_sha256(master_glossary),
         registry_sha256=active_registry.contract_sha256(),
+        semantic_config_sha256=semantic_config_sha256,
+        evidence_context_sha256=evidence_context_sha256,
     )
 
 
@@ -430,6 +445,8 @@ def _initial_snapshot(
     require_fidelity_review: bool = False,
     allow_nonregressing_patches: bool = False,
     max_delegation_rounds: int = 2,
+    jev_policy: JevPolicy | None = None,
+    evidence_context: str | None = None,
 ) -> AgentSessionSnapshot:
     initial_qa = RepairToolExecutor._bounded_report(executor.current_qa)
     assert initial_qa is not None
@@ -456,7 +473,164 @@ def _initial_snapshot(
         require_fidelity_review=require_fidelity_review,
         allow_nonregressing_patches=allow_nonregressing_patches,
         max_delegation_rounds=max_delegation_rounds,
+        jev_policy=jev_policy or JevPolicy(),
+        evidence_context=evidence_context,
     )
+
+
+def canonical_semantic_glossary(glossary: GlossaryParseResult) -> str:
+    """Serialize glossary state identically for live, shared, and replay reports."""
+
+    return json.dumps(
+        glossary.model_dump(mode="json"),
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+
+
+def build_semantic_snapshot(
+    *,
+    source_text: str,
+    draft_text: str,
+    glossary: GlossaryParseResult,
+    style_guide: str = "",
+    evidence_context: str | None = None,
+) -> SemanticSnapshot:
+    """Build the exact shared Jev state from data-only inputs."""
+
+    return SemanticSnapshot(
+        source_text=source_text,
+        draft_text=draft_text,
+        glossary_text=canonical_semantic_glossary(glossary),
+        style_guide=style_guide,
+        context=evidence_context or "",
+    )
+
+
+def _semantic_style_guide(instruction_context: dict[str, Any] | None) -> str:
+    value = (instruction_context or {}).get("style_guide", "")
+    if isinstance(value, str):
+        return value
+    return json.dumps(
+        value,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+
+
+def _semantic_advisory(
+    *,
+    session_snapshot: AgentSessionSnapshot,
+    semantic_snapshot: SemanticSnapshot,
+) -> dict[str, Any] | None:
+    """Render the newest report as bounded, explicitly untrusted user data."""
+
+    policy = session_snapshot.jev_policy
+    if policy.mode != "advisory" or not session_snapshot.semantic_signal_reports:
+        return None
+    report = session_snapshot.semantic_signal_reports[-1]
+    fresh = (
+        report.is_fresh(semantic_snapshot)
+        and report.snapshot_digest == semantic_snapshot_digest(semantic_snapshot)
+    )
+    return {
+        "schema_version": "semantic-advisory.v1",
+        "trust": "untrusted_model_evidence",
+        "status": report.status if fresh else "stale",
+        "report_status": report.status,
+        "fresh": fresh,
+        "source_sha256": report.source_sha256,
+        "evaluated_draft_sha256": report.draft_sha256,
+        "current_draft_sha256": semantic_snapshot.draft_sha256,
+        "snapshot_digest": report.snapshot_digest,
+        "policy_digest": report.policy_digest,
+        "question_set": report.question_set,
+        "question_version": report.question_version,
+        "content": render_signal_report(report, max_findings=12, max_chars=6000),
+        "instruction": (
+            "Verify relevant source and draft evidence before acting. "
+            "Unavailable, partial, or stale status is not an all-clear result."
+        ),
+    }
+
+
+def _evaluate_semantics(
+    *,
+    store: SessionStore,
+    session_snapshot: AgentSessionSnapshot,
+    judgment_provider: JudgmentProvider,
+    semantic_snapshot: SemanticSnapshot,
+    reason: str,
+) -> SemanticSignalReport:
+    """Run one bounded semantic evaluation and durably record its outcome."""
+
+    policy = session_snapshot.jev_policy
+    _append_event(
+        store,
+        "semantic_evaluation_requested",
+        {
+            "reason": reason,
+            "question_set": policy.question_set,
+            "source_sha256": semantic_snapshot.source_sha256,
+            "draft_sha256": semantic_snapshot.draft_sha256,
+        },
+    )
+    try:
+        raw_report = judgment_provider.evaluate(
+            semantic_snapshot,
+            policy.question_set,
+        )
+        report = (
+            raw_report
+            if isinstance(raw_report, SemanticSignalReport)
+            else SemanticSignalReport.model_validate(raw_report)
+        )
+        if report.source_sha256 != semantic_snapshot.source_sha256:
+            raise ValueError("semantic report source hash mismatch")
+        if report.draft_sha256 != semantic_snapshot.draft_sha256:
+            raise ValueError("semantic report draft hash mismatch")
+        if report.snapshot_digest != semantic_snapshot_digest(semantic_snapshot):
+            raise ValueError("semantic report snapshot digest mismatch")
+        if report.question_set != policy.question_set:
+            raise ValueError("semantic report question-set mismatch")
+        if report.question_version != QUESTION_VERSION:
+            raise ValueError("semantic report question-version mismatch")
+        if report.policy_digest != semantic_config_digest(policy):
+            raise ValueError("semantic report policy mismatch")
+        if report.advisory_threshold != policy.advisory_threshold:
+            raise ValueError("semantic report advisory-threshold mismatch")
+    except ReplayMissError:
+        # Replay is an evidence contract, not a best-effort live run.  Missing
+        # or stale semantic receipts must never trigger network fallback or a
+        # materially different coordinator request.
+        raise
+    except Exception as exc:  # noqa: BLE001 - Jev is advisory and must fail open.
+        report = unavailable_report(
+            semantic_snapshot,
+            policy,
+            policy.question_set,
+            f"Semantic provider failed ({type(exc).__name__}).",
+            code="provider_failure",
+        )
+    session_snapshot.semantic_signal_reports.append(report)
+    session_snapshot.semantic_signal_reports = session_snapshot.semantic_signal_reports[-64:]
+    _append_event(
+        store,
+        "semantic_evaluation_recorded",
+        {
+            "reason": reason,
+            "status": report.status,
+            "question_set": report.question_set,
+            "source_sha256": report.source_sha256,
+            "draft_sha256": report.draft_sha256,
+            "request_count": len(report.requests),
+            "issue_count": len(report.issues),
+        },
+    )
+    _write_checkpoint(store, session_snapshot)
+    return report
 
 
 def _action_from_provider(value: Any) -> AgentAction:
@@ -886,6 +1060,7 @@ def _continue_v3_session(
     require_fidelity_review: bool = False,
     allow_nonregressing_patches: bool = False,
     max_delegation_rounds: int = 2,
+    judgment_provider: JudgmentProvider | None = None,
 ) -> AgentSessionResult:
     """Continue a bounded session until terminal, budget, interruption, or approval pause."""
 
@@ -928,8 +1103,18 @@ def _continue_v3_session(
 
     tool_protocol = _normalized_provider_protocol(provider)
 
+    if snapshot.jev_policy.mode != "off" and judgment_provider is None:
+        raise ValueError("An enabled Jev policy requires a judgment provider")
+
     while len(episode.steps) < episode.max_steps:
         step_number = len(episode.steps) + 1
+        current_semantic_snapshot = build_semantic_snapshot(
+            source_text=source_text,
+            draft_text=executor.current_text,
+            glossary=executor.episode_glossary,
+            style_guide=_semantic_style_guide(snapshot.instruction_context),
+            evidence_context=snapshot.evidence_context,
+        )
         request = AgentActionRequest(
             episode_id=episode.episode_id,
             step_number=step_number,
@@ -944,6 +1129,19 @@ def _continue_v3_session(
             exposed_tool_names=tuple(snapshot.exposed_tool_names),
             instruction_context=(
                 snapshot.instruction_context
+                if tool_schema_version == SHOWCASE_TOOL_SCHEMA_VERSION
+                else None
+            ),
+            semantic_advisory=(
+                _semantic_advisory(
+                    session_snapshot=snapshot,
+                    semantic_snapshot=current_semantic_snapshot,
+                )
+                if tool_schema_version == SHOWCASE_TOOL_SCHEMA_VERSION
+                else None
+            ),
+            evidence_context=(
+                snapshot.evidence_context
                 if tool_schema_version == SHOWCASE_TOOL_SCHEMA_VERSION
                 else None
             ),
@@ -1046,6 +1244,7 @@ def _continue_v3_session(
             continue
 
         _append_event(store, "tool_validated", {"step": step_number, "tool": action.tool})
+        draft_before_execution = executor.current_text
         decision = policy.before_tool(action, spec)
         _append_event(store, "policy_decided", {"step": step_number, "tool": action.tool, "decision": decision})
         if decision.outcome == "reject" or decision.outcome == "abort":
@@ -1107,6 +1306,7 @@ def _continue_v3_session(
                             chapter=episode.chapter,
                             session_dir=store.session_dir,
                             step_number=step_number,
+                            evidence_context=snapshot.evidence_context,
                         )
                         reviews = _coerce_specialist_reviews(
                             raw_reviews,
@@ -1276,6 +1476,26 @@ def _continue_v3_session(
         if isinstance(action, (SubmitPatchAction, NormalizePunctuationAction)):
             snapshot.patch_attempts += 1
         snapshot.executor = executor.snapshot()
+        if (
+            snapshot.jev_policy.mode != "off"
+            and snapshot.jev_policy.schedule == "after_edit"
+            and executor.current_text != draft_before_execution
+        ):
+            assert judgment_provider is not None
+            refreshed_snapshot = build_semantic_snapshot(
+                source_text=source_text,
+                draft_text=executor.current_text,
+                glossary=executor.episode_glossary,
+                style_guide=_semantic_style_guide(snapshot.instruction_context),
+                evidence_context=snapshot.evidence_context,
+            )
+            _evaluate_semantics(
+                store=store,
+                session_snapshot=snapshot,
+                judgment_provider=judgment_provider,
+                semantic_snapshot=refreshed_snapshot,
+                reason="after_edit",
+            )
         if bounded_observation.kind == "finished" and bounded_observation.ok:
             _mark_terminal(snapshot, session_status="completed", final_status="verified", summary=bounded_observation.message)
         elif bounded_observation.kind == "escalated" and bounded_observation.ok:
@@ -1324,6 +1544,9 @@ def run_repair_session(
     require_fidelity_review: bool = False,
     allow_nonregressing_patches: bool = False,
     max_delegation_rounds: int = 2,
+    jev_policy: JevPolicy | None = None,
+    judgment_provider: JudgmentProvider | None = None,
+    evidence_context: str | None = None,
 ) -> AgentSessionResult:
     """Run a durable session with registry/policy enforcement."""
 
@@ -1339,6 +1562,16 @@ def run_repair_session(
         raise ValueError(
             "allow_nonregressing_patches requires require_fidelity_review=True"
         )
+    effective_jev_policy = jev_policy or JevPolicy()
+    if (
+        effective_jev_policy.mode == "advisory"
+        and tool_schema_version != SHOWCASE_TOOL_SCHEMA_VERSION
+    ):
+        raise ValueError("Jev advisory mode is supported only for showcase sessions")
+    if evidence_context is not None and len(evidence_context) > 24_000:
+        raise ValueError("evidence_context exceeds 24000 characters")
+    if evidence_context is not None and tool_schema_version != SHOWCASE_TOOL_SCHEMA_VERSION:
+        raise ValueError("evidence_context is supported only for showcase sessions")
     registry = _registry_for_version(tool_schema_version)
     if tool_schema_version != SHOWCASE_TOOL_SCHEMA_VERSION:
         # Showcase instructions and specialist policy are deliberately opt-in.
@@ -1360,6 +1593,18 @@ def run_repair_session(
         raise FileExistsError(
             f"Session artifacts already exist in {store.session_dir} ({names}); "
             "use resume_repair_session to continue or choose a new directory."
+        )
+    if effective_jev_policy.mode != "off" and judgment_provider is None:
+        judgment_provider = (
+            ReplayJudgmentProvider(
+                store.session_dir / "jev_records",
+                policy=effective_jev_policy,
+            )
+            if provider_mode == "replay"
+            else GatewayJudgmentProvider(
+                effective_jev_policy,
+                record_dir=store.session_dir / "jev_records",
+            )
         )
     executor = RepairToolExecutor(
         source_text=source_text,
@@ -1383,6 +1628,14 @@ def run_repair_session(
         provider_mode=provider_mode,
         tool_schema_version=tool_schema_version,
         registry=registry,
+        semantic_config_sha256=(
+            semantic_config_digest(effective_jev_policy)
+            if effective_jev_policy.mode != "off"
+            else None
+        ),
+        evidence_context_sha256=(
+            _sha256_text(evidence_context) if evidence_context is not None else None
+        ),
     )
     if not dynamic_tools:
         exposed = list(registry.visible_specs())
@@ -1410,10 +1663,28 @@ def run_repair_session(
         require_fidelity_review=require_fidelity_review,
         allow_nonregressing_patches=allow_nonregressing_patches,
         max_delegation_rounds=max_delegation_rounds,
+        jev_policy=effective_jev_policy,
+        evidence_context=evidence_context,
     )
     _append_event(store, "run_started", {"run_id": run_id, "episode_id": snapshot.episode.episode_id})
     _append_event(store, "tools_exposed", {"dynamic_tools": dynamic_tools, "tool_names": snapshot.exposed_tool_names})
     _write_checkpoint(store, snapshot)
+    if effective_jev_policy.mode != "off":
+        assert judgment_provider is not None
+        initial_semantic_snapshot = build_semantic_snapshot(
+            source_text=source_text,
+            draft_text=translated_text,
+            glossary=master,
+            style_guide=_semantic_style_guide(instruction_context),
+            evidence_context=evidence_context,
+        )
+        _evaluate_semantics(
+            store=store,
+            session_snapshot=snapshot,
+            judgment_provider=judgment_provider,
+            semantic_snapshot=initial_semantic_snapshot,
+            reason="initial",
+        )
     return _continue_v3_session(
         store=store,
         snapshot=snapshot,
@@ -1432,6 +1703,7 @@ def run_repair_session(
         require_fidelity_review=require_fidelity_review,
         allow_nonregressing_patches=allow_nonregressing_patches,
         max_delegation_rounds=max_delegation_rounds,
+        judgment_provider=judgment_provider,
     )
 
 
@@ -1459,6 +1731,9 @@ def resume_repair_session(
     require_fidelity_review: bool | None = None,
     allow_nonregressing_patches: bool | None = None,
     max_delegation_rounds: int | None = None,
+    jev_policy: JevPolicy | None = None,
+    judgment_provider: JudgmentProvider | None = None,
+    evidence_context: str | None = None,
 ) -> AgentSessionResult:
     """Continue a session, applying a decision when approval is pending."""
 
@@ -1467,6 +1742,19 @@ def resume_repair_session(
     if snapshot is None:
         raise FileNotFoundError(f"No session snapshot found in {store.session_dir}")
     master = _master_glossary(glossary, master_glossary)
+    effective_jev_policy = snapshot.jev_policy if jev_policy is None else jev_policy
+    if jev_policy is not None and jev_policy != snapshot.jev_policy:
+        raise SessionIdentityMismatchError("Session Jev policy mismatch")
+    effective_evidence_context = (
+        snapshot.evidence_context if evidence_context is None else evidence_context
+    )
+    if (
+        evidence_context is not None
+        and evidence_context != snapshot.evidence_context
+    ):
+        raise SessionIdentityMismatchError("Session evidence context mismatch")
+    if effective_evidence_context is not None and len(effective_evidence_context) > 24_000:
+        raise ValueError("evidence_context exceeds 24000 characters")
     effective_run_id = snapshot.episode.run_id if run_id is None else run_id
     effective_story_slug = snapshot.episode.story_slug if story_slug is None else story_slug
     effective_chapter = snapshot.episode.chapter if chapter is None else chapter
@@ -1480,6 +1768,16 @@ def resume_repair_session(
         REGISTRY_TOOL_SCHEMA_VERSION if tool_schema_version is None else tool_schema_version
     )
     registry = _registry_for_version(effective_tool_schema_version)
+    if (
+        effective_jev_policy.mode == "advisory"
+        and effective_tool_schema_version != SHOWCASE_TOOL_SCHEMA_VERSION
+    ):
+        raise ValueError("Jev advisory mode is supported only for showcase sessions")
+    if (
+        effective_evidence_context is not None
+        and effective_tool_schema_version != SHOWCASE_TOOL_SCHEMA_VERSION
+    ):
+        raise ValueError("evidence_context is supported only for showcase sessions")
     candidate = _session_identity_candidate(
         provider=provider,
         source_text=source_text,
@@ -1490,6 +1788,16 @@ def resume_repair_session(
         provider_mode=effective_provider_mode,
         tool_schema_version=effective_tool_schema_version,
         registry=registry,
+        semantic_config_sha256=(
+            semantic_config_digest(effective_jev_policy)
+            if effective_jev_policy.mode != "off"
+            else None
+        ),
+        evidence_context_sha256=(
+            _sha256_text(effective_evidence_context)
+            if effective_evidence_context is not None
+            else None
+        ),
     )
     _validate_session_identity(snapshot, candidate)
     if effective_tool_schema_version == SHOWCASE_TOOL_SCHEMA_VERSION:
@@ -1541,9 +1849,44 @@ def resume_repair_session(
         if canonical_glossary_path is not None
         else None
     )
+    if (
+        effective_jev_policy.mode != "off"
+        and judgment_provider is None
+        and snapshot.status in {"running", "awaiting_approval"}
+    ):
+        judgment_provider = (
+            ReplayJudgmentProvider(
+                store.session_dir / "jev_records",
+                policy=effective_jev_policy,
+            )
+            if effective_provider_mode == "replay"
+            else GatewayJudgmentProvider(
+                effective_jev_policy,
+                record_dir=store.session_dir / "jev_records",
+            )
+        )
     # Terminal sessions are deliberately idempotent: no event, provider call,
     # or filesystem write is performed for a repeated decision.
     if snapshot.status == "running" and decision is None:
+        if (
+            effective_jev_policy.mode != "off"
+            and not snapshot.semantic_signal_reports
+        ):
+            assert judgment_provider is not None
+            initial_semantic_snapshot = build_semantic_snapshot(
+                source_text=source_text,
+                draft_text=snapshot.executor.current_text,
+                glossary=snapshot.executor.episode_glossary,
+                style_guide=_semantic_style_guide(effective_instruction_context),
+                evidence_context=effective_evidence_context,
+            )
+            _evaluate_semantics(
+                store=store,
+                session_snapshot=snapshot,
+                judgment_provider=judgment_provider,
+                semantic_snapshot=initial_semantic_snapshot,
+                reason="resume_missing_initial",
+            )
         return _continue_v3_session(
             store=store,
             snapshot=snapshot,
@@ -1562,6 +1905,7 @@ def resume_repair_session(
             require_fidelity_review=effective_require_fidelity_review,
             allow_nonregressing_patches=effective_allow_nonregressing_patches,
             max_delegation_rounds=effective_max_delegation_rounds,
+            judgment_provider=judgment_provider,
         )
     if snapshot.status != "awaiting_approval":
         return _session_result(store, snapshot, canonical_glossary_path=canonical_path)
@@ -1689,6 +2033,7 @@ def resume_repair_session(
         require_fidelity_review=effective_require_fidelity_review,
         allow_nonregressing_patches=effective_allow_nonregressing_patches,
         max_delegation_rounds=effective_max_delegation_rounds,
+        judgment_provider=judgment_provider,
     )
     return result
 
@@ -1705,6 +2050,8 @@ __all__ = [
     "SessionIdentityMismatchError",
     "AgentSessionResult",
     "ReviewHandler",
+    "build_semantic_snapshot",
+    "canonical_semantic_glossary",
     "run_repair_session",
     "resume_repair_session",
 ]

@@ -1,0 +1,1493 @@
+{
+  "translations": {
+    "0001": "Chapter 1: Rain Gate\n\nAfter the rain stopped, Lin Zhou opened the city gate，and the guard lit a lamp。 He signaled Lin Zhou to follow the riverbank。",
+    "0002": "Chapter 2: Three Bells\n\nThe bell rang past midnight，and Bailu folded the map！ She looked back once，then handed the key to the boatman？",
+    "0003": "Chapter 3: Old Tower\n\nWind crossed the old tower；it blew out the last candle。 Gu Yao walked down the stone steps in darkness，“hearing the latch fall”。",
+    "0004": "Chapter 4: Under the Bridge\n\nThey found a wooden box beneath the bridge、Inside it held no treasure（only a note dated for that day）。",
+    "0005": "Chapter 5: The Mountain Pass\n\nA disciple of the Blue Cloud School waited at the pass for a messenger from Mirror Lake Town. The messenger carried a bronze badge carved with the Tidal Mirror pattern.",
+    "0006": "Chapter 6: Seven Lights\n\nThe 星河步 required seven steps through starlight, and the third step had to stop in the middle of the stone bridge. Shen Yan practiced once before leading his companion across.",
+    "0007": "Chapter 7: The Last Lantern\n\nEvery lantern in Mirror Lake Village went dark at midnight; only the old tower on the north shore still shone.",
+    "0008": "Chapter 8: The Hidden Road\n\nThe Tidal Reflection showed the gate's reflection. When it cracked, the hidden road appeared.",
+    "0009": "Chapter 9: The North Gate\n\nBailu gave the key to the boatman, who opened the north gate. The road behind it led to the lighthouse.",
+    "0010": "Chapter 10: Three Bells\n\nWhen the rope touched the stone platform, the three bells rang from the bottom of the well. Shen Yan lowered the rope afterward.",
+    "0011": "Chapter 11: The Altar\n\nGu Yao took the jewel from the altar. The stone door slowly opened, revealing stairs to the sea.",
+    "0012": "Chapter 12: Northward\n\nBailu burned the map so the pursuers could find the village. She remembered the river's direction and set out north alone."
+  },
+  "actions": {
+    "0001": [
+      {
+        "tool": "tools.search",
+        "query": "patch normalize punctuation glossary review",
+        "limit": 16
+      },
+      {
+        "tool": "delegate_review",
+        "specialists": [
+          "terminology",
+          "fidelity"
+        ],
+        "objective": "Check the short chapter for terminology and source fidelity before cleanup."
+      },
+      {
+        "tool": "normalize_punctuation"
+      },
+      {
+        "tool": "finish",
+        "summary": "Surface punctuation checks are clean."
+      }
+    ],
+    "0002": [
+      {
+        "tool": "tools.search",
+        "query": "patch normalize punctuation glossary review",
+        "limit": 16
+      },
+      {
+        "tool": "delegate_review",
+        "specialists": [
+          "terminology",
+          "fidelity"
+        ],
+        "objective": "Check the short chapter for terminology and source fidelity before cleanup."
+      },
+      {
+        "tool": "normalize_punctuation"
+      },
+      {
+        "tool": "finish",
+        "summary": "Surface punctuation checks are clean."
+      }
+    ],
+    "0003": [
+      {
+        "tool": "tools.search",
+        "query": "patch normalize punctuation glossary review",
+        "limit": 16
+      },
+      {
+        "tool": "delegate_review",
+        "specialists": [
+          "terminology",
+          "fidelity"
+        ],
+        "objective": "Check the short chapter for terminology and source fidelity before cleanup."
+      },
+      {
+        "tool": "normalize_punctuation"
+      },
+      {
+        "tool": "finish",
+        "summary": "Surface punctuation checks are clean."
+      }
+    ],
+    "0004": [
+      {
+        "tool": "tools.search",
+        "query": "patch normalize punctuation glossary review",
+        "limit": 16
+      },
+      {
+        "tool": "delegate_review",
+        "specialists": [
+          "terminology",
+          "fidelity"
+        ],
+        "objective": "Check the short chapter for terminology and source fidelity before cleanup."
+      },
+      {
+        "tool": "normalize_punctuation"
+      },
+      {
+        "tool": "finish",
+        "summary": "Surface punctuation checks are clean."
+      }
+    ],
+    "0005": [
+      {
+        "tool": "tools.search",
+        "query": "patch normalize punctuation glossary review",
+        "limit": 16
+      },
+      {
+        "tool": "delegate_review",
+        "specialists": [
+          "terminology",
+          "fidelity"
+        ],
+        "objective": "Find glossary variants and return exact bounded terminology edits."
+      },
+      {
+        "tool": "select_term",
+        "term": "青云宗",
+        "target": "Azure Cloud Sect",
+        "rationale": "Use the canonical sect name from the terminology review."
+      },
+      {
+        "tool": "submit_patch",
+        "edits": [
+          {
+            "old_text": "Blue Cloud School",
+            "new_text": "Azure Cloud Sect"
+          }
+        ],
+        "rationale": "Replace the blocked sect variant with the canonical glossary target."
+      },
+      {
+        "tool": "finish",
+        "summary": "The sect name follows the glossary and surface checks are clean."
+      }
+    ],
+    "0006": [
+      {
+        "tool": "tools.search",
+        "query": "patch normalize punctuation glossary review",
+        "limit": 16
+      },
+      {
+        "tool": "delegate_review",
+        "specialists": [
+          "terminology",
+          "fidelity"
+        ],
+        "objective": "Find the untranslated technique name and return an exact bounded terminology edit."
+      },
+      {
+        "tool": "select_term",
+        "term": "星河步",
+        "target": "Starstream Step",
+        "rationale": "Use the canonical technique name from the terminology review."
+      },
+      {
+        "tool": "submit_patch",
+        "edits": [
+          {
+            "old_text": "星河步",
+            "new_text": "Starstream Step"
+          }
+        ],
+        "rationale": "Replace the residual source term with the selected glossary target."
+      },
+      {
+        "tool": "finish",
+        "summary": "The technique name follows the glossary and surface checks are clean."
+      }
+    ],
+    "0007": [
+      {
+        "tool": "tools.search",
+        "query": "patch normalize punctuation glossary review",
+        "limit": 16
+      },
+      {
+        "tool": "delegate_review",
+        "specialists": [
+          "terminology",
+          "fidelity"
+        ],
+        "objective": "Find the blocked place-name variant and return an exact bounded terminology edit."
+      },
+      {
+        "tool": "select_term",
+        "term": "镜湖镇",
+        "target": "Mirror Lake Town",
+        "rationale": "Use the canonical place name from the terminology review."
+      },
+      {
+        "tool": "submit_patch",
+        "edits": [
+          {
+            "old_text": "Mirror Lake Village",
+            "new_text": "Mirror Lake Town"
+          }
+        ],
+        "rationale": "Replace the blocked place-name variant with the selected glossary target."
+      },
+      {
+        "tool": "finish",
+        "summary": "The place name follows the glossary and surface checks are clean."
+      }
+    ],
+    "0008": [
+      {
+        "tool": "tools.search",
+        "query": "patch normalize punctuation glossary review",
+        "limit": 16
+      },
+      {
+        "tool": "delegate_review",
+        "specialists": [
+          "terminology",
+          "fidelity"
+        ],
+        "objective": "Find the blocked artifact name and return an exact bounded terminology edit."
+      },
+      {
+        "tool": "select_term",
+        "term": "潮汐镜",
+        "target": "Tidal Mirror",
+        "rationale": "Use the canonical artifact name from the terminology review."
+      },
+      {
+        "tool": "submit_patch",
+        "edits": [
+          {
+            "old_text": "Tidal Reflection",
+            "new_text": "Tidal Mirror"
+          }
+        ],
+        "rationale": "Replace the blocked artifact variant with the selected glossary target."
+      },
+      {
+        "tool": "finish",
+        "summary": "The artifact name follows the glossary and surface checks are clean."
+      }
+    ],
+    "0009": [
+      {
+        "tool": "tools.search",
+        "query": "patch normalize punctuation glossary review",
+        "limit": 16
+      },
+      {
+        "tool": "delegate_review",
+        "specialists": [
+          "fidelity"
+        ],
+        "objective": "Check the order of actors and the cause of the gate opening against the source."
+      },
+      {
+        "tool": "finish",
+        "summary": "Return the draft for a fidelity decision if a meaning risk remains."
+      }
+    ],
+    "0010": [
+      {
+        "tool": "tools.search",
+        "query": "patch normalize punctuation glossary review",
+        "limit": 16
+      },
+      {
+        "tool": "delegate_review",
+        "specialists": [
+          "fidelity"
+        ],
+        "objective": "Check the timing of the bells and rope against the source."
+      },
+      {
+        "tool": "finish",
+        "summary": "Return the draft for a fidelity decision if a meaning risk remains."
+      }
+    ],
+    "0011": [
+      {
+        "tool": "tools.search",
+        "query": "patch normalize punctuation glossary review",
+        "limit": 16
+      },
+      {
+        "tool": "delegate_review",
+        "specialists": [
+          "fidelity"
+        ],
+        "objective": "Check whether the jewel is taken or left on the altar."
+      },
+      {
+        "tool": "finish",
+        "summary": "Return the draft for a fidelity decision if a meaning risk remains."
+      }
+    ],
+    "0012": [
+      {
+        "tool": "tools.search",
+        "query": "patch normalize punctuation glossary review",
+        "limit": 16
+      },
+      {
+        "tool": "delegate_review",
+        "specialists": [
+          "fidelity"
+        ],
+        "objective": "Check the purpose of burning the map against the source."
+      },
+      {
+        "tool": "finish",
+        "summary": "Return the draft for a fidelity decision if a meaning risk remains."
+      }
+    ]
+  },
+  "reviews": {
+    "0001": {
+      "2": {
+        "terminology": [
+          {
+            "tool": "read_paragraphs",
+            "document": "source",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "read_paragraphs",
+            "document": "translation",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "complete_review",
+            "summary": "No named terminology needs a change.",
+            "findings": [],
+            "proposed_edits": [],
+            "term_suggestions": []
+          }
+        ],
+        "fidelity": [
+          {
+            "tool": "read_paragraphs",
+            "document": "source",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "read_paragraphs",
+            "document": "translation",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "complete_review",
+            "summary": "The two actions remain in the source order.",
+            "findings": [],
+            "proposed_edits": [],
+            "term_suggestions": []
+          }
+        ]
+      }
+    },
+    "0002": {
+      "2": {
+        "terminology": [
+          {
+            "tool": "read_paragraphs",
+            "document": "source",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "read_paragraphs",
+            "document": "translation",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "complete_review",
+            "summary": "No named terminology needs a change.",
+            "findings": [],
+            "proposed_edits": [],
+            "term_suggestions": []
+          }
+        ],
+        "fidelity": [
+          {
+            "tool": "read_paragraphs",
+            "document": "source",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "read_paragraphs",
+            "document": "translation",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "complete_review",
+            "summary": "The two actions remain in the source order.",
+            "findings": [],
+            "proposed_edits": [],
+            "term_suggestions": []
+          }
+        ]
+      }
+    },
+    "0003": {
+      "2": {
+        "terminology": [
+          {
+            "tool": "read_paragraphs",
+            "document": "source",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "read_paragraphs",
+            "document": "translation",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "complete_review",
+            "summary": "No named terminology needs a change.",
+            "findings": [],
+            "proposed_edits": [],
+            "term_suggestions": []
+          }
+        ],
+        "fidelity": [
+          {
+            "tool": "read_paragraphs",
+            "document": "source",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "read_paragraphs",
+            "document": "translation",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "complete_review",
+            "summary": "The two actions remain in the source order.",
+            "findings": [],
+            "proposed_edits": [],
+            "term_suggestions": []
+          }
+        ]
+      }
+    },
+    "0004": {
+      "2": {
+        "terminology": [
+          {
+            "tool": "read_paragraphs",
+            "document": "source",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "read_paragraphs",
+            "document": "translation",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "complete_review",
+            "summary": "No named terminology needs a change.",
+            "findings": [],
+            "proposed_edits": [],
+            "term_suggestions": []
+          }
+        ],
+        "fidelity": [
+          {
+            "tool": "read_paragraphs",
+            "document": "source",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "read_paragraphs",
+            "document": "translation",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "complete_review",
+            "summary": "The two actions remain in the source order.",
+            "findings": [],
+            "proposed_edits": [],
+            "term_suggestions": []
+          }
+        ]
+      }
+    },
+    "0005": {
+      "2": {
+        "terminology": [
+          {
+            "tool": "read_paragraphs",
+            "document": "source",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "read_paragraphs",
+            "document": "translation",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "complete_review",
+            "summary": "The sect name must use one stable English target.",
+            "findings": [
+              {
+                "category": "terminology",
+                "message": "青云宗 is represented by the blocked Blue Cloud School variant.",
+                "source_excerpt": "青云宗的门人守在山口",
+                "translation_excerpt": "A disciple of the Blue Cloud School waited at the pass",
+                "blocking": true
+              }
+            ],
+            "proposed_edits": [
+              {
+                "old_text": "Blue Cloud School",
+                "new_text": "Azure Cloud Sect"
+              }
+            ],
+            "term_suggestions": [
+              {
+                "term": "青云宗",
+                "target": "Azure Cloud Sect",
+                "rationale": "Use the canonical sect target."
+              }
+            ]
+          }
+        ],
+        "fidelity": [
+          {
+            "tool": "read_paragraphs",
+            "document": "source",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "read_paragraphs",
+            "document": "translation",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "complete_review",
+            "summary": "The messenger and badge remain in source order.",
+            "findings": [],
+            "proposed_edits": [],
+            "term_suggestions": []
+          }
+        ]
+      }
+    },
+    "0006": {
+      "2": {
+        "terminology": [
+          {
+            "tool": "read_paragraphs",
+            "document": "source",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "read_paragraphs",
+            "document": "translation",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "complete_review",
+            "summary": "The technique name is left in Chinese and needs a stable target.",
+            "findings": [
+              {
+                "category": "terminology",
+                "message": "星河步 remains untranslated in the draft.",
+                "source_excerpt": "星河步要求踏着七道星光前进",
+                "translation_excerpt": "The 星河步 required seven steps through starlight",
+                "blocking": true
+              }
+            ],
+            "proposed_edits": [
+              {
+                "old_text": "星河步",
+                "new_text": "Starstream Step"
+              }
+            ],
+            "term_suggestions": [
+              {
+                "term": "星河步",
+                "target": "Starstream Step",
+                "rationale": "Use the canonical technique target."
+              }
+            ]
+          }
+        ],
+        "fidelity": [
+          {
+            "tool": "read_paragraphs",
+            "document": "source",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "read_paragraphs",
+            "document": "translation",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "complete_review",
+            "summary": "The seven lights and bridge action remain in order.",
+            "findings": [],
+            "proposed_edits": [],
+            "term_suggestions": []
+          }
+        ]
+      }
+    },
+    "0007": {
+      "2": {
+        "terminology": [
+          {
+            "tool": "read_paragraphs",
+            "document": "source",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "read_paragraphs",
+            "document": "translation",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "complete_review",
+            "summary": "The place name uses a blocked variant and needs the canonical target.",
+            "findings": [
+              {
+                "category": "terminology",
+                "message": "镜湖镇 is represented by the blocked Mirror Lake Village variant.",
+                "source_excerpt": "镜湖镇的灯火在子夜同时熄灭",
+                "translation_excerpt": "Every lantern in Mirror Lake Village went dark at midnight",
+                "blocking": true
+              }
+            ],
+            "proposed_edits": [
+              {
+                "old_text": "Mirror Lake Village",
+                "new_text": "Mirror Lake Town"
+              }
+            ],
+            "term_suggestions": [
+              {
+                "term": "镜湖镇",
+                "target": "Mirror Lake Town",
+                "rationale": "Use the canonical place-name target."
+              }
+            ]
+          }
+        ],
+        "fidelity": [
+          {
+            "tool": "read_paragraphs",
+            "document": "source",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "read_paragraphs",
+            "document": "translation",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "complete_review",
+            "summary": "The lantern timing and tower location remain intact.",
+            "findings": [],
+            "proposed_edits": [],
+            "term_suggestions": []
+          }
+        ]
+      }
+    },
+    "0008": {
+      "2": {
+        "terminology": [
+          {
+            "tool": "read_paragraphs",
+            "document": "source",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "read_paragraphs",
+            "document": "translation",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "complete_review",
+            "summary": "The artifact name uses a blocked variant and needs the canonical target.",
+            "findings": [
+              {
+                "category": "terminology",
+                "message": "潮汐镜 is represented by the blocked Tidal Reflection variant.",
+                "source_excerpt": "潮汐镜映出山门的倒影",
+                "translation_excerpt": "The Tidal Reflection showed the gate's reflection",
+                "blocking": true
+              }
+            ],
+            "proposed_edits": [
+              {
+                "old_text": "Tidal Reflection",
+                "new_text": "Tidal Mirror"
+              }
+            ],
+            "term_suggestions": [
+              {
+                "term": "潮汐镜",
+                "target": "Tidal Mirror",
+                "rationale": "Use the canonical artifact target."
+              }
+            ]
+          }
+        ],
+        "fidelity": [
+          {
+            "tool": "read_paragraphs",
+            "document": "source",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "read_paragraphs",
+            "document": "translation",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "complete_review",
+            "summary": "The reflection and road sequence remain intact.",
+            "findings": [],
+            "proposed_edits": [],
+            "term_suggestions": []
+          }
+        ]
+      }
+    },
+    "0009": {
+      "2": {
+        "fidelity": [
+          {
+            "tool": "read_paragraphs",
+            "document": "source",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "read_paragraphs",
+            "document": "translation",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "complete_review",
+            "summary": "The actor order is reversed: the boatman gives the key to Bailu, then Bailu opens the gate.",
+            "findings": [
+              {
+                "category": "fidelity",
+                "message": "The draft reverses who receives the key and opens the north gate.",
+                "source_excerpt": "船夫把钥匙交给白鹭，白鹭才打开北门",
+                "translation_excerpt": "Bailu gave the key to the boatman, who opened the north gate",
+                "blocking": true
+              }
+            ],
+            "proposed_edits": [],
+            "term_suggestions": []
+          }
+        ]
+      }
+    },
+    "0010": {
+      "2": {
+        "fidelity": [
+          {
+            "tool": "read_paragraphs",
+            "document": "source",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "read_paragraphs",
+            "document": "translation",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "complete_review",
+            "summary": "The draft reverses the timing of the rope and the bells.",
+            "findings": [
+              {
+                "category": "fidelity",
+                "message": "The bells ring before the rope reaches the platform, but the draft puts the bell event first.",
+                "source_excerpt": "听见井底传来三声铃响，便把绳子放下",
+                "translation_excerpt": "When the rope touched the stone platform, the three bells rang",
+                "blocking": true
+              }
+            ],
+            "proposed_edits": [],
+            "term_suggestions": []
+          }
+        ]
+      }
+    },
+    "0011": {
+      "2": {
+        "fidelity": [
+          {
+            "tool": "read_paragraphs",
+            "document": "source",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "read_paragraphs",
+            "document": "translation",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "complete_review",
+            "summary": "The draft changes leaving the jewel into taking it.",
+            "findings": [
+              {
+                "category": "fidelity",
+                "message": "The source leaves the jewel on the altar, while the draft says Gu Yao takes it.",
+                "source_excerpt": "顾遥没有取走宝石，而是把它留在祭坛上",
+                "translation_excerpt": "Gu Yao took the jewel from the altar",
+                "blocking": true
+              }
+            ],
+            "proposed_edits": [],
+            "term_suggestions": []
+          }
+        ]
+      }
+    },
+    "0012": {
+      "2": {
+        "fidelity": [
+          {
+            "tool": "read_paragraphs",
+            "document": "source",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "read_paragraphs",
+            "document": "translation",
+            "start": 0,
+            "count": 3
+          },
+          {
+            "tool": "complete_review",
+            "summary": "The draft reverses why Bailu burns the map.",
+            "findings": [
+              {
+                "category": "fidelity",
+                "message": "The map is burned to keep pursuers from finding the village, not to help them find it.",
+                "source_excerpt": "把地图烧掉，免得追兵找到村子",
+                "translation_excerpt": "Bailu burned the map so the pursuers could find the village",
+                "blocking": true
+              }
+            ],
+            "proposed_edits": [],
+            "term_suggestions": []
+          }
+        ]
+      }
+    }
+  },
+  "strategies": {
+    "deterministic": {
+      "actions": {
+        "0001": [
+          {
+            "tool": "normalize_punctuation"
+          },
+          {
+            "tool": "finish",
+            "summary": "Surface punctuation checks are clean."
+          }
+        ],
+        "0002": [
+          {
+            "tool": "normalize_punctuation"
+          },
+          {
+            "tool": "finish",
+            "summary": "Surface punctuation checks are clean."
+          }
+        ],
+        "0003": [
+          {
+            "tool": "normalize_punctuation"
+          },
+          {
+            "tool": "finish",
+            "summary": "Surface punctuation checks are clean."
+          }
+        ],
+        "0004": [
+          {
+            "tool": "normalize_punctuation"
+          },
+          {
+            "tool": "finish",
+            "summary": "Surface punctuation checks are clean."
+          }
+        ],
+        "0005": [],
+        "0006": [],
+        "0007": [],
+        "0008": [],
+        "0009": [],
+        "0010": [],
+        "0011": [],
+        "0012": []
+      },
+      "reviews": {}
+    },
+    "single": {
+      "actions": {
+        "0001": [
+          {
+            "tool": "tools.search",
+            "query": "patch normalize punctuation glossary review",
+            "limit": 16
+          },
+          {
+            "tool": "normalize_punctuation"
+          },
+          {
+            "tool": "finish",
+            "summary": "Surface punctuation checks are clean."
+          }
+        ],
+        "0002": [
+          {
+            "tool": "tools.search",
+            "query": "patch normalize punctuation glossary review",
+            "limit": 16
+          },
+          {
+            "tool": "normalize_punctuation"
+          },
+          {
+            "tool": "finish",
+            "summary": "Surface punctuation checks are clean."
+          }
+        ],
+        "0003": [
+          {
+            "tool": "tools.search",
+            "query": "patch normalize punctuation glossary review",
+            "limit": 16
+          },
+          {
+            "tool": "normalize_punctuation"
+          },
+          {
+            "tool": "finish",
+            "summary": "Surface punctuation checks are clean."
+          }
+        ],
+        "0004": [
+          {
+            "tool": "tools.search",
+            "query": "patch normalize punctuation glossary review",
+            "limit": 16
+          },
+          {
+            "tool": "normalize_punctuation"
+          },
+          {
+            "tool": "finish",
+            "summary": "Surface punctuation checks are clean."
+          }
+        ],
+        "0005": [
+          {
+            "tool": "tools.search",
+            "query": "patch normalize punctuation glossary review",
+            "limit": 16
+          },
+          {
+            "tool": "submit_patch",
+            "edits": [
+              {
+                "old_text": "Blue Cloud School",
+                "new_text": "Azure Cloud Sect"
+              }
+            ],
+            "rationale": "Replace the blocked sect variant with the canonical glossary target."
+          },
+          {
+            "tool": "finish",
+            "summary": "The sect name follows the glossary and surface checks are clean."
+          }
+        ],
+        "0006": [
+          {
+            "tool": "tools.search",
+            "query": "patch normalize punctuation glossary review",
+            "limit": 16
+          },
+          {
+            "tool": "submit_patch",
+            "edits": [
+              {
+                "old_text": "星河步",
+                "new_text": "Starstream Step"
+              }
+            ],
+            "rationale": "Replace the residual source term with the selected glossary target."
+          },
+          {
+            "tool": "finish",
+            "summary": "The technique name follows the glossary and surface checks are clean."
+          }
+        ],
+        "0007": [
+          {
+            "tool": "tools.search",
+            "query": "patch normalize punctuation glossary review",
+            "limit": 16
+          },
+          {
+            "tool": "submit_patch",
+            "edits": [
+              {
+                "old_text": "Mirror Lake Village",
+                "new_text": "Mirror Lake Town"
+              }
+            ],
+            "rationale": "Replace the blocked place-name variant with the selected glossary target."
+          },
+          {
+            "tool": "finish",
+            "summary": "The place name follows the glossary and surface checks are clean."
+          }
+        ],
+        "0008": [
+          {
+            "tool": "tools.search",
+            "query": "patch normalize punctuation glossary review",
+            "limit": 16
+          },
+          {
+            "tool": "submit_patch",
+            "edits": [
+              {
+                "old_text": "Tidal Reflection",
+                "new_text": "Tidal Mirror"
+              }
+            ],
+            "rationale": "Replace the blocked artifact variant with the selected glossary target."
+          },
+          {
+            "tool": "finish",
+            "summary": "The artifact name follows the glossary and surface checks are clean."
+          }
+        ],
+        "0009": [
+          {
+            "tool": "finish",
+            "summary": "Return the draft for a fidelity decision if a meaning risk remains."
+          }
+        ],
+        "0010": [
+          {
+            "tool": "finish",
+            "summary": "Return the draft for a fidelity decision if a meaning risk remains."
+          }
+        ],
+        "0011": [
+          {
+            "tool": "finish",
+            "summary": "Return the draft for a fidelity decision if a meaning risk remains."
+          }
+        ],
+        "0012": [
+          {
+            "tool": "finish",
+            "summary": "Return the draft for a fidelity decision if a meaning risk remains."
+          }
+        ]
+      },
+      "reviews": {}
+    },
+    "specialists": {
+      "actions": {
+        "0001": [
+          {
+            "tool": "tools.search",
+            "query": "patch normalize punctuation glossary review",
+            "limit": 16
+          },
+          {
+            "tool": "delegate_review",
+            "specialists": [
+              "terminology",
+              "fidelity"
+            ],
+            "objective": "Check the short chapter before punctuation cleanup."
+          },
+          {
+            "tool": "normalize_punctuation"
+          },
+          {
+            "tool": "delegate_review",
+            "specialists": [
+              "fidelity"
+            ],
+            "objective": "Recheck the final punctuation-clean draft against the source."
+          },
+          {
+            "tool": "finish",
+            "summary": "Surface punctuation checks are clean."
+          }
+        ],
+        "0002": [
+          {
+            "tool": "tools.search",
+            "query": "patch normalize punctuation glossary review",
+            "limit": 16
+          },
+          {
+            "tool": "delegate_review",
+            "specialists": [
+              "terminology",
+              "fidelity"
+            ],
+            "objective": "Check the short chapter before punctuation cleanup."
+          },
+          {
+            "tool": "normalize_punctuation"
+          },
+          {
+            "tool": "delegate_review",
+            "specialists": [
+              "fidelity"
+            ],
+            "objective": "Recheck the final punctuation-clean draft against the source."
+          },
+          {
+            "tool": "finish",
+            "summary": "Surface punctuation checks are clean."
+          }
+        ],
+        "0003": [
+          {
+            "tool": "tools.search",
+            "query": "patch normalize punctuation glossary review",
+            "limit": 16
+          },
+          {
+            "tool": "delegate_review",
+            "specialists": [
+              "terminology",
+              "fidelity"
+            ],
+            "objective": "Check the short chapter before punctuation cleanup."
+          },
+          {
+            "tool": "normalize_punctuation"
+          },
+          {
+            "tool": "delegate_review",
+            "specialists": [
+              "fidelity"
+            ],
+            "objective": "Recheck the final punctuation-clean draft against the source."
+          },
+          {
+            "tool": "finish",
+            "summary": "Surface punctuation checks are clean."
+          }
+        ],
+        "0004": [
+          {
+            "tool": "tools.search",
+            "query": "patch normalize punctuation glossary review",
+            "limit": 16
+          },
+          {
+            "tool": "delegate_review",
+            "specialists": [
+              "terminology",
+              "fidelity"
+            ],
+            "objective": "Check the short chapter before punctuation cleanup."
+          },
+          {
+            "tool": "normalize_punctuation"
+          },
+          {
+            "tool": "delegate_review",
+            "specialists": [
+              "fidelity"
+            ],
+            "objective": "Recheck the final punctuation-clean draft against the source."
+          },
+          {
+            "tool": "finish",
+            "summary": "Surface punctuation checks are clean."
+          }
+        ],
+        "0005": [
+          {
+            "tool": "tools.search",
+            "query": "patch normalize punctuation glossary review",
+            "limit": 16
+          },
+          {
+            "tool": "delegate_review",
+            "specialists": [
+              "terminology",
+              "fidelity"
+            ],
+            "objective": "Find glossary variants and return bounded edits."
+          },
+          {
+            "tool": "select_term",
+            "term": "青云宗",
+            "target": "Azure Cloud Sect",
+            "rationale": "Use the canonical sect target."
+          },
+          {
+            "tool": "submit_patch",
+            "edits": [
+              {
+                "old_text": "Blue Cloud School",
+                "new_text": "Azure Cloud Sect"
+              }
+            ],
+            "rationale": "Apply the reviewed sect target."
+          },
+          {
+            "tool": "delegate_review",
+            "specialists": [
+              "fidelity"
+            ],
+            "objective": "Recheck the repaired sect name against the source."
+          },
+          {
+            "tool": "finish",
+            "summary": "The sect name follows the glossary and surface checks are clean."
+          }
+        ],
+        "0006": [
+          {
+            "tool": "tools.search",
+            "query": "patch normalize punctuation glossary review",
+            "limit": 16
+          },
+          {
+            "tool": "delegate_review",
+            "specialists": [
+              "terminology",
+              "fidelity"
+            ],
+            "objective": "Find the untranslated technique and return a bounded edit."
+          },
+          {
+            "tool": "select_term",
+            "term": "星河步",
+            "target": "Starstream Step",
+            "rationale": "Use the canonical technique target."
+          },
+          {
+            "tool": "submit_patch",
+            "edits": [
+              {
+                "old_text": "星河步",
+                "new_text": "Starstream Step"
+              }
+            ],
+            "rationale": "Apply the reviewed technique target."
+          },
+          {
+            "tool": "delegate_review",
+            "specialists": [
+              "fidelity"
+            ],
+            "objective": "Recheck the repaired technique name against the source."
+          },
+          {
+            "tool": "finish",
+            "summary": "The technique name follows the glossary and surface checks are clean."
+          }
+        ],
+        "0007": [
+          {
+            "tool": "tools.search",
+            "query": "patch normalize punctuation glossary review",
+            "limit": 16
+          },
+          {
+            "tool": "delegate_review",
+            "specialists": [
+              "terminology",
+              "fidelity"
+            ],
+            "objective": "Find the blocked place name and return a bounded edit."
+          },
+          {
+            "tool": "select_term",
+            "term": "镜湖镇",
+            "target": "Mirror Lake Town",
+            "rationale": "Use the canonical place-name target."
+          },
+          {
+            "tool": "submit_patch",
+            "edits": [
+              {
+                "old_text": "Mirror Lake Village",
+                "new_text": "Mirror Lake Town"
+              }
+            ],
+            "rationale": "Apply the reviewed place-name target."
+          },
+          {
+            "tool": "delegate_review",
+            "specialists": [
+              "fidelity"
+            ],
+            "objective": "Recheck the repaired place name against the source."
+          },
+          {
+            "tool": "finish",
+            "summary": "The place name follows the glossary and surface checks are clean."
+          }
+        ],
+        "0008": [
+          {
+            "tool": "tools.search",
+            "query": "patch normalize punctuation glossary review",
+            "limit": 16
+          },
+          {
+            "tool": "delegate_review",
+            "specialists": [
+              "terminology",
+              "fidelity"
+            ],
+            "objective": "Find the blocked artifact name and return a bounded edit."
+          },
+          {
+            "tool": "select_term",
+            "term": "潮汐镜",
+            "target": "Tidal Mirror",
+            "rationale": "Use the canonical artifact target."
+          },
+          {
+            "tool": "submit_patch",
+            "edits": [
+              {
+                "old_text": "Tidal Reflection",
+                "new_text": "Tidal Mirror"
+              }
+            ],
+            "rationale": "Apply the reviewed artifact target."
+          },
+          {
+            "tool": "delegate_review",
+            "specialists": [
+              "fidelity"
+            ],
+            "objective": "Recheck the repaired artifact name against the source."
+          },
+          {
+            "tool": "finish",
+            "summary": "The artifact name follows the glossary and surface checks are clean."
+          }
+        ],
+        "0009": [
+          {
+            "tool": "tools.search",
+            "query": "patch normalize punctuation glossary review",
+            "limit": 16
+          },
+          {
+            "tool": "delegate_review",
+            "specialists": [
+              "fidelity"
+            ],
+            "objective": "Check the order of actors and the cause of the gate opening."
+          },
+          {
+            "tool": "finish",
+            "summary": "Return the draft for a fidelity decision if a meaning risk remains."
+          },
+          {
+            "tool": "escalate",
+            "reason": "A blocking fidelity finding requires human review."
+          }
+        ],
+        "0010": [
+          {
+            "tool": "tools.search",
+            "query": "patch normalize punctuation glossary review",
+            "limit": 16
+          },
+          {
+            "tool": "delegate_review",
+            "specialists": [
+              "fidelity"
+            ],
+            "objective": "Check the timing of the bells and rope."
+          },
+          {
+            "tool": "finish",
+            "summary": "Return the draft for a fidelity decision if a meaning risk remains."
+          },
+          {
+            "tool": "escalate",
+            "reason": "A blocking fidelity finding requires human review."
+          }
+        ],
+        "0011": [
+          {
+            "tool": "tools.search",
+            "query": "patch normalize punctuation glossary review",
+            "limit": 16
+          },
+          {
+            "tool": "delegate_review",
+            "specialists": [
+              "fidelity"
+            ],
+            "objective": "Check whether the jewel is taken or left."
+          },
+          {
+            "tool": "finish",
+            "summary": "Return the draft for a fidelity decision if a meaning risk remains."
+          },
+          {
+            "tool": "escalate",
+            "reason": "A blocking fidelity finding requires human review."
+          }
+        ],
+        "0012": [
+          {
+            "tool": "tools.search",
+            "query": "patch normalize punctuation glossary review",
+            "limit": 16
+          },
+          {
+            "tool": "delegate_review",
+            "specialists": [
+              "fidelity"
+            ],
+            "objective": "Check the purpose of burning the map."
+          },
+          {
+            "tool": "finish",
+            "summary": "Return the draft for a fidelity decision if a meaning risk remains."
+          },
+          {
+            "tool": "escalate",
+            "reason": "A blocking fidelity finding requires human review."
+          }
+        ]
+      },
+      "reviews": {}
+    }
+  }
+}

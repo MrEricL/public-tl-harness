@@ -37,9 +37,9 @@ from agentic_translation.glossary import parse_glossary_text
 from agentic_translation.models import ProviderCallRecord
 
 
-SOURCE = "第一章：技术检查\n\n校准模式保持阀门关闭。"
-DRAFT = "Chapter 1: Technical Check\n\nCalibration mode keeps the valve closed."
-GLOSSARY = parse_glossary_text("校准模式: calibration mode\n")
+SOURCE = "第一章\n\n道心守住了山门。"
+DRAFT = "Chapter 1\n\nDao Heart guarded the mountain gate."
+GLOSSARY = parse_glossary_text("道心: Dao Heart\n")
 
 
 class ScriptedProvider:
@@ -65,7 +65,7 @@ def _review(role: str, translated_text: str = DRAFT) -> SpecialistReview:
         status="completed",
         summary=f"{role} review complete.",
         term_suggestions=(
-            [TermSuggestion(term="校准模式", target="calibration mode", rationale="Use the episode canon.")]
+            [TermSuggestion(term="道心", target="Dao Heart", rationale="Use the episode canon.")]
             if role == "terminology"
             else []
         ),
@@ -182,7 +182,7 @@ def test_v4_messages_retain_nested_read_and_review_evidence_in_user_context() ->
                                 ],
                                 "term_suggestions": [
                                     {
-                                        "term": "校准模式",
+                                        "term": "道心",
                                         "target": target_sentinel,
                                         "rationale": "Keep the episode term consistent.",
                                     }
@@ -248,13 +248,13 @@ def test_v4_oversized_context_drops_oldest_prior_step() -> None:
 
 def test_showcase_delegation_read_select_and_approval_are_end_to_end(tmp_path: Path) -> None:
     canonical = tmp_path / "glossary.txt"
-    canonical.write_text("校准模式 -> calibration state\n", encoding="utf-8")
+    canonical.write_text("道心 -> Heart of Dao\n", encoding="utf-8")
     provider = ScriptedProvider(
         [
             ReadParagraphsAction(document="source", start=0, count=3),
             DelegateReviewAction(specialists=["terminology"], objective="Review terms."),
-            SelectTermAction(term="校准模式", target="calibration mode", rationale="Use the review."),
-            {"tool": "promote_glossary_term", "term": "校准模式", "rationale": "Persist canon."},
+            SelectTermAction(term="道心", target="Dao Heart", rationale="Use the review."),
+            {"tool": "promote_glossary_term", "term": "道心", "rationale": "Persist canon."},
         ]
     )
     callback_calls: list[dict[str, object]] = []
@@ -317,7 +317,7 @@ def test_showcase_delegation_read_select_and_approval_are_end_to_end(tmp_path: P
         instruction_context={"style": "faithful", "role": "coordinator"},
     )
     assert resumed.snapshot.status == "completed"
-    assert canonical.read_text(encoding="utf-8") == "校准模式 -> calibration mode\n"
+    assert canonical.read_text(encoding="utf-8") == "道心 -> Dao Heart\n"
 
 
 def test_fidelity_review_must_be_fresh_and_interruption_can_resume(tmp_path: Path) -> None:

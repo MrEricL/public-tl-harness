@@ -14,11 +14,11 @@ from agentic_translation.showcase import replay_showcase, resume_showcase, run_s
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SHOWCASE = ROOT / "samples" / "synthetic_repair_demo"
+SHOWCASE = ROOT / "samples" / "showcase"
 
 
 def _copy_showcase(tmp_path: Path) -> Path:
-    fixture = tmp_path / "synthetic-repair-demo"
+    fixture = tmp_path / "showcase"
     shutil.copytree(SHOWCASE, fixture)
     story = fixture / "story.yaml"
     config = yaml.safe_load(story.read_text(encoding="utf-8"))
@@ -54,11 +54,11 @@ def test_showcase_pauses_for_glossary_approval_before_delivery(tmp_path: Path) -
     assert (result.run_dir / "inputs/scenario.json").exists()
 
 
-def test_approved_showcase_delivers_two_checks_and_reuses_sampling_cycle(tmp_path: Path) -> None:
+def test_approved_showcase_delivers_three_chapters_and_reuses_starstream_step(tmp_path: Path) -> None:
     _, result = _run_and_approve(tmp_path)
 
     assert result.manifest["status"] == "completed"
-    assert set(result.manifest["chapters"]) == {"0001", "0002"}
+    assert set(result.manifest["chapters"]) == {"0001", "0002", "0003"}
     assert result.manifest["artifacts"] == {
         "report": "report.html",
         "txt": "delivery/book.txt",
@@ -67,9 +67,9 @@ def test_approved_showcase_delivers_two_checks_and_reuses_sampling_cycle(tmp_pat
     assert (result.run_dir / "delivery/book.txt").exists()
     assert (result.run_dir / "delivery/book.epub").exists()
     book = (result.run_dir / "delivery/book.txt").read_text(encoding="utf-8")
-    assert book.count("Chapter:") == 2
-    assert book.count("sampling cycle") == 2
-    assert "采样周期" not in book
+    assert book.count("Chapter:") == 3
+    assert book.count("Starstream Step") >= 3
+    assert "星河步" not in book
 
 
 def test_showcase_resume_uses_saved_inputs_after_original_story_changes(tmp_path: Path) -> None:
@@ -166,7 +166,7 @@ def test_interrupted_coordinator_persists_checkpoint_and_can_resume(tmp_path: Pa
     assert resumed.manifest["status"] == "awaiting_approval"
     completed = resume_showcase(resumed.run_dir, decision="approved")
     assert completed.manifest["status"] == "completed"
-    assert len(completed.manifest["chapters"]["0001"]["coordinator_calls"]) == 7
+    assert len(completed.manifest["chapters"]["0001"]["coordinator_calls"]) == 9
 
 
 def test_supplied_drafts_bypass_translation(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -180,12 +180,7 @@ def test_supplied_drafts_bypass_translation(tmp_path: Path, monkeypatch: pytest.
     import agentic_translation.showcase_providers as showcase_providers
 
     monkeypatch.setattr(showcase_providers, "make_translation_provider", fail_translation)
-    result = run_showcase(
-        story,
-        tmp_path / "run",
-        draft_dir=draft_dir,
-        strategy="deterministic",
-    )
+    result = run_showcase(story, tmp_path / "run", draft_dir=draft_dir, auto_approve=True)
 
     assert result.manifest["status"] == "completed"
     assert all(result.manifest["chapters"][chapter]["translation_calls"] == [] for chapter in result.manifest["chapter_ids"])
@@ -196,7 +191,7 @@ def test_deterministic_baseline_uses_existing_glossary_rules(tmp_path: Path) -> 
     drafts = tmp_path / "drafts"
     shutil.copytree(story.parent / "expected", drafts)
     first = drafts / "0001.txt"
-    first.write_text(first.read_text().replace("readings.", "readings。", 1))
+    first.write_text(first.read_text().replace("Azure Cloud Sect", "Blue Cloud School", 1))
 
     result = run_showcase(story, tmp_path / "run", draft_dir=drafts, strategy="deterministic")
 
@@ -206,7 +201,7 @@ def test_deterministic_baseline_uses_existing_glossary_rules(tmp_path: Path) -> 
     assert chapter["final_findings"] == 0
     assert chapter["accepted_patches"] == 1
     assert chapter["provider_calls"] == []
-    assert "readings。" not in (result.run_dir / "delivery/book.txt").read_text()
+    assert "Blue Cloud School" not in (result.run_dir / "delivery/book.txt").read_text()
     assert (result.run_dir / "delivery/book.txt").exists()
     assert not (result.run_dir / "expected").exists()
     assert not (result.run_dir / "inputs/expected").exists()
@@ -241,7 +236,7 @@ def test_live_runner_uses_mocked_openai_client_without_network(tmp_path: Path, m
     story = _copy_showcase(tmp_path)
     expected = [
         (story.parent / "expected" / f"{chapter}.txt").read_text(encoding="utf-8")
-        for chapter in ("0001", "0002")
+        for chapter in ("0001", "0002", "0003")
     ]
     _FakeLiveOpenAI.instances = []
     _FakeLiveOpenAI.translations = expected
@@ -260,7 +255,7 @@ def test_live_runner_uses_mocked_openai_client_without_network(tmp_path: Path, m
     )
 
     assert result.manifest["status"] == "completed"
-    assert len(_FakeLiveOpenAI.instances) == 2
+    assert len(_FakeLiveOpenAI.instances) == 3
     assert all(instance.kwargs["timeout"] == 60.0 for instance in _FakeLiveOpenAI.instances)
     assert all(call["temperature"] == 0.0 for instance in _FakeLiveOpenAI.instances for call in instance.completions.calls)
     assert all(call["max_tokens"] == 2048 for instance in _FakeLiveOpenAI.instances for call in instance.completions.calls)

@@ -1,0 +1,253 @@
+{
+  "translations": {
+    "0001": "Chapter 1: The Gate in the Rain\n\nNight rain fell over the Blue Cloud School's stone steps， tapping the bronze lamps like countless needles。 Shen Yan stood alone at the outer gate, listening to the wind pass through the pines, and drew his cloak tighter around his shoulders。 The clouds hung low tonight, yet a thin, untimely silver line lit the distant sky。\n\nJust after midnight, a girl in a straw rain cape climbed the steps. She said she came from Mirror Lake Town and placed a cracked bronze token in Shen Yan's hand. The water in town, she said, had reflected a second moon, and every fishing lamp had gone dark in its reflection. She had also seen an unfamiliar shadow cross the middle of the lake and walk toward the Azure Cloud Sect.\n\nShen Yan took her to the gate elder. The elder did not question her story. He drew an old map from his sleeve and pointed to the abandoned Stargazing Terrace behind the mountain. A lost sect footwork was sealed there, and it could be used only when starlight and the sound of rain appeared together. The elder said the 星河步 was not a shortcut for chasing an enemy; it let the world decide where each foot should land.\n\nThe alarm suddenly rang three times, and the stone beasts outside the gate opened their blue-green eyes. Shen Yan left the girl beneath the lamp and charged into the rain with his sword drawn. The shadow changed direction seven times among the trees, moving as if it knew every stone. Shen Yan did not pursue it. He listened to the rhythm of the drops striking the ground and followed the stars on the map, stepping left, back, and left again.\n\nThose three steps carried him through tree shadows that had held no gap a moment before, placing him between the shadow and the Stargazing Terrace. A black needle flew from the stranger's sleeve. Shen Yan knocked it down with the spine of his sword and saw the seal of Mirror Lake Town's guild carved into its tail. The shadow leaped into the mist while he hesitated. The elder arrived and pocketed the token. The real answer, he said, lay beneath the lake, and they had to leave before dawn.\n",
+    "0002": "Chapter 2: Echoes Beneath Mirror Lake\n\nBefore dawn, the sky faded from deep blue to gray as Shen Yan and the girl in the straw cape reached Mirror Lake Town. The water lay so still that there was not a breath of wind, yet every fishing net along the shore was pulled tight in the same direction, as if a beast below had seized the knots. Shen Yan pressed the Azure Cloud Sect token against a stone marker, and a white line surfaced at the center of the lake.\n\nThe girl's name was Gu Ling, and she was the town's last lamp keeper. She guided Shen Yan in a small boat to the end of the white line. The second moon was no illusion, she told him, but an ancient city turned upside down beneath the lake. Whenever anyone tried to approach, the city gate shifted with the moonlight; even old people who knew the waterways by heart could not find the way back.\n\nThey dove beneath the surface, passed through a layer of warm blue light, and landed before the ancient city's stone gate. Shen Yan unfolded the elder's map and found seven stars carved beside the door. Gu Ling stepped in the wrong place, and water pressed in from every side. Shen Yan quickly used the {{星河步}}, making the stones beneath his feet light one after another until the pressure withdrew.\n\nThere was no street beyond the gate, only a courtyard suspended in darkness. The shadow stood in its center, holding the black needle stamped with the guild seal. He admitted that he had been ordered to find the Tidal Mirror, but said the guild in Mirror Lake Town had already been replaced. Its true master, he said, was hiding behind the Azure Cloud Sect.\n\nGu Ling refused to believe him and advanced with her knife drawn. Fine chains suddenly fell through the darkness. Shen Yan used the {{星河步}} to circle the courtyard's four stone pillars and cut the mechanism locking their escape. The three of them rushed through a split water gate and surfaced together. A shard of the Tidal Mirror clung to Shen Yan's palm, reflecting a mountain gate in flames.\n",
+    "0003": "Chapter 3: Fire on the Stargazing Terrace\n\nWhen they returned to the Azure Cloud Sect, the eastern sky had just turned cold and white. The gate had not been swallowed by the flames, but every stone beast had fallen inward, as if bowing to an intruder. The Tidal Mirror shard pointed toward the rear mountain, and each turn briefly revealed a blue stairway in the smoke.\n\nThe elders gathered the disciples to hold the front hall, while Gu Ling handed the guild seal to the gate warden. The warden drew his sword at the sight of it. He admitted that he had opened the mountain road for the shadow, but insisted that he had done it to rescue his brother, who was trapped in the ancient city. Shen Yan did not condemn him at once. He only asked how the warden knew about the seal at the Stargazing Terrace.\n\nThe answer came from the second moon above the Stargazing Terrace. It hung in the daylight, and beneath it stood an old man in gray robes, writing the disciples' names into the Tidal Mirror. Each name he wrote made the fire at the gate rise higher. Give him the shard, the old man said, and everyone would be safe.\n\nShen Yan tossed the shard into the air and used its blue light to see four trails of water left in the courtyard. He followed them with the {{星河步}}: the first step avoided a moon blade, the second gave Gu Ling an opening to cut the mirror thread, and the third carried him to the edge of the Stargazing Terrace. The old man expected him to keep moving forward, but Shen Yan stopped outside the starlight and left the final step to the mountain beneath his feet.\n\nThe mountain's echo passed through the stone platform. A seal rose from underground like a closing hand and seized the Tidal Mirror. Forced into view, the gray-robed old man proved to be the Stargazing Elder, who had vanished many years before. The flames went out as the mirror shattered. The warden lowered his sword, and Gu Ling decided to remain with the Azure Cloud Sect to investigate the guild. After sunrise, Shen Yan wrote the {{星河步}} into the gatekeeper's register, took the new map, and walked toward the world beyond the mountain.\n"
+  },
+  "actions": {
+    "0001": [
+      {
+        "tool": "tools.search",
+        "query": "paragraph review term patch glossary punctuation",
+        "limit": 16
+      },
+      {
+        "tool": "delegate_review",
+        "specialists": ["terminology", "fidelity"],
+        "objective": "Review the chapter for terminology consistency and source fidelity before repair; return evidence and bounded suggestions."
+      },
+      {
+        "tool": "select_term",
+        "term": "星河步",
+        "target": "Starstream Step",
+        "rationale": "Choose a concise technique name that preserves the image of starlight flowing beneath each step and can remain stable across chapters."
+      },
+      {
+        "tool": "submit_patch",
+        "edits": [
+          {
+            "old_text": "This sentence is intentionally absent from the working draft.",
+            "new_text": "The sentence remains absent from the working draft."
+          }
+        ],
+        "rationale": "Exercise fail-closed patch validation with an exact target that is not present."
+      },
+      {
+        "tool": "submit_patch",
+        "edits": [
+          {
+            "old_text": "Blue Cloud School",
+            "new_text": "Azure Cloud Sect"
+          },
+          {
+            "old_text": "星河步",
+            "new_text": "Starstream Step"
+          }
+        ],
+        "rationale": "Apply the selected glossary term and replace the blocked sect variant in two small, exact spans."
+      },
+      {
+        "tool": "normalize_punctuation"
+      },
+      {
+        "tool": "delegate_review",
+        "specialists": ["fidelity"],
+        "objective": "Recheck the repaired chapter against its source for omissions, changed relationships, and remaining meaning errors."
+      },
+      {
+        "tool": "promote_glossary_term",
+        "term": "星河步",
+        "rationale": "Promote the reviewed Starstream Step choice so the same technique remains stable in the next chapters."
+      },
+      {
+        "tool": "finish",
+        "summary": "The chapter is repaired, punctuation is normalized, and the approved technique term is ready for later chapters."
+      }
+    ],
+    "0002": [
+      {
+        "tool": "tools.search",
+        "query": "paragraph review term patch glossary punctuation",
+        "limit": 16
+      },
+      {
+        "tool": "delegate_review",
+        "specialists": ["fidelity"],
+        "objective": "Check the chapter against its source for omissions, altered cause and effect, and continuity of the approved technique term."
+      },
+      {
+        "tool": "finish",
+        "summary": "The chapter matches the source and reuses the approved Starstream Step term."
+      }
+    ],
+    "0003": [
+      {
+        "tool": "tools.search",
+        "query": "paragraph review term patch glossary punctuation",
+        "limit": 16
+      },
+      {
+        "tool": "delegate_review",
+        "specialists": ["fidelity"],
+        "objective": "Check the final chapter against its source for omissions, changed relationships, and continuity of the approved technique term."
+      },
+      {
+        "tool": "finish",
+        "summary": "The final chapter matches the source and carries the approved Starstream Step term through the ending."
+      }
+    ]
+  },
+  "reviews": {
+    "0001": {
+      "2": {
+        "terminology": [
+          {
+            "tool": "read_paragraphs",
+            "document": "source",
+            "start": 0,
+            "count": 6
+          },
+          {
+            "tool": "read_paragraphs",
+            "document": "translation",
+            "start": 0,
+            "count": 6
+          },
+          {
+            "tool": "complete_review",
+            "summary": "The technique name is present in the source but is inconsistent in the draft; use one stable English target.",
+            "findings": [
+              {
+                "category": "terminology",
+                "message": "The draft leaves 星河步 untranslated in the footwork explanation, and the selected target should be reused in later chapters.",
+                "source_excerpt": "那里封着宗门失传的步法，只有在星光与雨声同时出现时才能施展。长老说，星河步不是追敌的捷径。",
+                "translation_excerpt": "A lost sect footwork was sealed there, and it could be used only when starlight and the sound of rain appeared together. The elder said the 星河步 was not a shortcut.",
+                "blocking": true
+              }
+            ],
+            "proposed_edits": [
+              {
+                "old_text": "星河步",
+                "new_text": "Starstream Step"
+              }
+            ],
+            "term_suggestions": [
+              {
+                "term": "星河步",
+                "target": "Starstream Step",
+                "rationale": "The image is a flowing movement through starlight, so Starstream Step is concise, memorable, and suitable for repeated technique references."
+              }
+            ]
+          }
+        ],
+        "fidelity": [
+          {
+            "tool": "read_paragraphs",
+            "document": "source",
+            "start": 0,
+            "count": 6
+          },
+          {
+            "tool": "read_paragraphs",
+            "document": "translation",
+            "start": 0,
+            "count": 6
+          },
+          {
+            "tool": "complete_review",
+            "summary": "The scene comparison is faithful; one bounded opening sentence can be normalized alongside the terminology repair.",
+            "findings": [
+              {
+                "category": "fidelity",
+                "message": "The opening keeps the rain, bronze lamps, and solitary watch. The sentence overlaps the sect-name repair and punctuation cleanup, but it does not introduce a semantic discrepancy.",
+                "source_excerpt": "夜雨落在青云宗的石阶上，像无数细针敲打着青铜灯罩。",
+                "translation_excerpt": "Night rain fell over the Blue Cloud School's stone steps， tapping the bronze lamps like countless needles。",
+                "blocking": false
+              }
+            ],
+            "proposed_edits": [
+              {
+                "old_text": "Night rain fell over the Blue Cloud School's stone steps， tapping the bronze lamps like countless needles。",
+                "new_text": "Night rain fell over the Azure Cloud Sect's stone steps, tapping the bronze lamps like countless needles."
+              }
+            ],
+            "term_suggestions": []
+          }
+        ]
+      },
+      "7": {
+        "fidelity": [
+          {
+            "tool": "read_paragraphs",
+            "document": "source",
+            "start": 0,
+            "count": 6
+          },
+          {
+            "tool": "read_paragraphs",
+            "document": "translation",
+            "start": 0,
+            "count": 6
+          },
+          {
+            "tool": "complete_review",
+            "summary": "The repaired chapter preserves the source scene and its sequence of discoveries.",
+            "findings": [],
+            "proposed_edits": [],
+            "term_suggestions": []
+          }
+        ]
+      }
+    },
+    "0002": {
+      "2": {
+        "fidelity": [
+          {
+            "tool": "read_paragraphs",
+            "document": "source",
+            "start": 0,
+            "count": 6
+          },
+          {
+            "tool": "read_paragraphs",
+            "document": "translation",
+            "start": 0,
+            "count": 6
+          },
+          {
+            "tool": "complete_review",
+            "summary": "The lake descent, hidden city, and escape retain the source's cause and effect, with the approved technique term reused consistently.",
+            "findings": [],
+            "proposed_edits": [],
+            "term_suggestions": []
+          }
+        ]
+      }
+    },
+    "0003": {
+      "2": {
+        "fidelity": [
+          {
+            "tool": "read_paragraphs",
+            "document": "source",
+            "start": 0,
+            "count": 6
+          },
+          {
+            "tool": "read_paragraphs",
+            "document": "translation",
+            "start": 0,
+            "count": 6
+          },
+          {
+            "tool": "complete_review",
+            "summary": "The confrontation and resolution preserve the source's reveal, final choice, and continuity of the approved technique term.",
+            "findings": [],
+            "proposed_edits": [],
+            "term_suggestions": []
+          }
+        ]
+      }
+    }
+  }
+}

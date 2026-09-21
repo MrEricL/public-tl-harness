@@ -11,17 +11,21 @@ def test_public_readme_describes_the_released_automatic_surface() -> None:
         "Automatic repair is the default",
         "QA does not regress",
         "SHA-256 matches the current draft",
-        "Bounded, read-only terminology and fidelity specialists",
+        "read-only specialists review terminology and fidelity",
         "samples/synthetic_repair_demo/story.yaml",
         "harness resume runs/synthetic-repair",
         "harness replay runs/synthetic-repair",
-        "DeepSeek V4 Flash",
-        "strict JSON actions",
-        "2048",
-        "The model proposes; the verifier disposes.",
-        "cache-only terminology replay",
-        "batch translation workflow",
-        "clean model review is evidence",
+        "DeepSeek",
+        "cache-only replay",
+        "batch workflow",
+        "clean model review does not guarantee",
+        "optional Jev semantic checks",
+        "Jev is off by default",
+        "## Contents",
+        "[Optional Jev semantic checks](#optional-jev-semantic-checks)",
+        "docs/JEV_EXTENSION.md#aggregate-evidence",
+        "five focused questions or eighteen dense questions",
+        "scripted model decisions",
     ):
         assert text in readme or text in normalized
 
@@ -32,6 +36,16 @@ def test_public_readme_describes_the_released_automatic_surface() -> None:
     assert "python-3.11%2B" in readme
     assert "license-MIT" in readme
 
+    opening, remainder = readme.split("## Contents\n", 1)
+    contents = remainder.split("\n## Quickstart\n", 1)[0]
+    assert "Jev" in opening
+    assert "#optional-jev-semantic-checks" in contents
+    assert "Vercel" not in readme
+    assert "Gateway" not in readme
+    assert "AI_GATEWAY_API_KEY" not in readme
+    assert "96 assignments" not in readme
+    assert "Execution failure |" not in readme
+
 
 def test_public_docs_and_fixture_are_present() -> None:
     for path in (
@@ -40,6 +54,8 @@ def test_public_docs_and_fixture_are_present() -> None:
         "CHANGELOG.md",
         "docs/AUTOMATIC_REPAIR.md",
         "docs/SESSION_IDENTITY.md",
+        "docs/JEV_EXTENSION.md",
+        "samples/jev/policy.example.json",
         "samples/synthetic_repair_demo/story.yaml",
         "samples/synthetic_repair_demo/scenario.json",
     ):

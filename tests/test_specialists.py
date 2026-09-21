@@ -28,14 +28,14 @@ from agentic_translation.models import GlossaryEntry, GlossaryParseResult, Provi
 from agentic_translation.specialists import SpecialistRunner
 
 
-SOURCE = "Technical note\n\n第一段说明阀门保持关闭。\n\n第二段说明读数和操作顺序。"
-DRAFT = "Technical note\n\nThe first paragraph says the valve remains closed.\n\nThe second paragraph explains the readings and operation order."
+SOURCE = "Title\n\n第一段在山门前停下。\n\n第二段说明了关系和动作。"
+DRAFT = "Title\n\nThe first paragraph stops at the mountain gate.\n\nThe second paragraph explains the relationship and action."
 GLOSSARY = GlossaryParseResult(
     entries=[
         GlossaryEntry(
-            source="阀门",
-            target="valve",
-            candidates=["valve", "control valve"],
+            source="山门",
+            target="mountain gate",
+            candidates=["mountain gate", "gate of the mountain"],
         )
     ]
 )
@@ -96,7 +96,7 @@ def _run(
 
     runner = SpecialistRunner(
         factory,
-        style_guide="Use concise technical English.",
+        style_guide="Use concise, literary English.",
         max_steps=max_steps,
         max_workers=8,
     )
@@ -138,11 +138,11 @@ def test_specialist_registry_has_only_read_and_report_tools() -> None:
 def test_runner_returns_structured_results_in_requested_order_and_writes_artifacts(tmp_path: Path) -> None:
     terminology = ScriptedProvider(
         [
-            LookupGlossaryAction(term="阀门"),
+            LookupGlossaryAction(term="山门"),
             CompleteReviewAction(
                 summary="The canonical gate term is available.",
                 term_suggestions=[
-                    TermSuggestion(term="阀门", target="valve", rationale="Matches the glossary.")
+                    TermSuggestion(term="山门", target="mountain gate", rationale="Matches the glossary.")
                 ],
             ),
         ]
@@ -156,12 +156,12 @@ def test_runner_returns_structured_results_in_requested_order_and_writes_artifac
                     ReviewFinding(
                         category="fidelity",
                         message="Check the relationship clause against the source.",
-                        source_excerpt="第二段说明读数和操作顺序。",
-                        translation_excerpt="The second paragraph explains the readings and operation order.",
+                        source_excerpt="第二段说明了关系和动作。",
+                        translation_excerpt="The second paragraph explains the relationship and action.",
                     )
                 ],
                 proposed_edits=[
-                    TextEdit(old_text="explains the readings", new_text="describes the readings")
+                    TextEdit(old_text="explains the relationship", new_text="describes the relationship")
                 ],
             ),
         ],
@@ -177,7 +177,7 @@ def test_runner_returns_structured_results_in_requested_order_and_writes_artifac
     assert [review.role for review in reviews] == ["fidelity", "terminology"]
     assert all(review.status == "completed" for review in reviews)
     assert reviews[0].findings[0].category == "fidelity"
-    assert reviews[1].term_suggestions[0].target == "valve"
+    assert reviews[1].term_suggestions[0].target == "mountain gate"
     assert all(len(review.steps) == 2 for review in reviews)
     assert all(len(review.provider_calls) == 2 for review in reviews)
     assert all(review.draft_sha256 == hashlib.sha256(DRAFT.encode()).hexdigest() for review in reviews)
@@ -207,7 +207,7 @@ def test_runner_returns_structured_results_in_requested_order_and_writes_artifac
         )
         assert first.instruction_context["role"] == role
         assert first.instruction_context["objective"] == "Review the chapter and return evidence."
-        assert first.instruction_context["style_guide"] == "Use concise technical English."
+        assert first.instruction_context["style_guide"] == "Use concise, literary English."
         evidence = first.instruction_context["initial_evidence"]
         assert evidence["source_paragraph_count"] == 3
         assert evidence["translation_paragraph_count"] == 3

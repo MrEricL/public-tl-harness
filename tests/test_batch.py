@@ -136,6 +136,7 @@ paths:
 
 
 def _write_panel_split_batch(tmp_path: Path) -> Path:
+    # Newly authored technical statements retain only the split-panel shape.
     fixture = tmp_path / "panel_story"
     source_dir = fixture / "source"
     terms_dir = fixture / "terms"
@@ -144,17 +145,17 @@ def _write_panel_split_batch(tmp_path: Path) -> Path:
     terms_dir.mkdir()
     source_text = (
         "第1章\n\n"
-        "【註：1，宿主每次模擬僅可進行一次深度模擬。 "
-        "2，深度模擬狀態下宿主死亡，深度模擬將直接結束。 "
-        "3，深度模擬狀態下時間流速保持一致。】\n\n"
-        "【叮，正在進入深度模擬......】"
+        "【註：1，每個採樣週期只記錄一次溫度。 "
+        "2，電源中斷時，採樣立即停止。 "
+        "3，採樣期間時間間隔保持不變。】\n\n"
+        "【狀態：正在啟動溫度感測器......】"
     )
     final_text = (
         "Chapter 1\n\n"
-        "[Note: 1. Host may conduct deep simulation only once per simulation.]\n\n"
-        "[2. If host dies in deep simulation state, deep simulation will end directly.]\n\n"
-        "[3. In deep simulation state, time flow remains consistent.]\n\n"
-        "[Ding. Entering deep simulation...]"
+        "[Note: 1. Record the temperature once per sampling cycle.]\n\n"
+        "[2. If power fails, sampling stops immediately.]\n\n"
+        "[3. During sampling, the time interval remains constant.]\n\n"
+        "[Status: Starting the temperature sensor...]"
     )
     (source_dir / "0001.txt").write_text(source_text, encoding="utf-8")
     (terms_dir / "master_glossary.txt").write_text("", encoding="utf-8")
@@ -223,6 +224,7 @@ paths:
 
 
 def _write_single_extra_panel_split_batch(tmp_path: Path) -> Path:
+    # Authored fixture with one long two-sentence panel and one short panel.
     fixture = tmp_path / "panel_story"
     source_dir = fixture / "source"
     terms_dir = fixture / "terms"
@@ -231,15 +233,15 @@ def _write_single_extra_panel_split_batch(tmp_path: Path) -> Path:
     terms_dir.mkdir()
     source_text = (
         "第1章\n\n"
-        "【你沉默片刻，在心底默念：等哪天你也犯傻栽進坑裡，吃盡苦頭，自然就長記性了。"
-        "那些血淚換來的教訓，可比旁人說一萬遍都管用。】\n\n"
-        "【畢竟，沒有模擬器的話，我早就死了。】"
+        "【技術員先檢查控制器的電源和接線，再把三個感測器固定在測試台上，等待讀數穩定後開始記錄。"
+        "所有測量結果都寫入同一張表格，方便下一班工作人員逐項核對。】\n\n"
+        "【狀態：控制器已就緒。】"
     )
     final_text = (
         "Chapter 1\n\n"
-        "[You fall silent for a moment, then silently recite in your heart: When one day you also do something stupid and fall into a pit, suffer all kinds of hardship, you will naturally learn your lesson.]\n\n"
-        "[After all, those lessons bought with blood and tears are far more useful than hearing others say something ten thousand times.]\n\n"
-        "[After all, without the Simulator, I would already be dead.]"
+        "[The technician checks the controller power and wiring, secures three sensors to the test bench, and waits for stable readings before recording them.]\n\n"
+        "[All measurements go into one table so the next shift can check each entry.]\n\n"
+        "[Status: The controller is ready.]"
     )
     (source_dir / "0001.txt").write_text(source_text, encoding="utf-8")
     (terms_dir / "master_glossary.txt").write_text("", encoding="utf-8")
@@ -2102,8 +2104,8 @@ def test_normalize_panel_splits_merges_numbered_note_panels_and_accepts(tmp_path
     assert result.skipped_count == 0
     assert result.items[0].replacement_count == 1
     final_text = (run_dir / "chapters" / "0001" / "translated_final" / "0001.txt").read_text(encoding="utf-8")
-    assert "[Note: 1. Host may conduct deep simulation only once per simulation. 2. If host dies" in final_text
-    assert "\n\n[2. If host dies" not in final_text
+    assert "[Note: 1. Record the temperature once per sampling cycle. 2. If power fails" in final_text
+    assert "\n\n[2. If power fails" not in final_text
     manifest = load_batch_manifest(run_dir / "batch_manifest.json")
     chapter = manifest.chapters["0001"]
     assert chapter.status == "packaged"
@@ -2127,9 +2129,9 @@ def test_normalize_panel_splits_merges_single_extra_adjacent_panel_by_length(tmp
 
     assert result.normalized_count == 1
     final_text = (run_dir / "chapters" / "0001" / "translated_final" / "0001.txt").read_text(encoding="utf-8")
-    assert "learn your lesson. After all, those lessons bought with blood and tears" in final_text
-    assert "\n\n[After all, those lessons bought with blood and tears" not in final_text
-    assert "\n\n[After all, without the Simulator, I would already be dead.]" in final_text
+    assert "before recording them. All measurements go into one table" in final_text
+    assert "\n\n[All measurements go into one table" not in final_text
+    assert "\n\n[Status: The controller is ready.]" in final_text
     manifest = load_batch_manifest(run_dir / "batch_manifest.json")
     chapter = manifest.chapters["0001"]
     assert chapter.status == "packaged"
