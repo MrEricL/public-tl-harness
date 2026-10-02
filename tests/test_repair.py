@@ -390,8 +390,10 @@ def test_repair_queue_skips_conflicting_alias_and_repairs_independent_alias() ->
     assert "SharedAlias" in result.text
 
 
-def test_repair_queue_rejects_missing_patch_span_instead_of_raising() -> None:
-    glossary = parse_glossary_text("法主: Lord of Laws, Law Lord\n")
+def test_repair_queue_rejects_missing_patch_span_instead_of_raising(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Inject an actually invalid proposal; do not depend on a false substring alias.
+    monkeypatch.setattr("agentic_translation.pipeline.OfflineRepairProvider", MissingSpanRepairProvider)
+    glossary = parse_glossary_text("法主: Lord of Laws, Law Lords\n")
 
     result = _apply_repair_queue(
         run_id="missing_span",

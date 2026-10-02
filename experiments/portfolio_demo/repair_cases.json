@@ -1,0 +1,220 @@
+[
+  {
+    "id": "01-negation",
+    "category": "negation",
+    "source": "林青没有打开匣子。她把钥匙交给周岚。",
+    "draft": "Lin Qing opened the box. She handed the key to Zhou Lan.",
+    "reference": "Lin Qing did not open the box. She handed the key to Zhou Lan.",
+    "checks": [
+      {
+        "require": [
+          "Lin Qing.{0,20}(?:did not|didn.t|never).{0,12}open",
+          "(?:key.{0,30}Zhou Lan|Zhou Lan.{0,20}key)"
+        ],
+        "forbid": []
+      }
+    ]
+  },
+  {
+    "id": "02-count",
+    "category": "quantities",
+    "source": "仓库收到12箱，退回5箱，留下7箱。",
+    "draft": "The warehouse received 12 crates, returned 5, and kept 8.",
+    "reference": "The warehouse received 12 crates, returned 5, and kept 7.",
+    "checks": [
+      {
+        "require": [
+          "12|twelve",
+          "5|five",
+          "(?:kept|left|remaining|retained).{0,20}(?:7|seven)"
+        ],
+        "forbid": [
+          "\\b8\\b|\\beight\\b"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "03-order",
+    "category": "chronology",
+    "source": "他先关掉泵，再打开排水阀，最后检查压力表。",
+    "draft": "He opened the drain valve, switched off the pump, and finally checked the pressure gauge.",
+    "reference": "He switched off the pump, opened the drain valve, and finally checked the pressure gauge.",
+    "checks": [
+      {
+        "require": [
+          "(?:off|stopped).{0,25}pump.{0,60}(?:open|drain)",
+          "(?:finally|last|then).{0,30}(?:check|inspect).{0,25}(?:gauge|pressure)"
+        ],
+        "forbid": []
+      }
+    ]
+  },
+  {
+    "id": "04-condition",
+    "category": "conditions",
+    "source": "只有水位低于红线时才能过桥。灯亮不代表可以通行。",
+    "draft": "You may cross when the lamp is lit, regardless of the water level.",
+    "reference": "You may cross only when the water level is below the red line. A lit lamp does not grant permission to cross.",
+    "checks": [
+      {
+        "require": [
+          "only.{0,70}below.{0,20}red",
+          "(?:lamp|light).{0,25}(?:does not|doesn.t|not|isn.t)"
+        ],
+        "forbid": [
+          "regardless"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "05-actor",
+    "category": "actor attribution",
+    "source": "周岚把药给了林青，自己留下了空瓶。",
+    "draft": "Lin Qing gave the medicine to Zhou Lan and kept the empty bottle.",
+    "reference": "Zhou Lan gave the medicine to Lin Qing and kept the empty bottle.",
+    "checks": [
+      {
+        "require": [
+          "Zhou Lan.{0,55}(?:to|for) Lin Qing",
+          "(?:kept|retained).{0,20}empty bottle"
+        ],
+        "forbid": []
+      }
+    ]
+  },
+  {
+    "id": "06-uncertainty",
+    "category": "uncertainty",
+    "source": "雾里那个人似乎在招手，但林青看不清。",
+    "draft": "The person in the fog was definitely waving, and Lin Qing recognized him.",
+    "reference": "The person in the fog seemed to be waving, but Lin Qing could not see clearly.",
+    "checks": [
+      {
+        "require": [
+          "(?:seem|appear|might|perhaps)",
+          "(?:could not|couldn.t|unable|not).{0,35}(?:see|clear|make out)"
+        ],
+        "forbid": [
+          "definitely|recognized him"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "07-omission",
+    "category": "omissions",
+    "source": "她关上窗，带走信，最后从后门离开。",
+    "draft": "She closed the window, took the letter, and left.",
+    "reference": "She closed the window, took the letter, and left through the back door.",
+    "checks": [
+      {
+        "require": [
+          "(?:back|rear) door",
+          "letter",
+          "window"
+        ],
+        "forbid": []
+      }
+    ]
+  },
+  {
+    "id": "08-invention",
+    "category": "unsupported additions",
+    "source": "收信人的名字被墨迹遮住，无法辨认。",
+    "draft": "The recipient was the mayor, whose name was covered by ink.",
+    "reference": "The recipient's name was covered by ink and could not be read.",
+    "checks": [
+      {
+        "require": [
+          "ink",
+          "(?:could not|couldn.t|unreadable|illegible|obscured|impossible)"
+        ],
+        "forbid": [
+          "mayor|governor"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "09-term",
+    "category": "terminology",
+    "source": "林青使用月影步躲开了箭。",
+    "draft": "Lin Qing used Lunar Shadow Footwork to dodge the arrow.",
+    "reference": "Lin Qing used Moon-Shadow Step to dodge the arrow.",
+    "checks": [
+      {
+        "require": [
+          "Moon-Shadow Step",
+          "(?:dodge|avoid|evade).{0,20}arrow"
+        ],
+        "forbid": [
+          "Lunar Shadow Footwork"
+        ]
+      }
+    ],
+    "glossary": [
+      {
+        "source": "月影步",
+        "target": "Moon-Shadow Step",
+        "blocked_variants": [
+          "Lunar Shadow Footwork"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "10-belief",
+    "category": "belief versus fact",
+    "source": "周岚怀疑钥匙是假的，但还没有证据。",
+    "draft": "The key was fake, and Zhou Lan had proved it.",
+    "reference": "Zhou Lan suspected the key was fake, but had no evidence yet.",
+    "checks": [
+      {
+        "require": [
+          "Zhou Lan.{0,25}(?:suspect|thought|believ)",
+          "(?:no evidence|without evidence|no proof|not.{0,12}proven)"
+        ],
+        "forbid": [
+          "had proved"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "11-clean",
+    "category": "clean controls",
+    "source": "林青锁好门后离开了。",
+    "draft": "Lin Qing locked the door before leaving.",
+    "reference": "Lin Qing locked the door before leaving.",
+    "checks": [
+      {
+        "require": [
+          "Lin Qing",
+          "lock",
+          "(?:before leaving|then left|and left)"
+        ],
+        "forbid": []
+      }
+    ],
+    "clean_control": true
+  },
+  {
+    "id": "12-clean",
+    "category": "clean controls",
+    "source": "盒子里有两封信，她只拿走了其中一封。",
+    "draft": "There were two letters in the box. She took only one.",
+    "reference": "There were two letters in the box. She took only one.",
+    "checks": [
+      {
+        "require": [
+          "two letters|2 letters",
+          "only one|only 1"
+        ],
+        "forbid": []
+      }
+    ],
+    "clean_control": true
+  }
+]

@@ -13,7 +13,7 @@ import os
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, Iterable
 
 from pydantic import TypeAdapter, ValidationError
 
@@ -32,6 +32,7 @@ from .agent_models import (
     ReadSourceContextAction,
     ReadTranslationContextAction,
     SubmitPatchAction,
+    SubmitSegmentPatchAction,
     TextEdit,
 )
 from .agent_provider import (
@@ -46,6 +47,7 @@ from .agent_provider import (
 )
 from .models import GlossaryEntry, GlossaryParseResult, ProviderCallRecord, QAFinding, QAReport
 from .qa import run_translation_qa
+from .qa import weighted_score
 from .repair import validate_patch_improves_qa
 from .providers_offline import normalize_english_punctuation
 from .terminology import TerminologyResolutionError, TerminologyResolver
@@ -132,6 +134,7 @@ class RepairToolExecutor:
         terminology_source_context_chars: int = 800,
         terminology_translation_context_chars: int = 800,
         allow_nonregressing_patches: bool = False,
+        ignored_qa_checks: Iterable[str] = (),
     ) -> None:
         self.source_text = source_text
         # Each episode receives an isolated glossary copy.  Resolution can
@@ -148,6 +151,9 @@ class RepairToolExecutor:
             100, min(int(terminology_translation_context_chars), 4000)
         )
         self.allow_nonregressing_patches = allow_nonregressing_patches
+        # Informational check IDs (e.g. curly English quotes flagged as Chinese
+        # punctuation) that must neither block nor score a candidate patch.
+        self.ignored_qa_checks = frozenset(ignored_qa_checks)
         self.run_id = run_id
         self.story_slug = story_slug
         self.chapter = chapter
@@ -622,20 +628,24 @@ class RepairToolExecutor:
         # This is deliberately the only candidate QA call.  All structured
         # edits are applied to a temporary string before entering the gate.
         candidate_report = self._run_qa(candidate_text)
-        before_keys = finding_identities(before_report)
-        after_keys = finding_identities(candidate_report)
+        before_gated = [f for f in before_report.findings if f.check_id not in self.ignored_qa_checks]
+        after_gated = [f for f in candidate_report.findings if f.check_id not in self.ignored_qa_checks]
+        before_keys = finding_identities(before_gated)
+        after_keys = finding_identities(after_gated)
         new_keys = after_keys - before_keys
         improves = validate_patch_improves_qa(
             before_report=before_report,
             after_report=candidate_report,
         )
+        if self.ignored_qa_checks:
+            improves = improves or weighted_score(after_gated) > weighted_score(before_gated)
         changed = candidate_text != self.current_text
         accepted_by_nonregression = (
             not improves
-            and mutation_tool == "submit_patch"
+            and mutation_tool in {"submit_patch", "submit_segment_patch"}
             and self.allow_nonregressing_patches
             and changed
-            and candidate_report.score >= before_report.score
+            and weighted_score(after_gated) >= weighted_score(before_gated)
             and not new_keys
         )
         accepted = (improves and not new_keys) or accepted_by_nonregression
@@ -674,6 +684,9 @@ class RepairToolExecutor:
                 message=(
                     "Patch accepted because deterministic QA did not regress; "
                     "a fresh source-fidelity review is required before completion."
+                    if mutation_tool == "submit_patch" else
+                    "Segment patch accepted because deterministic QA did not regress; "
+                    "fresh source screening or review is required before completion."
                 ),
                 data={
                     **evidence,
@@ -735,6 +748,88 @@ class RepairToolExecutor:
                 return self._reject_edit(edit, occurrences=occurrence_count)
             candidate_text = candidate_text.replace(edit.old_text, edit.new_text, 1)
         return self._verify_candidate(candidate_text, mutation_tool=action.tool)
+
+    def submit_segment_patch(
+        self,
+        action: SubmitSegmentPatchAction,
+        ordered_segments: list[tuple[str, str]],
+        *,
+        candidate_guard: Callable[[str], tuple[bool, str]] | None = None,
+    ) -> ToolExecutionResult:
+        """Apply an exact, atomic segment edit through the existing chapter QA gate.
+
+        The caller owns stable segment IDs and updates its segment record only
+        after an accepted result. This method never guesses a segment boundary
+        from mutated English prose.
+        """
+
+        if self.escalated or self.finished:
+            return self._result(self._observation(
+                ok=False, kind="terminal_rejected",
+                message="Repair executor is already in a terminal state.",
+            ))
+        if len({segment_id for segment_id, _ in ordered_segments}) != len(ordered_segments):
+            raise ValueError("ordered_segments contains duplicate segment IDs")
+        if "\n\n".join(text for _, text in ordered_segments) != self.current_text:
+            return self._result(self._observation(
+                ok=False, kind="patch_rejected",
+                message="Segment snapshot is stale relative to the working translation.",
+                data={"reason": "stale_segments"},
+            ), qa_before=self.current_qa)
+        match = next(((index, text) for index, (segment_id, text) in enumerate(ordered_segments)
+                      if segment_id == action.segment_id), None)
+        if match is None:
+            return self._result(self._observation(
+                ok=False, kind="patch_rejected", message="Unknown segment ID.",
+                data={"reason": "unknown_segment", "segment_id": action.segment_id},
+            ), qa_before=self.current_qa)
+        index, original = match
+        current_sha = hashlib.sha256(original.encode("utf-8")).hexdigest()
+        if current_sha != action.expected_segment_sha256:
+            return self._result(self._observation(
+                ok=False, kind="patch_rejected", message="Segment target is stale.",
+                data={"reason": "stale_target", "segment_id": action.segment_id,
+                      "current_segment_sha256": current_sha},
+            ), qa_before=self.current_qa)
+        candidate_segment = original
+        for edit in action.edits:
+            if edit.old_text == self.current_text:
+                return self._result(self._observation(
+                    ok=False, kind="patch_rejected",
+                    message="Whole-chapter target is not allowed.",
+                    data={"reason": "whole_chapter_target"},
+                ), qa_before=self.current_qa)
+            count = _count_overlapping_occurrences(candidate_segment, edit.old_text)
+            if count != 1:
+                return self._result(self._observation(
+                    ok=False, kind="patch_rejected",
+                    message=f"old_text must occur exactly once inside segment {action.segment_id} (found {count}).",
+                    data={"reason": "ambiguous_target", "occurrences": count,
+                          "segment_id": action.segment_id},
+                ), qa_before=self.current_qa)
+            candidate_segment = candidate_segment.replace(edit.old_text, edit.new_text, 1)
+        if not candidate_segment.strip():
+            return self._result(self._observation(
+                ok=False, kind="patch_rejected",
+                message="Segment patch would remove all translated content for a source segment.",
+                data={"reason": "structural_regression", "segment_id": action.segment_id},
+            ), qa_before=self.current_qa)
+        candidate_segments = list(ordered_segments)
+        candidate_segments[index] = (action.segment_id, candidate_segment)
+        candidate_text = "\n\n".join(text for _, text in candidate_segments)
+        if candidate_guard is not None:
+            allowed, reason = candidate_guard(candidate_segment)
+            if not allowed:
+                return self._result(self._observation(
+                    ok=False, kind="patch_rejected", message=reason,
+                    data={"reason": "source_guard", "segment_id": action.segment_id},
+                ), qa_before=self.current_qa)
+        result = self._verify_candidate(candidate_text, mutation_tool=action.tool)
+        result.observation.data["segment_id"] = action.segment_id
+        result.observation.data["issue_ids"] = list(action.issue_ids)
+        if result.observation.ok:
+            result.observation.data["candidate_segment_text"] = candidate_segment
+        return result
 
     def _normalize_punctuation(self) -> ToolExecutionResult:
         candidate_text = normalize_english_punctuation(self.current_text)

@@ -97,6 +97,30 @@ class SubmitPatchAction(AgentActionBase):
         return self.edits[0].new_text
 
 
+class SegmentTextEdit(AgentActionBase):
+    """A bounded exact replacement inside one identified segment.
+
+    The 8000-char bound accommodates a whole-segment rewrite (one edit whose
+    ``old_text`` is the entire current segment text) used by review v3's
+    segment-patch path. It does not apply to the legacy ``TextEdit`` above.
+    """
+
+    old_text: str = Field(min_length=1, max_length=8000)
+    new_text: str = Field(max_length=8000)
+
+
+class SubmitSegmentPatchAction(AgentActionBase):
+    """Versioned adaptive action; legacy global patch contracts are unchanged."""
+
+    tool: Literal["submit_segment_patch"] = "submit_segment_patch"
+    schema_version: Literal["segment-patch.v1"] = "segment-patch.v1"
+    segment_id: str = Field(min_length=1, max_length=200)
+    expected_segment_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    edits: list[SegmentTextEdit] = Field(min_length=1, max_length=8)
+    issue_ids: list[str] = Field(min_length=1, max_length=16)
+    rationale: str = Field(min_length=1, max_length=1200)
+
+
 class NormalizePunctuationAction(AgentActionBase):
     """Normalize Chinese punctuation in the working translation."""
 

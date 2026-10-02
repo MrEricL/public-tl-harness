@@ -2,6 +2,26 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import re
+import unicodedata
+
+
+def literal_term_pattern(term: str, *, ignore_case: bool = True) -> re.Pattern[str]:
+    """Match a literal term without mistaking a Latin word fragment for a name.
+
+    Possessives and punctuation are valid boundaries; letters, numbers, and
+    underscores are not. CJK spans retain literal substring semantics because
+    Chinese text does not separate words with spaces. No spelling, inflection,
+    or hyphenation normalization is implied.
+    """
+    if not term:
+        raise ValueError("A literal term must be nonempty")
+
+    def word_edge(char: str) -> bool:
+        return char.isdigit() or char == "_" or "LATIN" in unicodedata.name(char, "")
+
+    start = r"(?<!\w)" if word_edge(term[0]) else ""
+    end = r"(?!\w)" if word_edge(term[-1]) else ""
+    return re.compile(start + re.escape(term) + end, re.IGNORECASE if ignore_case else 0)
 
 
 @dataclass(frozen=True)

@@ -16,6 +16,19 @@ underlying chapters. These materials document what was measured; they do not
 make the private corpus independently reproducible or establish a general
 translation-quality improvement.
 
+The held-out web-novel study, its development runs, and the harness lab used
+chapters from a private corpus that is not distributed. The public
+[results](docs/RESULTS.md) report aggregate counts, costs, and judgments only,
+plus one published example of a single character name and its six English
+renderings. Chapter text, translations, per-term data, judging packets, and run
+artifacts are not included, and the experiment runners that read the corpus
+are not published.
+
+The folder demo's glossary (`samples/showcase/terms/demo_glossary.json`) and
+the seeded repair challenge (`experiments/portfolio_demo/repair_cases.json`)
+are short authored fixtures for the bundled invented story and the repair
+test, not text from the private corpus.
+
 `samples/synthetic_repair_demo/` is newly authored synthetic test material. Its
 short statements describe a controller, a valve, sampling cycles, and numeric
 readings solely to exercise operation-order repair, terminology approval,

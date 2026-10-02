@@ -22,6 +22,9 @@ dependencies = [
 dev = [
   "pytest",
 ]
+jev = [
+  "typesafe-sdk>=0.5.7",
+]
 
 [project.scripts]
 agentic-translation = "agentic_translation.cli:app"

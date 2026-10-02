@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import re
 from typing import Literal
 
 from .models import QAFinding, QAReport, RepairPatch
 from .qa import weighted_score
-from .text import join_paragraphs, split_paragraphs
+from .text import literal_term_pattern, join_paragraphs, split_paragraphs
 
 
 RepairStrategy = Literal["rule", "candidate_selection", "human_review", "none"]
@@ -51,15 +50,12 @@ def apply_patch(text: str, patch: RepairPatch) -> str:
     if patch.patch_type == "replace_span":
         if not patch.old_text:
             raise ValueError("replace_span patch requires non-empty old_text")
-        if re.match(r"^[A-Za-z0-9].*[A-Za-z0-9]$", patch.old_text):
-            pattern = re.compile(rf"(?<![A-Za-z0-9]){re.escape(patch.old_text)}(?![A-Za-z0-9])")
-            if not pattern.search(text):
-                raise ValueError(f"Patch old_text not found: {patch.old_text}")
-            return pattern.sub(patch.new_text, text)
-        if patch.old_text not in text:
+        pattern = literal_term_pattern(patch.old_text, ignore_case=False)
+        if not pattern.search(text):
             raise ValueError(f"Patch old_text not found: {patch.old_text}")
-        # Demo policy: replace all exact occurrences of the stale span.
-        return text.replace(patch.old_text, patch.new_text)
+        # The replacement is data, not a regex replacement expression. Using a
+        # callback also preserves backslashes and prevents backreference errors.
+        return pattern.sub(lambda _match: patch.new_text, text)
     paragraphs = split_paragraphs(text)
     if patch.paragraph_index is None:
         raise ValueError("replace_paragraph patch requires paragraph_index")

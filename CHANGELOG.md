@@ -50,3 +50,26 @@ This release does not include private corpora, comparison fixtures, raw
 experiment artifacts, provider payloads, or private workspace notes. Targeted
 historical checks are summarized in [docs/AUTOMATIC_REPAIR.md](docs/AUTOMATIC_REPAIR.md);
 they are not a new public benchmark run.
+
+## Long-horizon web-novel harness, results, and one-key demo
+
+- Leads the README with the pre-registered held-out web-novel result: 2.7×
+  fewer inconsistent term renderings (65.9% → 87.2% consistency) and 4.5× fewer
+  glossary misses across 40 chapters from four novels, with the judged-quality,
+  attribution, and Jev-routing limits stated beside them. Aggregate numbers are
+  in [docs/RESULTS.md](docs/RESULTS.md); the corpus and per-term data stay private.
+- Adds the unattended long-horizon runtime: causal source-only story memory,
+  segmentation, batched glossary alignment, routed review and bounded repair,
+  guards against lost content, added glosses, and duplicated text, cost
+  accounting, and an optional direct Jev decision adapter.
+- Adds `demo.py`: translate a folder of Chinese chapters with one
+  OpenAI-compatible key, compare plain → glossary → memory → repair by glossary
+  category, and replay the run without network calls. A second short test
+  repairs ten seeded meaning errors with two clean controls. Each call has a
+  total deadline, and a run with missing output reports "No score".
+- Adds the harness-lab tool surface: one bounded chapter-repair tool set exposed
+  as a CLI and a dependency-free MCP stdio server, guarded by the same trusted
+  executor, plus the aggregate same-tools comparison of this project's loop,
+  Claude Code, and Codex.
+- Fixes literal glossary-term matching, safe span replacement, and
+  glossary-bound session identity found in a September audit.

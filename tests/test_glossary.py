@@ -46,3 +46,11 @@ def test_load_public_demo_glossary() -> None:
     assert "Way of Heaven" in parsed.blocked_variants
     assert "deduction" in parsed.blocked_variants
 
+
+
+def test_incomplete_glossary_entries_are_not_silently_discarded() -> None:
+    for text in ("伊文 ->", "-> Evan", "伊文:", ": Evan", "伊文："):
+        parsed = parse_glossary_text(text)
+        assert not parsed.entries
+        assert len(parsed.warnings) == 1
+        assert "needs" in parsed.warnings[0]

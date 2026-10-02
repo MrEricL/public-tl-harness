@@ -35,6 +35,8 @@ def parse_glossary_text(text: str) -> GlossaryParseResult:
                 entries.append(
                     GlossaryEntry(source=source, target=target, candidates=[target])
                 )
+            else:
+                warnings.append(f"line {line_number}: glossary entry needs both source and target")
             continue
         if ":" in line or "：" in line:
             normalized = line.replace("：", ":", 1)
@@ -48,6 +50,8 @@ def parse_glossary_text(text: str) -> GlossaryParseResult:
                         candidates=candidates,
                     )
                 )
+            else:
+                warnings.append(f"line {line_number}: glossary entry needs source and candidates")
             continue
         warnings.append(f"line {line_number}: ignored malformed glossary line")
 
