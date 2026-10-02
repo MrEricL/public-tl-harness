@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import copy
 import json
+import math
 import os
 import time
 from pathlib import Path
@@ -57,6 +58,41 @@ _PROFILE_DEFAULTS: dict[str, dict[str, Any]] = {
         "default_model": "deepseek-chat",
     },
 }
+
+
+# These settings are intentionally separate from ``resolve_profile``.  The
+# latter is part of the historical showcase/replay contract and must continue
+# returning its 2,048-token, 60-second native-function profile.  New
+# experiment code opts into one of these phase profiles explicitly and records
+# the resulting values in its run identity.
+_PHASE_DEFAULTS: dict[str, dict[str, int | float]] = {
+    "translation": {
+        "max_output_tokens": 16_384,
+        "request_timeout_seconds": 180.0,
+    },
+    "simple_revision": {
+        "max_output_tokens": 16_384,
+        "request_timeout_seconds": 180.0,
+    },
+    "memory": {
+        "max_output_tokens": 4_096,
+        "request_timeout_seconds": 180.0,
+    },
+    "review": {
+        "max_output_tokens": 4_096,
+        "request_timeout_seconds": 180.0,
+    },
+    "action": {
+        "max_output_tokens": 2_048,
+        "request_timeout_seconds": 180.0,
+    },
+    "repair": {
+        "max_output_tokens": 2_048,
+        "request_timeout_seconds": 180.0,
+    },
+}
+_THINKING_MODES = frozenset({"disabled", "enabled"})
+_TOOL_PROTOCOLS = frozenset({"json_prompt", "native_function"})
 
 
 def _json_copy(value: Any, *, label: str) -> Any:
@@ -128,6 +164,98 @@ def resolve_profile(name: str, model: str | None = None) -> dict[str, Any]:
         # provider capability.
         profile["extra_body"] = {"thinking": {"type": "disabled"}}
         profile["tool_protocol"] = "json_prompt"
+    return profile
+
+
+def resolve_phase_profile(
+    name: str,
+    model: str | None = None,
+    *,
+    phase: str = "translation",
+    thinking: str = "disabled",
+    temperature: int | float = 0,
+    max_output_tokens: int | None = None,
+    request_timeout_seconds: int | float | None = None,
+    tool_protocol: str = "json_prompt",
+) -> dict[str, Any]:
+    """Resolve an explicit, phase-specific profile for a new experiment.
+
+    Provider/model selection follows :func:`resolve_profile` exactly, including
+    provider-specific environment variables, the shared model fallback, and
+    the redacted ``model_source`` field.  Every generation option that differs
+    by phase is then written into the returned mapping so callers can persist
+    the effective profile with their run identity.
+
+    ``thinking`` is an explicit option rather than a model-name heuristic.  A
+    DeepSeek phase profile carries it through the provider's ``extra_body``
+    request extension, including for the current ``deepseek-flash`` alias and
+    legacy names.  Other providers retain the recorded option without being
+    sent a DeepSeek-specific request extension.
+    """
+
+    if not isinstance(phase, str) or not phase.strip():
+        raise ValueError("phase must be a non-empty string")
+    phase_name = phase.strip().casefold()
+    if phase_name not in _PHASE_DEFAULTS:
+        supported = ", ".join(_PHASE_DEFAULTS)
+        raise ValueError(f"Unknown provider phase {phase!r}; expected one of {supported}.")
+
+    if not isinstance(thinking, str) or not thinking.strip():
+        raise ValueError("thinking must be a non-empty string")
+    thinking_mode = thinking.strip().casefold()
+    if thinking_mode not in _THINKING_MODES:
+        supported = ", ".join(sorted(_THINKING_MODES))
+        raise ValueError(f"thinking must be one of: {supported}")
+
+    if not isinstance(tool_protocol, str) or not tool_protocol.strip():
+        raise ValueError("tool_protocol must be a non-empty string")
+    protocol = tool_protocol.strip().casefold()
+    if protocol not in _TOOL_PROTOCOLS:
+        supported = ", ".join(sorted(_TOOL_PROTOCOLS))
+        raise ValueError(f"tool_protocol must be one of: {supported}")
+
+    if isinstance(temperature, bool) or not isinstance(temperature, (int, float)):
+        raise ValueError("temperature must be a finite number")
+    if not math.isfinite(float(temperature)) or float(temperature) < 0:
+        raise ValueError("temperature must be a finite non-negative number")
+
+    phase_defaults = _PHASE_DEFAULTS[phase_name]
+    output_limit = (
+        phase_defaults["max_output_tokens"]
+        if max_output_tokens is None
+        else max_output_tokens
+    )
+    if isinstance(output_limit, bool) or not isinstance(output_limit, int) or output_limit <= 0:
+        raise ValueError("max_output_tokens must be a positive integer")
+
+    timeout = (
+        phase_defaults["request_timeout_seconds"]
+        if request_timeout_seconds is None
+        else request_timeout_seconds
+    )
+    if isinstance(timeout, bool) or not isinstance(timeout, (int, float)):
+        raise ValueError("request_timeout_seconds must be a finite positive number")
+    if not math.isfinite(float(timeout)) or float(timeout) <= 0:
+        raise ValueError("request_timeout_seconds must be a finite positive number")
+
+    # Resolve the provider and model through the legacy function to keep
+    # explicit-vs-environment precedence identical.  Remove its historical
+    # DeepSeek V4 special case before applying this function's explicit option;
+    # the new path must not infer capabilities from a model-name prefix.
+    profile = resolve_profile(name, model)
+    profile.pop("extra_body", None)
+    profile.update(
+        {
+            "phase": phase_name,
+            "thinking": thinking_mode,
+            "tool_protocol": protocol,
+            "temperature": float(temperature),
+            "max_output_tokens": output_limit,
+            "request_timeout_seconds": float(timeout),
+        }
+    )
+    if profile["provider"] == "deepseek":
+        profile["extra_body"] = {"thinking": {"type": thinking_mode}}
     return profile
 
 
@@ -510,5 +638,6 @@ __all__ = [
     "fixture_profile",
     "make_action_provider",
     "make_translation_provider",
+    "resolve_phase_profile",
     "resolve_profile",
 ]

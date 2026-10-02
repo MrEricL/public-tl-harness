@@ -12,6 +12,7 @@ on:
       - "tests/**"
       - "tools/**"
       - "*.md"
+      - "demo.py"
       - "pyproject.toml"
       - "public-release-manifest.json"
       - "release/**"
@@ -26,6 +27,7 @@ on:
       - "tests/**"
       - "tools/**"
       - "*.md"
+      - "demo.py"
       - "pyproject.toml"
       - "public-release-manifest.json"
       - "release/**"
@@ -36,6 +38,10 @@ permissions:
 jobs:
   harness-v3:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.13"]
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -43,13 +49,18 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: ${{ matrix.python-version }}
 
       - name: Install package and test dependencies
-        run: python -m pip install -e ".[dev]"
+        run: python -m pip install -e ".[dev,jev]"
 
       - name: Run the complete portable test suite
-        run: python -m pytest -q
+        run: python -m pytest -q --junitxml="${{ runner.temp }}/test-results.xml"
+
+      - name: Check the portfolio CLI and credential-free demo
+        run: |
+          python demo.py --help
+          python demo.py --offline --out "${{ runner.temp }}/portfolio-offline"
 
       - name: Run the focused experiment benchmark tests
         working-directory: "experiments/mid_corpus_harness_benchmark"
@@ -69,3 +80,13 @@ jobs:
 
       - name: Smoke Harness v3 contract bench (synthetic, no provider)
         run: python -m agentic_translation harness bench --suite samples/harness_eval/v3_cases.json --out "${{ runner.temp }}/harness-v3-bench" --overwrite
+
+      - name: Retain test and source-free evidence reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: harness-evidence-python-${{ matrix.python-version }}
+          path: |
+            ${{ runner.temp }}/test-results.xml
+          retention-days: 14
+          if-no-files-found: warn

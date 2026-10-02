@@ -182,6 +182,12 @@ def harness_run(
     model: str | None = typer.Option(None, "--model"),
     draft_dir: Path | None = typer.Option(None, "--draft-dir", help="Use supplied chapter drafts instead of translating."),
     strategy: str = typer.Option("automatic", "--strategy", help="automatic (meaning repair + source review), specialists, single, or deterministic"),
+    interaction: str = typer.Option("interactive", "--interaction", help="interactive or unattended (adaptive strategies)"),
+    memory: str | None = typer.Option(None, "--memory", help="source-grounded for unattended mode"),
+    glossary_policy: str | None = typer.Option(None, "--glossary-policy", help="run-local-auto for unattended mode"),
+    decision_provider: str = typer.Option("jev", "--decision-provider"),
+    decision_model: str = typer.Option("jev-1.13.0", "--decision-model"),
+    max_usd: float = typer.Option(10.0, "--max-usd", min=0.01, help="API expense ceiling for a new unattended book run"),
     auto_approve: bool = typer.Option(False, "--auto-approve", help="Explicitly approve run-local glossary proposals for unattended demos."),
     jev_policy: Path | None = typer.Option(
         None,
@@ -192,6 +198,26 @@ def harness_run(
     """Translate chapters, review repairs, reuse approved terms, and export a book."""
     from .showcase import run_showcase
     try:
+        if strategy in {"adaptive", "always-review"}:
+            if (interaction != "unattended" or memory != "source-grounded"
+                    or glossary_policy != "run-local-auto" or decision_provider != "jev"):
+                raise ValueError("Adaptive runs require --interaction unattended --memory source-grounded --glossary-policy run-local-auto --decision-provider jev")
+            if provider_mode != "live" or profile != "deepseek" or draft_dir or jev_policy or auto_approve:
+                raise ValueError("Unattended book runs currently require live DeepSeek generation and direct Jev; use separate legacy options for supplied drafts, approvals or gateway policy")
+            from .autonomous_book import run_unattended_book
+            manifest = run_unattended_book(story, out, model=model or "deepseek-flash",
+                decision_model=decision_model, max_usd=max_usd, strategy=strategy)
+            console.print(f"Status: {manifest['status']}")
+            console.print(f"Manifest: {out / 'manifest.json'}")
+            delivery_name = manifest.get("delivery")
+            delivery_path = out / str(delivery_name) if isinstance(delivery_name, str) and delivery_name else None
+            if delivery_path is not None and delivery_path.is_file():
+                console.print(f"Delivery: {delivery_path}")
+            if manifest["status"] == "failed_no_output":
+                raise typer.Exit(1)
+            return
+        if interaction != "interactive" or memory is not None or glossary_policy is not None:
+            raise ValueError("Unattended policies require --strategy adaptive or always-review")
         semantic_policy = (
             JevPolicy.model_validate_json(jev_policy.read_text(encoding="utf-8"))
             if jev_policy is not None

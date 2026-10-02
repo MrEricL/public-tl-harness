@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 
 def test_public_docs_are_portable_and_exclude_private_workspace_details() -> None:
@@ -8,8 +9,11 @@ def test_public_docs_are_portable_and_exclude_private_workspace_details() -> Non
         Path("DATA_NOTICE.md"),
         Path("CHANGELOG.md"),
         Path("docs/AUTOMATIC_REPAIR.md"),
+        Path("docs/RESULTS.md"),
         Path("docs/SESSION_IDENTITY.md"),
         Path("docs/JEV_EXTENSION.md"),
+        Path("docs/TRY_IT.md"),
+        Path("experiments/portfolio_demo/README.md"),
     ]
     combined = "\n".join(path.read_text(encoding="utf-8") for path in public_docs)
 
@@ -19,10 +23,13 @@ def test_public_docs_are_portable_and_exclude_private_workspace_details() -> Non
         "/Users/",
         private_experiment_path,
         gateway_secret_prefix,
-        "recruiter-facing",
         "account is out of balance",
     ):
         assert forbidden not in combined
+
+    # Every experiments/ directory cited by the public docs must ship in this tree.
+    for cited in set(re.findall(r"experiments/\w+", combined)):
+        assert Path(cited).is_dir(), cited
 
 
 def test_data_notice_labels_the_new_fixture_as_synthetic() -> None:

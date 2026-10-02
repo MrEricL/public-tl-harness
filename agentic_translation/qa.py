@@ -4,7 +4,7 @@ import re
 from collections import Counter
 
 from .models import GlossaryParseResult, QAFinding, QALocation, QAReport, QASummary
-from .text import extract_panel_segments, find_paragraph_index, first_non_empty_line, split_paragraphs
+from .text import extract_panel_segments, find_paragraph_index, first_non_empty_line, literal_term_pattern, split_paragraphs
 
 
 CHINESE_RE = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]+")
@@ -92,7 +92,7 @@ def _finding(
 
 def _find_observed_glossary_alias(translated_text: str, entry_source: str, aliases: list[str]) -> tuple[str, int | None] | None:
     for alias in sorted({alias for alias in aliases if alias and alias != entry_source}, key=len, reverse=True):
-        match = re.search(re.escape(alias), translated_text, flags=re.IGNORECASE)
+        match = literal_term_pattern(alias).search(translated_text)
         if match:
             observed = match.group(0)
             return observed, find_paragraph_index(translated_text, observed)
@@ -341,21 +341,21 @@ def run_translation_qa(
                 )
             )
 
-    translated_lower = translated_text.lower()
     literal_source_spans, independent_source_spans = _glossary_source_spans(
         source_text,
         glossary,
     )
     for entry in glossary.entries:
         for variant in entry.blocked_variants:
-            if variant and variant.lower() in translated_lower:
+            match = literal_term_pattern(variant).search(translated_text) if variant else None
+            if match:
                 findings.append(
                     _finding(
                         check_id="blocked_glossary_variant",
                         chapter=chapter,
-                        found=variant,
+                        found=match.group(0),
                         expected=entry.target,
-                        paragraph_index=find_paragraph_index(translated_text, variant),
+                        paragraph_index=_paragraph_index_at_offset(translated_text, match.start()),
                         message="Blocked glossary variant appears in translated text.",
                         suggested_action="Replace blocked variant with canonical glossary term.",
                         auto_repairable=True,
@@ -364,7 +364,7 @@ def run_translation_qa(
 
     for entry in glossary.entries:
         entry_source_spans = independent_source_spans.get(entry.source, [])
-        if entry_source_spans and entry.target.lower() not in translated_lower:
+        if entry_source_spans and entry.target and not literal_term_pattern(entry.target).search(translated_text):
             aliases = [candidate for candidate in entry.candidates if candidate != entry.target]
             aliases.extend(
                 _cross_glossary_aliases(

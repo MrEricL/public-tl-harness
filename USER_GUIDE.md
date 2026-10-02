@@ -1,5 +1,11 @@
 # User Guide
 
+For the new one-key folder workflow, start with [Try it](docs/TRY_IT.md) or
+`python demo.py`. It creates translations, TXT/EPUB, a before/after report and
+component/category comparisons without story YAML or Jev. This longer guide
+also retains the legacy interactive and unattended commands.
+
+
 This guide explains how to install, run, inspect, and safely share the Agentic Long-Form Translation Prototype.
 
 The short version:

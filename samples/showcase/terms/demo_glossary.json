@@ -1,0 +1,37 @@
+[
+  {
+    "source": "青云宗",
+    "target": "Azure Cloud Sect",
+    "category": "sects"
+  },
+  {
+    "source": "沈砚",
+    "target": "Shen Yan",
+    "category": "people"
+  },
+  {
+    "source": "顾绫",
+    "target": "Gu Ling",
+    "category": "people"
+  },
+  {
+    "source": "镜湖镇",
+    "target": "Mirror Lake Town",
+    "category": "places"
+  },
+  {
+    "source": "观星台",
+    "target": "Stargazing Terrace",
+    "category": "places"
+  },
+  {
+    "source": "星河步",
+    "target": "Starstream Step",
+    "category": "techniques"
+  },
+  {
+    "source": "潮汐镜",
+    "target": "Tidal Mirror",
+    "category": "artifacts"
+  }
+]
