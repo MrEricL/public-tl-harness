@@ -102,12 +102,17 @@ python demo.py --repair-bench --provider openai --model YOUR_MODEL \
   --out runs/test-2 --max-calls 120 --open
 ```
 
-Twelve short authored passages cover negation, quantities, chronology,
+Ten short authored passages with seeded errors cover negation, quantities, chronology,
 conditions, actor attribution, uncertainty, omissions, unsupported additions,
 terminology and beliefs, plus two clean controls. The evaluator's reference and
 checks are never sent to the model. This isolates repair capability without
 paying to translate another corpus. The checks are deliberately small; inspect
 flagged text rather than treating a regex as a literary critic.
+
+The headline separates errors fixed out of ten from clean controls that still
+pass out of two. It also records how many controls remain byte-for-byte
+unchanged. The raw before/after check counts remain visible; the deliberately
+broken starting drafts are not a baseline for an overall quality multiplier.
 
 ## Inspect and replay
 
@@ -124,7 +129,9 @@ python demo.py --replay runs/test-1 --out runs/test-1-replay --open
 
 Folder-demo replay uses copied sources and successful cached model responses,
 never a network request. Changed source, glossary, policy, or a cache miss is
-rejected. Replay is not mid-run recovery and the separate repair challenge has
+rejected. Successful responses are copied into the replay folder, which can
+itself be moved and replayed without retaining the original run. Replay is not
+mid-run recovery and the separate repair challenge has
 no replay command. Replayed token/latency figures describe recorded work;
 `physical_calls` is zero. A replay itself does not provide a new quality trial.
 

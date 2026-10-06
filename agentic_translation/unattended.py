@@ -378,8 +378,9 @@ ALIGNMENT_SCHEMA = {
 class TermAlignmentAdapter:
     """One batched call aligns a chapter's drafts with established story-memory renderings."""
 
-    def __init__(self, generator: BudgetedGenerator):
+    def __init__(self, generator: BudgetedGenerator, *, bounded_edits: bool = False):
         self.generator = generator
+        self.bounded_edits = bounded_edits
 
     def align(self, items: Sequence[TermAlignmentItem]) -> list[SubmitSegmentPatchAction]:
         prompt = (
@@ -393,6 +394,9 @@ class TermAlignmentAdapter:
             "per segment with segment_id, expected_segment_sha256 (copy it), edits [{old_text,new_text}] where "
             "old_text occurs exactly once in that segment's draft_text, issue_ids [\"term_alignment\"], and a "
             "short rationale. Return an empty patches array if nothing should change.\n"
+            + ("Each old_text must be a nonempty proper substring of the current draft, never the whole "
+               "segment, even for a short passage. Use the shortest unique phrase containing the term; "
+               "preserve surrounding text.\n" if self.bounded_edits else "")
             + json.dumps({"segments": [
                 {"segment_id": item.segment_id, "source_text": item.source_text, "draft_text": item.draft_text,
                  "expected_segment_sha256": item.expected_segment_sha256,
@@ -672,6 +676,9 @@ def run_chapter_arms(
                         decision_provider or TypeSafeDecisionProvider(record_dir=run_dir / "decisions"),
                         config, run_dir,
                     )
+                    # Keep the live receipt list before running the scheduler:
+                    # a later exception still belongs in this arm's cost/count.
+                    decision_receipts = decisions.receipts
                 budgets = config.get("budgets", {})
                 budget = BudgetPolicy(
                     max_coordinator_steps=int(budgets.get("max_coordinator_steps", 24)),
@@ -697,7 +704,6 @@ def run_chapter_arms(
                     session_dir=run_dir / "adaptive_sessions" / f"{work_id}_{chapter_id}_{arm}",
                     run_id=f"natural_{arm}", story_slug=work_id,
                 )
-                decision_receipts = [] if decisions is None else decisions.receipts
                 output = result.final_text or ""
                 unrecovered_cost = recovered_terminal and bool(result.review_calls or result.screen_calls or result.patch_actions)
                 warning_items = [asdict(item) for item in result.warnings]
@@ -730,6 +736,7 @@ def run_chapter_arms(
                               "format_recovery_exhausted": isinstance(exc, GenerationOutputError)
                               or bool(getattr(gen, "coverage_recovery_attempted", False))}],
                    elapsed=time.perf_counter()-started,
+                   jev_calls=len(decision_receipts),
                    review_calls=1 if any(item.get("operation") == "simple_critique"
                                          for item in gen.receipts) else 0)
             if ((isinstance(exc, LLMProviderUnavailable) and not isinstance(exc, GenerationOutputError))

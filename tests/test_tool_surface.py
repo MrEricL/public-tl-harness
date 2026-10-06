@@ -159,7 +159,7 @@ def test_edit_segment_content_loss_guard_rejects_large_shrink(tmp_path):
     assert "shrank" in result["message"]
 
 
-def test_edit_segment_whole_chapter_target_suggests_rewrite_segment(tmp_path):
+def test_single_segment_rewrite_explains_the_usable_phrase_edit(tmp_path):
     task_dir = tmp_path / "task"
     surface = ToolSurface.create_task(
         task_dir, task_id="t", work_id="w", chapter_id="c",
@@ -172,7 +172,17 @@ def test_edit_segment_whole_chapter_target_suggests_rewrite_segment(tmp_path):
         "edits": [{"old_text": "Only segment.", "new_text": "Different."}],
     })
     assert result["ok"] is False
-    assert "rewrite_segment" in result["message"]
+    assert "smaller exact phrase" in result["message"]
+    rewrite = surface.call("rewrite_segment", {
+        "segment_id": "s1", "expected_sha256": sha, "text": "Different.",
+    })
+    assert rewrite["ok"] is False
+    assert "smaller exact phrase" in rewrite["message"]
+    phrase = surface.call("edit_segment", {
+        "segment_id": "s1", "expected_sha256": sha,
+        "edits": [{"old_text": "Only", "new_text": "Another"}],
+    })
+    assert phrase["ok"] is True
 
 
 def test_rewrite_segment_whole_segment_replacement(tmp_path):
@@ -230,6 +240,11 @@ def test_tool_call_budget_is_enforced(tmp_path):
     result = surface.call("list_segments")
     assert result["ok"] is False
     assert "Tool-call budget exhausted" in result["message"]
+    done = surface.call("done", {"summary": "Stopped at the tool budget."})
+    assert done["ok"] is True
+    from agentic_translation.tool_surface import TaskState
+    assert TaskState.load(surface.task_dir).finished is True
+    assert surface.call("list_segments")["ok"] is False
 
 
 def test_edit_budget_is_enforced_independent_of_read_calls(tmp_path):

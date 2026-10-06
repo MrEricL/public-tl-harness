@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from agentic_translation.adaptive import (
     AdaptiveReviewFinding,
     AdaptiveReviewResult,
@@ -168,11 +170,13 @@ def test_full_review_requires_each_segment_and_fails_closed_on_budget() -> None:
     assert "missing_review_coverage" in {warning.code for warning in result.warnings}
 
 
-def test_full_review_rechecks_edited_segment() -> None:
+@pytest.mark.parametrize("instruction", ["natural-review-v5", "natural-review-v6"])
+def test_full_review_rechecks_edited_segment(instruction) -> None:
     reviewer = Reviewer()
     result = run_adaptive_chapter(SOURCES, DRAFTS, glossary=GLOSSARY,
                                   decision_provider=None, review_provider=reviewer,
-                                  verification_policy=VerificationPolicy(mode="full_segment_review"))
+                                  verification_policy=VerificationPolicy(
+                                      mode="full_segment_review", instruction_version=instruction))
     assert result.outcome == "delivered"
     assert result.review_calls == 3
     assert [request.draft_text for request in reviewer.requests if request.segment_id == SOURCES[0].segment_id] == [
@@ -306,3 +310,101 @@ def test_segment_patch_allows_repeated_phrase_in_other_segment() -> None:
     outcome = executor.submit_segment_patch(action, [("s1", "wrong"), ("s2", "wrong")])
     assert outcome.observation.ok
     assert executor.current_text == "right\n\nwrong"
+
+
+@pytest.mark.parametrize("review_state", ["failed", "missing", "exhausted", "completed"])
+def test_deterministic_trigger_requires_current_review_even_after_clean_screen(review_state) -> None:
+    from agentic_translation.models import GlossaryEntry, GlossaryParseResult
+
+    # Chapter-level QA sees Moonboat in the first segment and misses the
+    # second segment's drift. The segment-level trigger must still be resolved.
+    sources = segment_source("invented", "c1", "月舟停了。\n月舟走了。\n", target_chars=6, max_chars=7)
+    drafts = (
+        DraftSegment.from_text(sources[0].segment_id, "Chapter 1\n\nThe Moonboat stopped."),
+        DraftSegment.from_text(sources[1].segment_id, "The skiff left."),
+    )
+    glossary = GlossaryParseResult(entries=[GlossaryEntry(source="月舟", target="Moonboat")])
+
+    class CleanScreen:
+        def evaluate(self, request):
+            return _decision(request)
+
+    class Review:
+        def review(self, request):
+            assert request.deterministic_findings
+            return AdaptiveReviewResult(
+                status="completed" if review_state == "completed" else "failed",
+                summary="Reviewed the contextual sense." if review_state == "completed" else "Invalid response.",
+            )
+
+    result = run_adaptive_chapter(
+        sources, drafts, glossary=glossary, decision_provider=CleanScreen(),
+        review_provider=None if review_state == "missing" else Review(),
+        verification_policy=VerificationPolicy(route_deterministic_findings=True),
+        budget_policy=BudgetPolicy(max_coordinator_steps=0 if review_state == "exhausted" else 24),
+    )
+    if review_state == "completed":
+        # A completed review may explain a legitimate context-dependent sense.
+        assert result.outcome == "delivered"
+        assert result.warnings == ()
+    else:
+        assert result.outcome == "delivered_with_warnings"
+        assert [(warning.code, warning.segment_id) for warning in result.warnings] == [
+            ("missing_review_coverage", sources[1].segment_id),
+        ]
+
+
+@pytest.mark.parametrize("instruction", ["natural-review-v5", "natural-review-v6"])
+@pytest.mark.parametrize("proposal_path", ["review", "alignment", "chained_review"])
+def test_v6_phrase_boundary_applies_to_review_and_alignment(instruction, proposal_path) -> None:
+    from agentic_translation.models import GlossaryEntry, GlossaryParseResult
+
+    sources = segment_source("invented", "c1", "月舟停了。\n风吹过树林。\n", target_chars=6, max_chars=8)
+    drafts = (
+        DraftSegment.from_text(sources[0].segment_id, "Chapter 1\n\nThe skiff stopped."),
+        DraftSegment.from_text(sources[1].segment_id, "The wind blew through the trees."),
+    )
+    glossary = GlossaryParseResult(entries=[GlossaryEntry(source="月舟", target="Moonboat")])
+
+    def rewrite(segment_id, draft_text):
+        edits = [SegmentTextEdit(old_text=draft_text, new_text=draft_text.replace("skiff", "Moonboat"))]
+        if proposal_path == "chained_review":
+            # The second edit targets the whole evolving segment rather than
+            # the original text, so both paths need the same phrase boundary.
+            revised = draft_text.replace("skiff", "vessel")
+            edits = [SegmentTextEdit(old_text="skiff", new_text="vessel"),
+                     SegmentTextEdit(old_text=revised, new_text=revised.replace("vessel", "Moonboat"))]
+        return SubmitSegmentPatchAction(
+            segment_id=segment_id, expected_segment_sha256=sha256_text(draft_text),
+            edits=edits,
+            issue_ids=["terminology_conflict"], rationale="Align the vessel's name.",
+        )
+
+    class Review:
+        def review(self, request):
+            patches = ()
+            if proposal_path != "alignment" and "skiff" in request.draft_text:
+                patches = (rewrite(request.segment_id, request.draft_text),)
+            return AdaptiveReviewResult(status="completed", summary="Terminology checked.", patches=patches)
+
+    class Alignment:
+        def align(self, items):
+            return [rewrite(item.segment_id, item.draft_text) for item in items]
+
+    result = run_adaptive_chapter(
+        sources, drafts, glossary=glossary, decision_provider=None, review_provider=Review(),
+        alignment_provider=Alignment() if proposal_path == "alignment" else None,
+        verification_policy=VerificationPolicy(
+            mode="full_segment_review", instruction_version=instruction,
+            term_alignment_pass=proposal_path == "alignment",
+        ),
+    )
+    if instruction == "natural-review-v6":
+        assert "skiff" in result.final_text
+        rejected = [event for event in result.events
+                    if event["kind"] in {"patch_rejected", "term_alignment_rejected"}]
+        assert rejected and "proper substring" in rejected[0]["message"]
+    else:
+        # Preserve the historical v5 whole-segment rewrite contract.
+        assert "Moonboat" in result.final_text
+        assert "skiff" not in result.final_text

@@ -362,7 +362,7 @@ class ToolSurface:
             self._log(state, tool, args, observation, started)
             return observation
 
-        if state.tool_calls >= state.max_tool_calls:
+        if state.tool_calls >= state.max_tool_calls and tool != "done":
             observation = _observation(
                 False,
                 f"Tool-call budget exhausted (max_tool_calls={state.max_tool_calls}); "
@@ -612,8 +612,8 @@ class ToolSurface:
                 )
             elif reason == "whole_chapter_target":
                 message = (
-                    f"old_text spans the whole chapter, not just segment {segment_id}; "
-                    "use rewrite_segment for a whole-segment replacement instead."
+                    f"old_text spans the whole chapter (segment {segment_id} is the only segment); "
+                    "use edit_segment with a smaller exact phrase. rewrite_segment cannot replace a whole chapter."
                 )
             elif reason == "source_guard":
                 message = observation.message
@@ -752,6 +752,6 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
     "search_chapter": "Case-insensitive substring search across all segments' source and draft text.",
     "lookup_glossary": "Look up the fixed English rendering of a source-language term.",
     "edit_segment": "Apply one or more exact-once find/replace edits inside one segment (atomic, QA-gated).",
-    "rewrite_segment": "Replace an entire segment's draft text (guarded whole-segment rewrite).",
+    "rewrite_segment": "Replace one segment's draft text in a multi-segment chapter (guarded rewrite); for a single-segment chapter use edit_segment with a smaller phrase.",
     "done": "Finish the episode with a short summary. No-change is a valid outcome.",
 }

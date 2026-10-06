@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from dataclasses import asdict
 import json
 from pathlib import Path
 
+import pytest
 from typer.testing import CliRunner
 
 from agentic_translation import autonomous_book
@@ -13,6 +15,8 @@ from agentic_translation.decisions.models import (
     DecisionResult,
 )
 from agentic_translation.decisions.questions import question_schema_digest, request_id
+from agentic_translation.demo import demo_policy
+from agentic_translation.profiles import CONTEXTUAL_PROFILE, PORTFOLIO_REVIEW_PROFILE
 
 
 def _story_yaml(root: Path) -> Path:
@@ -175,13 +179,18 @@ def test_unattended_book_runs_memory_translation_and_adaptive_output(
     assert (out / "memory" / "story_memory" / "snapshots" / "0001.json").exists()
     chapter = json.loads((out / "chapters" / "0001.json").read_text(encoding="utf-8"))
     assert chapter["verification_policy"]["mode"] == "adaptive_segment_screen"
+    assert manifest["profile"] == "legacy-adaptive.v1"
+    assert chapter["verification_policy"]["version"] == manifest["profile"]
+    assert not chapter["verification_policy"]["gloss_guard"]
     assert chapter["final_text"] == "Chapter 1\n\nA speaks."
     assert (out / "delivery" / "book.txt").read_text(encoding="utf-8") == "Chapter 1\n\nA speaks."
 
 
+@pytest.mark.parametrize("strategy", ["adaptive", "contextual", "portfolio-review"])
 def test_unattended_book_persists_failed_no_output_after_first_generation_error(
     tmp_path: Path,
     monkeypatch,
+    strategy: str,
 ) -> None:  # noqa: ANN001 - pytest fixture typing is not needed here
     story = _story_yaml(tmp_path)
     out = tmp_path / "failed-run"
@@ -190,7 +199,7 @@ def test_unattended_book_persists_failed_no_output_after_first_generation_error(
     monkeypatch.setattr(autonomous_book, "BudgetedDecisions", _FakeBudgetedDecisions)
     monkeypatch.setattr(autonomous_book, "load_credentials", lambda: None)
 
-    manifest = autonomous_book.run_unattended_book(story, out, strategy="adaptive")
+    manifest = autonomous_book.run_unattended_book(story, out, strategy=strategy)
 
     assert _FailingGenerator.operations == ["memory_extract"]
     assert manifest["status"] == "failed_no_output"
@@ -216,6 +225,127 @@ def test_unattended_book_persists_failed_no_output_after_first_generation_error(
     assert chapter["outcome"] == "failed_no_output"
     assert chapter["error"] == {"type": "RuntimeError", "fatal_provider_error": False}
     assert not (out / "delivery" / "book.txt").exists()
+    if strategy == "contextual":
+        assert chapter["verification_policy"] is None
+        assert chapter["evidence"] == []
+
+
+def test_default_book_profile_translates_without_constructing_review_or_jev(tmp_path, monkeypatch):
+    story = _story_yaml(tmp_path)
+    out = tmp_path / "contextual"
+    _FakeGenerator.operations = []
+    monkeypatch.setattr(autonomous_book, "BudgetedGenerator", _FakeGenerator)
+    monkeypatch.setattr(autonomous_book, "load_credentials", lambda: None)
+
+    def unexpected(*args, **kwargs):
+        pytest.fail("Contextual mode must not construct a router/reviewer or execute repair")
+
+    for name in ("TypeSafeDecisionProvider", "BudgetedDecisions", "GenerativeReviewAdapter",
+                 "TermAlignmentAdapter", "run_adaptive_chapter"):
+        monkeypatch.setattr(autonomous_book, name, unexpected)
+    manifest = autonomous_book.run_unattended_book(story, out)
+
+    assert _FakeGenerator.operations == ["memory_extract", "contextual"]
+    assert manifest["status"] == "delivered"
+    assert manifest["profile"] == CONTEXTUAL_PROFILE
+    assert manifest["verification_policy"] is None
+    assert manifest["decision_provider"] is None
+    config = json.loads((out / "config.json").read_text())
+    assert config["profile"] == manifest["profile"]
+    assert config["verification_policy"] is None
+    assert config["memory"]["instruction_version"] == "term-quality-v1"
+    assert config["writer"]["call_timeout_seconds"] == 300
+    chapter = json.loads((out / "chapters/0001.json").read_text())
+    assert chapter["review_calls"] == chapter["screen_calls"] == chapter["patch_actions"] == 0
+    assert chapter["evidence"] == []
+    assert chapter["deterministic_qa"]["summary"]["total_findings"] == 0
+    assert (out / "delivery/book.txt").read_text() == "Chapter 1\n\nA speaks."
+
+
+def test_contextual_glossary_miss_is_delivered_with_visible_warning(tmp_path, monkeypatch):
+    story = _story_yaml(tmp_path)
+    (tmp_path / "terms.txt").write_text("甲 -> Aaron", encoding="utf-8")
+    out = tmp_path / "contextual-miss"
+    _FakeGenerator.operations = []
+    monkeypatch.setattr(autonomous_book, "BudgetedGenerator", _FakeGenerator)
+    monkeypatch.setattr(autonomous_book, "load_credentials", lambda: None)
+    manifest = autonomous_book.run_unattended_book(story, out)
+
+    assert _FakeGenerator.operations == ["memory_extract", "contextual"]
+    assert manifest["status"] == "delivered_with_warnings"
+    assert "glossary_required" in {warning["code"] for warning in manifest["chapters"][0]["warnings"]}
+    assert (out / "delivery/book.txt").read_text() == "Chapter 1\n\nA speaks."
+    chapter = json.loads((out / "chapters/0001.json").read_text())
+    assert chapter["deterministic_qa"]["summary"]["by_check"]["glossary_required"] == 1
+    assert chapter["verification_policy"] is None
+
+
+def test_portfolio_book_uses_demo_policy_and_really_aligns_without_jev(tmp_path, monkeypatch):
+    """Controlled generation drives the real parser, memory, alignment and executor."""
+    story = _story_yaml(tmp_path)
+    (tmp_path / "source/0001.txt").write_text("甲明说。", encoding="utf-8")
+    (tmp_path / "terms.txt").write_text("甲明 -> Aaron", encoding="utf-8")
+    out = tmp_path / "portfolio"
+
+    class ReviewedGenerator(_FakeGenerator):
+        operations = []
+
+        def call(self, operation, prompt, schema, **kwargs):
+            if operation in {"memory_extract", "contextual"}:
+                return super().call(operation, prompt, schema, **kwargs)
+            self.operations.append(operation)
+            if operation == "term_alignment":
+                assert "proper substring" in prompt
+                packet = json.loads(prompt[prompt.index('\n{"segments":') + 1:])
+                item = packet["segments"][0]
+                return {"patches": [{"segment_id": item["segment_id"],
+                                     "expected_segment_sha256": item["expected_segment_sha256"],
+                                     "edits": [{"old_text": "A speaks", "new_text": "Aaron speaks"}],
+                                     "issue_ids": ["term_alignment"], "rationale": "Apply supplied glossary"}]}
+            if operation == "segment_review":
+                assert "Aaron speaks" in prompt
+                return {"summary": "No further issue in this controlled fixture", "findings": [], "patches": []}
+            raise AssertionError(operation)
+
+    def unexpected(*args, **kwargs):
+        pytest.fail("Full review must not construct Jev")
+
+    monkeypatch.setattr(autonomous_book, "TypeSafeDecisionProvider", unexpected)
+    monkeypatch.setattr(autonomous_book, "BudgetedDecisions", unexpected)
+    monkeypatch.setattr(autonomous_book, "BudgetedGenerator", ReviewedGenerator)
+    monkeypatch.setattr(autonomous_book, "load_credentials", lambda: None)
+    manifest = autonomous_book.run_unattended_book(story, out, strategy=PORTFOLIO_REVIEW_PROFILE)
+
+    assert manifest["status"] == "delivered"
+    assert manifest["profile"] == PORTFOLIO_REVIEW_PROFILE
+    assert manifest["verification_policy"] == asdict(demo_policy())
+    assert manifest["decision_provider"] is None
+    assert ReviewedGenerator.operations == ["memory_extract", "contextual", "term_alignment", "segment_review"]
+    assert (out / "delivery/book.txt").read_text() == "Chapter 1\n\nAaron speaks."
+    chapter = json.loads((out / "chapters/0001.json").read_text())
+    assert chapter["patch_actions"] == 1
+    assert chapter["review_calls"] == 2  # one batched alignment and one segment review
+    assert chapter["screen_calls"] == 0
+    assert chapter["verification_policy"] == asdict(demo_policy())
+
+
+@pytest.mark.parametrize("strategy", ["contextual", CONTEXTUAL_PROFILE, "portfolio-review", PORTFOLIO_REVIEW_PROFILE])
+def test_named_book_cli_needs_one_provider_only(tmp_path, monkeypatch, strategy):
+    story = _story_yaml(tmp_path)
+    calls = []
+
+    def fake_runner(story_path, out, **kwargs):
+        calls.append(kwargs)
+        return {"status": "delivered", "delivery": "delivery/book.txt"}
+
+    monkeypatch.setattr(autonomous_book, "run_unattended_book", fake_runner)
+    result = CliRunner().invoke(app, ["harness", "run", "--story", str(story), "--out", str(tmp_path / "out"),
+                                     "--provider-mode", "live", "--profile", "deepseek", "--strategy", strategy,
+                                     "--interaction", "unattended", "--memory", "source-grounded",
+                                     "--glossary-policy", "run-local-auto"])
+    assert result.exit_code == 0, result.output
+    assert calls[0]["strategy"] == strategy
+    assert "Profile:" in result.output
 
 
 def test_adaptive_cli_requires_explicit_unattended_policy_flags(tmp_path: Path) -> None:

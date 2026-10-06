@@ -16,6 +16,7 @@ import shutil
 import signal
 import subprocess
 import tempfile
+import threading
 import time
 import uuid
 from copy import deepcopy
@@ -42,6 +43,32 @@ from .providers_llm import LLMProviderUnavailable
 
 Backend = Literal["deepseek", "codex", "claude"]
 ProviderMode = Literal["live", "replay"]
+
+
+def _with_deadline(call, seconds: float):
+    """Run one blocking provider call under a total wall-clock deadline.
+
+    The SDK timeout bounds each read, and a provider that keeps a queued request
+    alive with blank lines resets it, so a read timeout alone can wait for many
+    minutes. The abandoned daemon thread never blocks interpreter exit.
+    """
+    box: dict = {}
+
+    def target():
+        try:
+            box["value"] = call()
+        except BaseException as exc:  # re-raised in the caller's thread
+            box["error"] = exc
+
+    worker = threading.Thread(target=target, name="provider-call", daemon=True)
+    worker.start()
+    worker.join(seconds)
+    if worker.is_alive():
+        raise TimeoutError(f"Provider call exceeded the {seconds:g}-second deadline")
+    if "error" in box:
+        raise box["error"]
+    return box["value"]
+
 
 _MODEL_EFFORTS: dict[tuple[str, str], str | None] = {
     ("deepseek", "deepseek-v4-flash"): None,

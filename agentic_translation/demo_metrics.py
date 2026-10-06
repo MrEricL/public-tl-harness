@@ -114,11 +114,21 @@ def write_report(out: Path, report: dict) -> None:
     cards = "".join(f'<div class="card"><span>{esc(arm)}</span><strong>{score(all_scores[arm])}</strong></div>'
                     for arm in arms if arm in all_scores)
     headline = "No supplied terminology checks; inspect the translation and repair evidence below."
+    seeded = summary.get("seeded_errors")
+    controls = summary.get("clean_controls")
     # Missing text counts as failed checks below; a delta over it is not a measurement.
     missing = sum(any(not chapter["texts"].get(arm) for arm in arms) for chapter in report["chapters"])
     if missing:
         headline = (f"No score: {missing} of {len(report['chapters'])} item(s) lack output from at least one arm "
                     f"(status: {report['status']}). The tables below count missing text as failed checks.")
+    elif seeded is not None and controls is not None:
+        headline = (f"{seeded['fixed']}/{seeded['total']} seeded errors fixed by the authored checks; "
+                    f"{controls['passed']}/{controls['total']} clean controls still pass.")
+        cards = "".join(f'<div class="card"><span>{esc(label)}</span><strong>{count}/{total}</strong></div>'
+                        for label, count, total in [
+                            ("Seeded errors fixed", seeded["fixed"], seeded["total"]),
+                            ("Clean controls still pass", controls["passed"], controls["total"]),
+                            ("Clean controls unchanged", controls["unchanged"], controls["total"])])
     elif all_scores:
         before, after = all_scores[arms[0]], all_scores[arms[-1]]
         a, b = before["rate"], after["rate"]
@@ -126,9 +136,8 @@ def write_report(out: Path, report: dict) -> None:
             delta = 100 * (b-a)
             relative = f" ({100*(b/a-1):+.1f}% relative)" if a else " (relative change undefined from a zero baseline)"
             headline = f"{delta:+.1f} percentage points{relative}: {arms[0]} → {arms[-1]} on {summary['metric']}."
-    controls = summary.get("clean_controls")
     control_text = (f"Clean controls left unchanged: {controls['unchanged']}/{controls['total']}. "
-                    "Check their fact scores too; an unchanged clean passage is not a missed repair."
+                    "A changed control may still be correct; inspect its diff and fact checks."
                     if controls and not missing else "")
     text = f'''<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Translation workbench · run evidence</title><style>

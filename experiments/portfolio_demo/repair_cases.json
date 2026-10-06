@@ -24,9 +24,9 @@
     "checks": [
       {
         "require": [
-          "12|twelve",
-          "5|five",
-          "(?:kept|left|remaining|retained).{0,20}(?:7|seven)"
+          "\\b(?:12|twelve)\\b",
+          "\\b(?:5|five)\\b",
+          "(?:kept|left|remaining|retained|leaving).{0,20}\\b(?:7|seven)\\b|\\b(?:7|seven)\\b.{0,20}(?:left|remaining|retained)"
         ],
         "forbid": [
           "\\b8\\b|\\beight\\b"
@@ -43,7 +43,7 @@
     "checks": [
       {
         "require": [
-          "(?:off|stopped).{0,25}pump.{0,60}(?:open|drain)",
+          "(?:(?:off|stopped).{0,25}pump|pump.{0,15}off).{0,60}(?:open|drain)",
           "(?:finally|last|then).{0,30}(?:check|inspect).{0,25}(?:gauge|pressure)"
         ],
         "forbid": []
@@ -193,9 +193,13 @@
         "require": [
           "Lin Qing",
           "lock",
-          "(?:before leaving|then left|and left)"
+          "door",
+          "(?:lock\\w*.{0,30}(?:before leaving|then left|and left)|left.{0,20}after.{0,20}lock)"
         ],
-        "forbid": []
+        "forbid": [
+          "\\b(?:not|never|without)\\b.{0,15}lock|\\bdidn['’]t\\b.{0,15}lock",
+          "\\bleft.{0,20}before.{0,20}lock|not before leaving"
+        ]
       }
     ],
     "clean_control": true
@@ -209,10 +213,13 @@
     "checks": [
       {
         "require": [
-          "two letters|2 letters",
-          "only one|only 1"
+          "\\b(?:two|2) letters\\b",
+          "\\bonly (?:one|1)\\b"
         ],
-        "forbid": []
+        "forbid": [
+          "\\b(?:not|never)\\b.{0,20}(?:take|took|remove)|\\bdidn['’]t\\b.{0,20}(?:take|took|remove)",
+          "\\btook (?:both|two|2)\\b"
+        ]
       }
     ],
     "clean_control": true

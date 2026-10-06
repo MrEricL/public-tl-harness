@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from decimal import Decimal
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -15,7 +16,7 @@ from typing import Any
 
 from agentic_translation.costing import SpendLedger, RateCard, price_usage
 from agentic_translation.providers_llm import ResponseCache, LLMProviderUnavailable
-from agentic_translation.structured_transport import _validate_output
+from agentic_translation.structured_transport import _validate_output, _with_deadline
 
 
 class ProviderAccessError(LLMProviderUnavailable):
@@ -103,6 +104,11 @@ class BudgetedGenerator:
         self.run_dir = Path(run_dir)
         self.config = config
         self.model = model or config["writer"]["model"]
+        timeout = config["writer"].get("call_timeout_seconds", 300)
+        if (isinstance(timeout, bool) or not isinstance(timeout, (int, float))
+                or not math.isfinite(timeout) or timeout <= 0):
+            raise ValueError("writer.call_timeout_seconds must be a positive number")
+        self.call_timeout_seconds = float(timeout)
         self.phase = phase
         self.replay = replay
         self.ledger = ledger_for(config)
@@ -152,7 +158,7 @@ class BudgetedGenerator:
             record = {"call_id":call_id, "request_sha256":key, "operation":operation,
                       "requested_model":self.model, "attempt":attempt+1, "cache_hit":False,
                       "phase":self.phase, "status":"failed", "usage_complete":False,
-                      "estimated_charge":None}
+                      "estimated_charge":None, "call_timeout_seconds":self.call_timeout_seconds}
             actual = None
             complete = False
             response = None
@@ -161,10 +167,14 @@ class BudgetedGenerator:
             attempt_messages = messages + ([{"role":"user", "content":recovery_instruction}] if recovery_instruction else [])
             record["attempt_messages_sha256"] = digest(attempt_messages)
             try:
-                with OpenAI(api_key=api_key, base_url=os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com"), timeout=180, max_retries=0) as client:
-                    response = client.chat.completions.create(model=self.model, messages=attempt_messages,
-                        **({} if segment_ids else {"response_format":{"type":"json_object"}}), max_tokens=max_output_tokens,
-                        temperature=0, extra_body={"thinking":{"type":"disabled"}})
+                def request():
+                    # Keep cleanup in the worker too: abandoning a queued call
+                    # must not block the main thread while closing its client.
+                    with OpenAI(api_key=api_key, base_url=os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com"), timeout=180, max_retries=0) as client:
+                        return client.chat.completions.create(model=self.model, messages=attempt_messages,
+                            **({} if segment_ids else {"response_format":{"type":"json_object"}}), max_tokens=max_output_tokens,
+                            temperature=0, extra_body={"thinking":{"type":"disabled"}})
+                response = _with_deadline(request, self.call_timeout_seconds)
                 usage = response.usage.model_dump() if response.usage else {}
                 record.update(price_usage(usage, deepseek_rate(self.model), operation=operation))
                 actual = record["estimated_charge"]
@@ -208,6 +218,14 @@ class BudgetedGenerator:
                 record.update(error_type=last_error, http_status=status)
                 last_failure_was_output = output_stage and isinstance(exc, (ValueError, json.JSONDecodeError))
                 record["failure_kind"] = "output_exhausted" if last_failure_was_output else "provider_or_transport"
+                if isinstance(exc, TimeoutError):
+                    record["failure_kind"] = "total_deadline_exceeded"
+                    # The abandoned request might still be charged. Retain its
+                    # reservation in finally and do not queue a duplicate retry.
+                    raise GenerationTransportError(
+                        f"Provider call exceeded the {self.call_timeout_seconds:g}-second total deadline; "
+                        "live scheduling stopped and usage remains unknown"
+                    ) from None
                 if status in {401,402,403}:
                     raise ProviderAccessError(status) from exc
                 retryable = status in {408,429,500,502,503,504,529} or last_error in {"APITimeoutError", "APIConnectionError"}

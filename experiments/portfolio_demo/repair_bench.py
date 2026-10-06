@@ -14,6 +14,7 @@ from agentic_translation.models import GlossaryEntry, GlossaryParseResult
 from agentic_translation.segmentation import parse_draft_envelope, segment_source
 
 CASES = Path(__file__).with_name("repair_cases.json")
+RUBRIC_VERSION = "repair-challenge.v2"
 
 
 def checks(case: dict, text: str) -> list[dict]:
@@ -30,16 +31,22 @@ def run_benchmark(out: Path, config: dict, *, api_key=None, generator=None, case
     if not cases or len({row["id"] for row in cases}) != len(cases):
         raise ValueError("Benchmark requires nonempty unique case IDs")
     for case in cases:
+        if not case["checks"]:
+            raise ValueError("Each repair case requires at least one fact check")
         for rule in case["checks"]:
             for pattern in rule["require"] + rule.get("forbid", []):
                 re.compile(pattern)
+        if not all(row["passed"] for row in checks(case, case["reference"])):
+            raise ValueError(f"Reference fails the authored checks: {case['id']}")
+        if all(row["passed"] for row in checks(case, case["draft"])) != bool(case.get("clean_control")):
+            raise ValueError(f"Seeded-error/clean-control label disagrees with the checks: {case['id']}")
     if out.exists() and (not out.is_dir() or any(out.iterdir())):
         raise ValueError("Use a new or empty benchmark output directory")
     owned = generator is None
     generator = generator or DemoGenerator(out, config, api_key=api_key)
     out.mkdir(parents=True, exist_ok=True)
     write_json(out / "config.json", {"provider": config, "profile": asdict(demo_policy()),
-                                     "cases_sha256": digest(cases), "test": "repair-challenge.v1"})
+                                     "cases_sha256": digest(cases), "test": RUBRIC_VERSION})
     chapters, stop = [], False
     try:
         for case in cases:
@@ -73,18 +80,25 @@ def run_benchmark(out: Path, config: dict, *, api_key=None, generator=None, case
             except Exception as exc:
                 chapter.update(status="failed", error_type=type(exc).__name__)
                 stop = bool(getattr(exc, "fatal_provider_error", False))
-        summary = summarize(chapters, ["supplied_draft", "harness"], metric="Authored semantic fact-check pass rate")
+        summary = summarize(chapters, ["supplied_draft", "harness"], metric="Authored repair fact-check pass rate")
         summary["note"] = ("Seeded Chinese/English repair challenge, not natural error prevalence. Narrow regex fact checks allow "
-                           "some paraphrases but are not a semantic judge: inspect the paired text. The reference and checks are never sent to the model.")
+                           "some paraphrases but are not a semantic judge: inspect the paired text. Report errors fixed and clean controls separately; "
+                           "the starting pass rate is low by construction. The reference and checks are never sent to the model.")
+        seeded = [row for case, row in zip(cases, chapters) if not case.get("clean_control")]
+        summary["seeded_errors"] = dict(
+            fixed=sum(all(check["passed"] for check in row["arms"]["harness"]["checks"]) for row in seeded),
+            total=len(seeded), missing_output=sum(not row["texts"].get("harness") for row in seeded))
         controls = [(case, row) for case, row in zip(cases, chapters) if case.get("clean_control")]
         summary["clean_controls"] = dict(unchanged=sum(row["texts"].get("harness") == case["draft"] for case, row in controls),
-                                         total=len(controls))
+                                         passed=sum(all(check["passed"] for check in row["arms"]["harness"]["checks"]) for _, row in controls),
+                                         total=len(controls),
+                                         missing_output=sum(not row["texts"].get("harness") for _, row in controls))
         report = dict(mode=getattr(generator, "evidence_mode", "live model"),
                       description="Test 2: a dozen short seeded errors and clean controls; same bounded executor and policy as the folder demo.",
                       status="failed_partial" if any(not c["texts"].get("harness") for c in chapters) else "completed",
                       arms=["supplied_draft", "harness"], chapters=chapters, summary=summary,
                       resources=resources(generator.receipts), delivery=False,
-                      cases_sha256=digest(cases), profile=asdict(demo_policy()))
+                      cases_sha256=digest(cases), rubric_version=RUBRIC_VERSION, profile=asdict(demo_policy()))
         write_report(out, report)
         return report
     finally:

@@ -44,6 +44,9 @@ def test_live_cache_preserves_logical_usage_without_rebilling(tmp_path,monkeypat
     assert provider.call('naive','test',SCHEMA)=={'ok':True}
     snapshot=ledger_for(cfg).snapshot()
     assert snapshot['unknown_usage_calls']==0
+    # A local waiting deadline does not change the frozen provider request or
+    # its cache identity; changing it must still permit the same replay.
+    cfg['writer']['call_timeout_seconds'] = 1
     provider2=BudgetedGenerator(tmp_path/'run',cfg,replay=True)
     assert provider2.call('naive','test',SCHEMA)=={'ok':True}
     assert len(calls)==1
@@ -95,6 +98,63 @@ def test_balance_failure_never_retries_or_marks_request_free(tmp_path,monkeypatc
     with pytest.raises(ProviderAccessError): provider.call('naive','test',SCHEMA)
     assert len(calls)==1
     assert ledger_for(cfg).snapshot()['unknown_usage_calls']==1
+
+
+def test_queued_generation_has_total_deadline_and_retains_unknown_charge(tmp_path, monkeypatch):
+    """Keep-alives can defeat a read timeout; do not wait forever or retry a queued call."""
+    import threading
+    import time
+
+    release, closed = threading.Event(), threading.Event()
+    calls = []
+
+    class QueuedClient:
+        def __init__(self, **kwargs):
+            assert kwargs['timeout'] == 180  # Preserve the existing SDK/request contract.
+            assert kwargs['max_retries'] == 0
+            self.chat = SimpleNamespace(completions=SimpleNamespace(create=self.create))
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            closed.set()
+
+        def create(self, **kwargs):
+            calls.append(kwargs)
+            release.wait(5)
+            return response()
+
+    monkeypatch.setattr('openai.OpenAI', QueuedClient)
+    monkeypatch.setenv('DEEPSEEK_API_KEY', 'test')
+    cfg = config(tmp_path)
+    cfg['writer']['call_timeout_seconds'] = 0.2
+    provider = BudgetedGenerator(tmp_path/'run', cfg)
+    started = time.perf_counter()
+    try:
+        with pytest.raises(GenerationTransportError, match='0.2-second total deadline'):
+            provider.call('contextual', 'Translate', SCHEMA)
+        assert time.perf_counter() - started < 2
+        assert not closed.is_set()  # Return without waiting for the stalled worker's cleanup.
+    finally:
+        release.set()
+        assert closed.wait(1)
+
+    assert len(calls) == len(provider.receipts) == 1
+    receipt = provider.receipts[0]
+    assert receipt['status'] == 'failed'
+    assert receipt['failure_kind'] == 'total_deadline_exceeded'
+    assert receipt['estimated_charge'] is None
+    snapshot = ledger_for(cfg).snapshot()
+    assert snapshot['unknown_usage_calls'] == 1
+    charge = next(iter(snapshot['calls'].values()))
+    assert charge['status'] == 'settled'
+    assert charge['actual_estimate_usd'] is None
+    assert charge['budget_charge_usd'] == charge['reserved_usd']
+    assert float(charge['budget_charge_usd']) > 0
+    saved = json.loads(next((tmp_path/'run'/'calls').glob('*.json')).read_text())
+    assert saved['receipt']['failure_kind'] == 'total_deadline_exceeded'
+    assert saved['raw_response'] is None
 
 
 def test_segment_text_envelope_preserves_dialogue_and_detects_missing_ids(tmp_path,monkeypatch):

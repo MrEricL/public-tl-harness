@@ -24,6 +24,14 @@ renderings. Chapter text, translations, per-term data, judging packets, and run
 artifacts are not included, and the experiment runners that read the corpus
 are not published.
 
+`experiments/heldout_evidence/` contains anonymous per-work numeric summaries,
+paired-score sufficient statistics, and drift-transition counts. Its
+standard-library verifier reproduces the consistency arithmetic, reported
+costs, and judge coverage without source access. There are no term identifiers,
+rendering strings, or hashes identifying private material in that bundle.
+This verifies aggregation of saved measurements; it does not independently
+validate the underlying model extraction against the private chapters.
+
 The folder demo's glossary (`samples/showcase/terms/demo_glossary.json`) and
 the seeded repair challenge (`experiments/portfolio_demo/repair_cases.json`)
 are short authored fixtures for the bundled invented story and the repair
