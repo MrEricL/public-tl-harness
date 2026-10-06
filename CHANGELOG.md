@@ -73,3 +73,24 @@ they are not a new public benchmark run.
   Claude Code, and Codex.
 - Fixes literal glossary-term matching, safe span replacement, and
   glossary-bound session identity found in a September audit.
+
+## Executable evidence and clearer book profiles — 2026-10-06
+
+- Adds anonymous aggregate counts and a standard-library verifier for the
+  62.5% held-out inconsistency reduction, severe-drift transitions, costs, and
+  judge coverage. No corpus text or per-term records are published.
+- Leads with improvement across all four works and reports every arm. Clarifies
+  actual judge coverage, the glossary-count evidence gap, and estimated
+  standalone chapter duration. Historical measurements remain unchanged.
+- Adds `contextual.v1` for memory/glossary generation without model review,
+  and `portfolio-review.v1` for the shared folder-demo/book repair policy.
+  The interactive default remains `automatic`; older adaptive strategies have
+  explicit legacy names.
+- Corrects missing-review warnings, trusted v6 edit boundaries, completion at
+  the tool-call ceiling, and failed-call cost accounting. Book model calls now
+  have a total deadline as well as the SDK read timeout.
+- Makes folder replay outputs self-contained for subsequent replay, including
+  after the original run is removed.
+- Reports the repair challenge as ten seeded errors and two clean controls;
+  fixes demonstrated order, number, and negation matcher errors. Controlled
+  checks and offline demos remain separate from live model-quality evidence.

@@ -3,7 +3,7 @@
 For the new one-key folder workflow, start with [Try it](docs/TRY_IT.md) or
 `python demo.py`. It creates translations, TXT/EPUB, a before/after report and
 component/category comparisons without story YAML or Jev. This longer guide
-also retains the legacy interactive and unattended commands.
+also covers named book profiles and retains the legacy interactive commands.
 
 
 This guide explains how to install, run, inspect, and safely share the Agentic Long-Form Translation Prototype.
@@ -22,6 +22,51 @@ The project is a bench for agentic translation: cheap translation output is usef
 For the concise public walkthrough, use `DEMO_SCRIPT.md` as the two-minute
 Harness v3 narration guide; its final section keeps the older 90-second replay
 as an optional coda.
+
+## Book translation profiles
+
+For a story YAML, start with `contextual.v1`: source-only story memory plus the
+translator's glossary. It records deterministic QA findings and delivers the
+translation without paying for model review or repair. This is the inexpensive
+component that produced most of the [measured consistency gain](README.md).
+
+```bash
+# Set DEEPSEEK_API_KEY in your shell first.
+python -m agentic_translation harness run \
+  --story samples/showcase/story.yaml --out runs/contextual-book \
+  --provider-mode live --profile deepseek --model deepseek-flash \
+  --strategy contextual.v1 --interaction unattended \
+  --memory source-grounded --glossary-policy run-local-auto --max-usd 1
+```
+
+Use `portfolio-review.v1` to add experimental full review and bounded term
+alignment. It uses the same policy and per-segment repair budget as `demo.py`;
+the writer account also supplies review, with no Jev SDK or key.
+
+```bash
+python -m agentic_translation harness run \
+  --story samples/showcase/story.yaml --out runs/reviewed-book \
+  --provider-mode live --profile deepseek --model deepseek-flash \
+  --strategy portfolio-review.v1 --interaction unattended \
+  --memory source-grounded --glossary-policy run-local-auto --max-usd 1
+```
+
+The short aliases `--strategy contextual` and `--strategy portfolio-review`
+select those same versions. Both paths write `delivery/book.txt`, chapter
+receipts, a budget ledger, and the selected profile in `config.json` and
+`manifest.json`. Contextual receipts have `verification_policy: null`, no model
+review evidence, and visible warnings for remaining deterministic findings.
+Full review adds inspectable executor receipts; its deterministic guards do not
+establish semantic correctness. New runs require an empty output folder, and
+provider calls have a five-minute total deadline.
+
+The explicit `adaptive` and `always-review` strategies retain the older
+`natural-review-v2` settings under `legacy-adaptive.v1` and
+`legacy-always-review.v1`. Their optional gloss and duplication guards remain
+off; only `adaptive` constructs the Jev router. Use them for compatibility,
+not as aliases for the current portfolio policy. Frozen experiments keep their
+original configurations and results. The interactive `harness run` default is
+still `automatic`.
 
 ## 0. Harness v3 Golden Path
 

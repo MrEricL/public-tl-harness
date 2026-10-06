@@ -10,12 +10,11 @@ import json
 import math
 import os
 from pathlib import Path
-import threading
 import time
 from urllib.parse import urlsplit
 
 from .autonomous_provider import GenerationOutputError, GenerationTransportError, parse_segment_text, write_json
-from .structured_transport import _validate_output
+from .structured_transport import _validate_output, _with_deadline
 
 PROVIDERS = {
     "openai": ("https://api.openai.com/v1", "OPENAI_API_KEY"),
@@ -29,31 +28,6 @@ PROVIDERS = {
 def digest(value: object) -> str:
     return hashlib.sha256(json.dumps(value, sort_keys=True, ensure_ascii=False,
                                     allow_nan=False).encode()).hexdigest()
-
-
-def _with_deadline(call, seconds: float):
-    """Run one blocking provider call under a total wall-clock deadline.
-
-    The SDK timeout bounds each read, and a provider that keeps a queued request
-    alive with blank lines resets it, so a read timeout alone can wait for many
-    minutes. The abandoned daemon thread never blocks interpreter exit.
-    """
-    box: dict = {}
-
-    def target():
-        try:
-            box["value"] = call()
-        except BaseException as exc:  # re-raised in the caller's thread
-            box["error"] = exc
-
-    worker = threading.Thread(target=target, name="provider-call", daemon=True)
-    worker.start()
-    worker.join(seconds)
-    if worker.is_alive():
-        raise TimeoutError(f"Provider call exceeded the {seconds:g}-second deadline")
-    if "error" in box:
-        raise box["error"]
-    return box["value"]
 
 
 def provider_config(provider: str, model: str, *, base_url: str | None = None,
@@ -144,6 +118,13 @@ class DemoGenerator:
             if saved["request_sha256"] != key or digest(saved["response"]) != saved["response_sha256"]:
                 raise ValueError("Cached response identity differs")
             result = _validate_output(saved["response"], schema)
+            # A replay is an inspectable, self-contained run too. Preserve the
+            # original receipt in its cache; projected replay receipts below
+            # still report zero physical calls. This also permits replaying a
+            # copied replay folder after the original run is no longer present.
+            local_cache = self.run_dir / "cache" / cache.name
+            if local_cache.resolve() != cache.resolve():
+                write_json(local_cache, saved)
             self.receipts.append({**saved["receipt"], "cache_hit": True, "physical_calls": 0})
             return result
         if self.replay:

@@ -66,6 +66,9 @@ jobs:
         working-directory: "experiments/mid_corpus_harness_benchmark"
         run: python -m pytest -q test_benchmark.py
 
+      - name: Verify the published held-out evidence (standard library, no provider)
+        run: python -I experiments/heldout_evidence/verify.py
+
       - name: Smoke golden auto-approve (synthetic, no provider)
         run: python -m agentic_translation harness golden --runs-dir "${{ runner.temp }}/harness-v3-runs" --auto-approve --overwrite
 

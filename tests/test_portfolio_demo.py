@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import asdict
 import json
 from pathlib import Path
+import shutil
 from types import SimpleNamespace as NS
 
 import pytest
@@ -87,6 +88,15 @@ def test_folder_end_to_end_and_cache_replay(tmp_path, inputs, monkeypatch):
     assert repeated['chapters'][0]['texts'] == report['chapters'][0]['texts']
     assert (replay/'delivery/book.txt').read_bytes() == (out/'delivery/book.txt').read_bytes()
     assert not (replay/'calls').exists()
+    # A copied replay must not depend on the first run's location or cache.
+    expected_book = (out/'delivery/book.txt').read_bytes()
+    shutil.rmtree(out)
+    moved = tmp_path/'portable-replay'
+    replay.rename(moved)
+    again = tmp_path/'replayed-again'
+    assert main(['--replay', str(moved), '--out', str(again)]) == 0
+    assert (again/'delivery/book.txt').read_bytes() == expected_book
+    assert json.loads((again/'results.json').read_text())['resources']['physical_calls'] == 0
 
 
 # A fake key canary, split so release scanning does not mistake it for a credential.
@@ -221,6 +231,23 @@ def test_repair_fixture_rubric_is_self_consistent():
     assert sum(c.get('clean_control',False) for c in cases)==2
 
 
+@pytest.mark.parametrize('case_id,text,expected', [
+    ('02-count', 'The warehouse received twelve crates, returned five, and had seven crates remaining.', True),
+    ('02-count', 'The warehouse received 112 crates, returned 5, and kept 7.', False),
+    ('03-order', 'He shut the pump off before opening the drain valve, then checked the pressure gauge.', True),
+    ('03-order', 'He opened the drain valve, switched off the pump, and finally checked the pressure gauge.', False),
+    ('11-clean', 'Lin Qing left after locking the door.', True),
+    ('11-clean', 'Lin Qing did not lock the door before leaving.', False),
+    ('11-clean', 'Lin Qing left before locking the door.', False),
+    ('12-clean', 'There were two letters in the box. She did not take only one.', False),
+    ('12-clean', 'There were two letters in the box. She took both, not only one.', False),
+])
+def test_repair_rubric_common_paraphrases_and_meaning_reversals(case_id, text, expected):
+    """Small known counterexamples, not a claim that regexes establish fidelity."""
+    case = next(row for row in json.loads(CASES.read_text()) if row['id'] == case_id)
+    assert all(row['passed'] for row in checks(case, text)) is expected
+
+
 def test_report_escapes_untrusted_content(tmp_path,inputs):
     source,glossary=inputs
     evil=source/'<script>alert(1)</script>.txt'
@@ -267,8 +294,29 @@ def test_repair_benchmark_uses_same_real_executor_without_gold_in_requests(tmp_p
     assert report['profile']==asdict(demo_policy())
     assert report['summary']['groups']['all']['supplied_draft']['passed']==2
     assert report['summary']['groups']['all']['harness']['passed']==12
-    assert report['summary']['clean_controls']==dict(unchanged=2,total=2)
+    assert {row['id']: row['texts']['harness'] for row in report['chapters']} == {
+        case['id']: case['reference'] for case in cases}
+    assert report['summary']['seeded_errors']==dict(fixed=10,total=10,missing_output=0)
+    assert report['summary']['clean_controls']==dict(unchanged=2,passed=2,total=2,missing_output=0)
     assert report['mode']=='scripted integration fixture'
+    assert report['rubric_version']=='repair-challenge.v2'
+    headline = (out/'report.md').read_text().split('| Area |')[0]
+    assert '10/10 seeded errors fixed by the authored checks; 2/2 clean controls still pass.' in headline
+    assert '% relative' not in headline
+
+
+def test_failed_repair_benchmark_keeps_seeded_and_control_denominators(tmp_path):
+    def fail(kw):
+        raise RuntimeError('provider unavailable')
+    out = tmp_path/'failed-repair'
+    gen = DemoGenerator(out, provider_config('openai', 'test-model'), client=Client(fail))
+    gen.evidence_mode = 'scripted failure fixture'
+    report = run_benchmark(out, gen.config, generator=gen)
+    assert report['status'] == 'failed_partial'
+    assert report['resources']['physical_calls'] == 1
+    assert report['summary']['seeded_errors'] == dict(fixed=0,total=10,missing_output=10)
+    assert report['summary']['clean_controls'] == dict(unchanged=0,passed=0,total=2,missing_output=2)
+    assert 'No score: 12 of 12 item(s) lack output' in (out/'report.md').read_text()
 
 
 def test_real_openai_sdk_against_local_http_endpoint(tmp_path):

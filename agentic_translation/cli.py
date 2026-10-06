@@ -181,11 +181,11 @@ def harness_run(
     profile: str = typer.Option("openai", "--profile", help="openai or deepseek"),
     model: str | None = typer.Option(None, "--model"),
     draft_dir: Path | None = typer.Option(None, "--draft-dir", help="Use supplied chapter drafts instead of translating."),
-    strategy: str = typer.Option("automatic", "--strategy", help="automatic (meaning repair + source review), specialists, single, or deterministic"),
-    interaction: str = typer.Option("interactive", "--interaction", help="interactive or unattended (adaptive strategies)"),
+    strategy: str = typer.Option("automatic", "--strategy", help="Interactive: automatic, specialists, single, deterministic. Book: contextual (contextual.v1), portfolio-review (portfolio-review.v1, experimental), adaptive or always-review (legacy v2). Exact book profile names also work."),
+    interaction: str = typer.Option("interactive", "--interaction", help="interactive or unattended (book strategies)"),
     memory: str | None = typer.Option(None, "--memory", help="source-grounded for unattended mode"),
     glossary_policy: str | None = typer.Option(None, "--glossary-policy", help="run-local-auto for unattended mode"),
-    decision_provider: str = typer.Option("jev", "--decision-provider"),
+    decision_provider: str | None = typer.Option(None, "--decision-provider", help="Legacy adaptive defaults to jev. The named contextual and portfolio-review paths need no router."),
     decision_model: str = typer.Option("jev-1.13.0", "--decision-model"),
     max_usd: float = typer.Option(10.0, "--max-usd", min=0.01, help="API expense ceiling for a new unattended book run"),
     auto_approve: bool = typer.Option(False, "--auto-approve", help="Explicitly approve run-local glossary proposals for unattended demos."),
@@ -197,16 +197,25 @@ def harness_run(
 ) -> None:
     """Translate chapters, review repairs, reuse approved terms, and export a book."""
     from .showcase import run_showcase
+    from .profiles import (BOOK_STRATEGIES, CONTEXTUAL_PROFILE, PORTFOLIO_REVIEW_PROFILE,
+                           resolve_book_profile)
     try:
-        if strategy in {"adaptive", "always-review"}:
+        if strategy in BOOK_STRATEGIES:
+            book_profile = resolve_book_profile(strategy)
             if (interaction != "unattended" or memory != "source-grounded"
-                    or glossary_policy != "run-local-auto" or decision_provider != "jev"):
-                raise ValueError("Adaptive runs require --interaction unattended --memory source-grounded --glossary-policy run-local-auto --decision-provider jev")
+                    or glossary_policy != "run-local-auto"):
+                raise ValueError("Book runs require --interaction unattended --memory source-grounded --glossary-policy run-local-auto")
+            if book_profile in {CONTEXTUAL_PROFILE, PORTFOLIO_REVIEW_PROFILE}:
+                if decision_provider not in {None, "none"}:
+                    raise ValueError("Contextual and portfolio-review profiles use no Jev router; remove --decision-provider")
+            elif decision_provider not in {None, "jev"}:
+                raise ValueError("Legacy adaptive screening uses --decision-provider jev")
             if provider_mode != "live" or profile != "deepseek" or draft_dir or jev_policy or auto_approve:
-                raise ValueError("Unattended book runs currently require live DeepSeek generation and direct Jev; use separate legacy options for supplied drafts, approvals or gateway policy")
+                raise ValueError("Unattended book runs require --provider-mode live --profile deepseek; supplied drafts, approvals and gateway policies belong to the interactive paths")
             from .autonomous_book import run_unattended_book
             manifest = run_unattended_book(story, out, model=model or "deepseek-flash",
                 decision_model=decision_model, max_usd=max_usd, strategy=strategy)
+            console.print(f"Profile: {manifest.get('profile', book_profile)}")
             console.print(f"Status: {manifest['status']}")
             console.print(f"Manifest: {out / 'manifest.json'}")
             delivery_name = manifest.get("delivery")
@@ -217,7 +226,7 @@ def harness_run(
                 raise typer.Exit(1)
             return
         if interaction != "interactive" or memory is not None or glossary_policy is not None:
-            raise ValueError("Unattended policies require --strategy adaptive or always-review")
+            raise ValueError("Unattended policies require --strategy contextual or portfolio-review; adaptive and always-review retain legacy v2 behavior")
         semantic_policy = (
             JevPolicy.model_validate_json(jev_policy.read_text(encoding="utf-8"))
             if jev_policy is not None

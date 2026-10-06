@@ -253,6 +253,21 @@ _DIGIT_RUN_RE = re.compile(r"\d+")
 _CJK_RUN_RE = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]+")
 
 
+def _bounded_edit_violation(
+    action: SubmitSegmentPatchAction, draft_text: str, policy: VerificationPolicy,
+) -> str | None:
+    # v3-v5 deliberately allowed whole-segment rewrites. The portfolio v6
+    # contract promises phrase edits, so enforce it for alignment as well as
+    # review; a prompt instruction alone is not an edit boundary.
+    if policy.instruction_version == "natural-review-v6":
+        current = draft_text
+        for edit in action.edits:
+            if edit.old_text == current:
+                return "Review v6 requires each old_text to be a proper substring of the segment; target a smaller exact phrase."
+            current = current.replace(edit.old_text, edit.new_text, 1)
+    return None
+
+
 def _polish_guard_violation(old_text: str, new_text: str, source_text: str = "") -> str | None:
     """Cheap, deterministic content-loss veto applied to every patch.
 
@@ -715,8 +730,11 @@ def run_adaptive_chapter(
                 source, draft = sources[index], drafts[index]
 
                 def alignment_guard(candidate_text: str, draft: DraftSegment = draft,
-                                    source: SourceSegment = source) -> tuple[bool, str]:
-                    violation = _polish_guard_violation(draft.translated_text, candidate_text, source.text)
+                                    source: SourceSegment = source,
+                                    action: SubmitSegmentPatchAction = action) -> tuple[bool, str]:
+                    violation = _bounded_edit_violation(action, draft.translated_text, policy)
+                    if violation is None:
+                        violation = _polish_guard_violation(draft.translated_text, candidate_text, source.text)
                     if violation is None and policy.gloss_guard:
                         violation = _gloss_guard_violation(draft.translated_text, candidate_text, source.text)
                     if violation is None and policy.duplication_guard:
@@ -854,7 +872,9 @@ def run_adaptive_chapter(
         patch_rounds[sid] = patch_rounds.get(sid, 0) + 1
 
         def candidate_guard(candidate_text: str) -> tuple[bool, str]:
-            violation = _polish_guard_violation(draft.translated_text, candidate_text, source.text)
+            violation = _bounded_edit_violation(action, draft.translated_text, policy)
+            if violation is None:
+                violation = _polish_guard_violation(draft.translated_text, candidate_text, source.text)
             if violation is None and policy.gloss_guard:
                 violation = _gloss_guard_violation(draft.translated_text, candidate_text, source.text)
             if violation is None and policy.duplication_guard:
@@ -978,6 +998,14 @@ def run_adaptive_chapter(
                 warnings.append(AdaptiveWarning("unresolved_screen_flags", sid, ", ".join(screen.issue_ids)))
             if "source_incomplete" in screen.issue_ids:
                 warnings.append(AdaptiveWarning("source_incomplete", sid, "The available source is physically incomplete."))
+        if (policy.mode == "adaptive_segment_screen" and policy.route_deterministic_findings
+                and not current_review
+                and _segment_deterministic_findings(source.text, drafts[index].translated_text, glossary)):
+            # A clean router score cannot clear an independent deterministic
+            # trigger. Chapter-wide QA may miss a term omitted in this segment
+            # when its canonical rendering occurs in another segment.
+            warnings.append(AdaptiveWarning("missing_review_coverage", sid,
+                                            "Deterministic findings required review, but no current generative review receipt is available."))
         if current_review and review is not None and review.blocking_issue_ids:
             warnings.append(AdaptiveWarning("unresolved_review_findings", sid, ", ".join(review.blocking_issue_ids)))
         if sid in budget_exhausted_segments:

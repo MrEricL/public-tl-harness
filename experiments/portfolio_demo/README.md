@@ -59,7 +59,12 @@ accepts or rejects its proposed edits.
 The score is a narrow, inspectable fact check with allowed and forbidden patterns.
 The starting drafts pass 2/12 checks by construction, so report “fixed X of ten
 seeded errors, with Y of two clean controls preserved,” not a claim about natural
-error prevalence. Some valid paraphrases may miss the matcher; inspect the
+error prevalence. The report leads with errors fixed, controls whose checks still
+pass, and controls left byte-for-byte unchanged. It retains the raw before/after
+table without turning the engineered starting failure rate into a quality multiplier.
+The versioned `repair-challenge.v2` rubric checks common faithful paraphrases and
+simple meaning reversals; it remains a small regex test, not a semantic judge.
+Some valid paraphrases may miss the matcher; inspect the
 report before writing a headline, and keep the raw automated counts intact.
 
 ## Just run these, then decide

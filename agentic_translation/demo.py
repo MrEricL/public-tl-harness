@@ -12,13 +12,15 @@ import shlex
 import sys
 import webbrowser
 
-from .adaptive import BudgetPolicy, VerificationPolicy, run_adaptive_chapter
+from .adaptive import run_adaptive_chapter
 from .autonomous_provider import write_json
 from .demo_metrics import resources, summarize, term_checks, write_report
 from .demo_provider import DemoGenerator, PROVIDERS, digest, provider_config
 from .glossary import parse_glossary_text
 from .models import GlossaryEntry, GlossaryParseResult
 from .package import build_epub_collection, verify_epub_artifact
+from .profiles import (PORTFOLIO_REVIEW_PROFILE as PROFILE,
+                       portfolio_review_budget, portfolio_review_policy as demo_policy)
 from .qa import run_translation_qa
 from .segmentation import parse_draft_envelope, render_draft, segment_source
 from .story_memory import StoryMemoryTape
@@ -26,25 +28,13 @@ from .unattended import (GenerativeReviewAdapter, SourceMemoryExtractor, TermAli
                          TERM_ADHERENCE_INSTRUCTION, _context_payload, _glossary,
                          _translate, _with_translator_terms)
 
-PROFILE = "portfolio-review.v1"
-
-
-def demo_policy() -> VerificationPolicy:
-    """Both new live tests execute this exact named policy, with no router SDK."""
-    return VerificationPolicy(version=PROFILE, mode="full_segment_review",
-                              instruction_version="natural-review-v6",
-                              qa_warning_policy_version="qa-warnings.v2",
-                              route_deterministic_findings=True, term_alignment_pass=True,
-                              gloss_guard=True, duplication_guard=True)
-
 
 def repair_segments(segments, drafts, glossary, generator, out, *, context=None, memory_hash=""):
     return run_adaptive_chapter(
         segments, drafts, glossary=glossary, decision_provider=None,
         review_provider=GenerativeReviewAdapter(generator),
-        alignment_provider=TermAlignmentAdapter(generator), verification_policy=demo_policy(),
-        budget_policy=BudgetPolicy(max_coordinator_steps=max(24, len(segments)*8),
-                                   max_patch_actions=max(12, len(segments)*2)),
+        alignment_provider=TermAlignmentAdapter(generator, bounded_edits=True), verification_policy=demo_policy(),
+        budget_policy=portfolio_review_budget(len(segments)),
         context_by_segment=context, memory_snapshot_sha256=memory_hash or None,
         session_dir=out, story_slug="portfolio", run_id="portfolio",
     )
