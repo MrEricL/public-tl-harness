@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="968" height="614" viewBox="0 0 968 614" role="img" aria-labelledby="title desc">
+<title id="title">How a chapter moves through memory</title>
+<desc id="desc">Chapter n on the left, chapter n+1 on the right, and four layers between them, bottom to top. Run record: every call, cost and edit, replayable; Python adds to it and nothing edits it. Story memory: names and facts the model proposes from chapter n, kept only if their quote is in the Chinese; one snapshot per chapter, never rewritten; by chapter 25 it held 57,000–81,000 characters, 378–523 names and about 290 facts per novel. Translator&#x27;s glossary: the translator&#x27;s own names, listed first; they win over memory&#x27;s. Passage context, highlighted: the few lines one passage is given, with memory&#x27;s part at most 3,000 characters: 392 characters of memory per passage with names only, the default, or 2,862 when facts were included. Arrows: extract from chapter n into memory, select from memory and the glossary into the passage context, write from the context into chapter n+1, record from chapter n into the run record. </desc>
+<rect width="968" height="614" rx="12" fill="#ffffff"/>
+<g transform="translate(24 24)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" fill="#1f2328">
+<text x="0.0" y="26.0" font-size="21" fill="#1f2328" font-weight="600">How a chapter moves through memory</text>
+<text x="0.0" y="52.0" font-size="14.5" fill="#59636e">What chapter n leaves behind, and the few lines of it that chapter n+1 is given</text>
+<rect x="0.0" y="84.0" width="104.0" height="410.0" fill="#f6f8fa" rx="10" stroke="#d1d9e0" stroke-width="1"/>
+<text x="52.0" y="114.0" font-size="14" fill="#1f2328" font-weight="600" text-anchor="middle">Chapter n</text>
+<line x1="16.0" y1="138.0" x2="82.2" y2="138.0" stroke="#8c959f" stroke-width="1.6" stroke-opacity="0.35" stroke-linecap="round"/>
+<line x1="16.0" y1="147.0" x2="66.4" y2="147.0" stroke="#8c959f" stroke-width="1.6" stroke-opacity="0.35" stroke-linecap="round"/>
+<line x1="16.0" y1="156.0" x2="76.5" y2="156.0" stroke="#8c959f" stroke-width="1.6" stroke-opacity="0.35" stroke-linecap="round"/>
+<line x1="16.0" y1="165.0" x2="56.3" y2="165.0" stroke="#8c959f" stroke-width="1.6" stroke-opacity="0.35" stroke-linecap="round"/>
+<line x1="16.0" y1="174.0" x2="72.2" y2="174.0" stroke="#8c959f" stroke-width="1.6" stroke-opacity="0.35" stroke-linecap="round"/>
+<line x1="16.0" y1="183.0" x2="62.1" y2="183.0" stroke="#8c959f" stroke-width="1.6" stroke-opacity="0.35" stroke-linecap="round"/>
+<line x1="16.0" y1="192.0" x2="79.4" y2="192.0" stroke="#8c959f" stroke-width="1.6" stroke-opacity="0.35" stroke-linecap="round"/>
+<line x1="16.0" y1="201.0" x2="52.0" y2="201.0" stroke="#8c959f" stroke-width="1.6" stroke-opacity="0.35" stroke-linecap="round"/>
+<line x1="16.0" y1="210.0" x2="82.2" y2="210.0" stroke="#8c959f" stroke-width="1.6" stroke-opacity="0.35" stroke-linecap="round"/>
+<line x1="16.0" y1="219.0" x2="66.4" y2="219.0" stroke="#8c959f" stroke-width="1.6" stroke-opacity="0.35" stroke-linecap="round"/>
+<rect x="816.0" y="84.0" width="104.0" height="410.0" fill="#f6f8fa" rx="10" stroke="#d1d9e0" stroke-width="1"/>
+<text x="868.0" y="114.0" font-size="14" fill="#1f2328" font-weight="600" text-anchor="middle">Chapter n+1</text>
+<line x1="832.0" y1="138.0" x2="898.2" y2="138.0" stroke="#8c959f" stroke-width="1.6" stroke-opacity="0.35" stroke-linecap="round"/>
+<line x1="832.0" y1="147.0" x2="882.4" y2="147.0" stroke="#8c959f" stroke-width="1.6" stroke-opacity="0.35" stroke-linecap="round"/>
+<line x1="832.0" y1="156.0" x2="892.5" y2="156.0" stroke="#8c959f" stroke-width="1.6" stroke-opacity="0.35" stroke-linecap="round"/>
+<line x1="832.0" y1="165.0" x2="872.3" y2="165.0" stroke="#8c959f" stroke-width="1.6" stroke-opacity="0.35" stroke-linecap="round"/>
+<line x1="832.0" y1="174.0" x2="888.2" y2="174.0" stroke="#8c959f" stroke-width="1.6" stroke-opacity="0.35" stroke-linecap="round"/>
+<line x1="832.0" y1="183.0" x2="878.1" y2="183.0" stroke="#8c959f" stroke-width="1.6" stroke-opacity="0.35" stroke-linecap="round"/>
+<line x1="832.0" y1="192.0" x2="895.4" y2="192.0" stroke="#8c959f" stroke-width="1.6" stroke-opacity="0.35" stroke-linecap="round"/>
+<line x1="832.0" y1="201.0" x2="868.0" y2="201.0" stroke="#8c959f" stroke-width="1.6" stroke-opacity="0.35" stroke-linecap="round"/>
+<line x1="832.0" y1="210.0" x2="898.2" y2="210.0" stroke="#8c959f" stroke-width="1.6" stroke-opacity="0.35" stroke-linecap="round"/>
+<line x1="832.0" y1="219.0" x2="882.4" y2="219.0" stroke="#8c959f" stroke-width="1.6" stroke-opacity="0.35" stroke-linecap="round"/>
+<rect x="204.0" y="84.0" width="562.0" height="86.0" fill="#fbeae2" rx="10" stroke="#cf7a5c" stroke-width="1.2"/>
+<text x="222.0" y="114.0" font-size="15" fill="#1f2328" font-weight="600">Passage context</text>
+<text x="222.0" y="135.0" font-size="13" fill="#59636e">The few lines one passage is given; memory&#x27;s part is at most 3,000 characters</text>
+<text x="222.0" y="155.0" font-size="12.5" fill="#59636e">392 characters of memory per passage with names only; 2,862 with facts</text>
+<path d="M 712.0 102.0 L 739.0 102.0 L 748.0 111.0 L 748.0 148.0 L 712.0 148.0 Z" fill="#fbeae2" stroke="#cf7a5c" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 739.0 102.0 L 739.0 111.0 L 748.0 111.0" fill="none" stroke="#cf7a5c" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/>
+<line x1="719.2" y1="119.0" x2="737.2" y2="119.0" stroke="#cf7a5c" stroke-width="1.2"/>
+<line x1="719.2" y1="126.2" x2="741.5" y2="126.2" stroke="#cf7a5c" stroke-width="1.2"/>
+<line x1="719.2" y1="133.5" x2="737.2" y2="133.5" stroke="#cf7a5c" stroke-width="1.2"/>
+<line x1="719.2" y1="140.8" x2="741.5" y2="140.8" stroke="#cf7a5c" stroke-width="1.2"/>
+<rect x="292.0" y="192.0" width="474.0" height="86.0" fill="#eef1f4" rx="10" stroke="#aab4bf" stroke-width="1.2"/>
+<text x="310.0" y="222.0" font-size="15" fill="#1f2328" font-weight="600">Translator&#x27;s glossary</text>
+<text x="310.0" y="243.0" font-size="13" fill="#59636e">The translator&#x27;s own names, listed first; they win over memory&#x27;s</text>
+<text x="310.0" y="263.0" font-size="12.5" fill="#8c959f">Optional: the --glossary file</text>
+<rect x="204.0" y="300.0" width="562.0" height="86.0" fill="#ddf2e5" rx="10" stroke="#5aab80" stroke-width="1.2"/>
+<text x="222.0" y="330.0" font-size="15" fill="#1f2328" font-weight="600">Story memory</text>
+<text x="222.0" y="351.0" font-size="13" fill="#59636e">Names and facts, kept only if their quote is in the Chinese</text>
+<text x="222.0" y="371.0" font-size="12.5" fill="#59636e">By chapter 25: 57,000–81,000 characters, 378–523 names, about 290 facts</text>
+<text x="696.0" y="318.0" font-size="11" fill="#8c959f" text-anchor="middle">one snapshot per chapter</text>
+<path d="M 644.0 328.0 L 660.0 328.0 L 668.0 336.0 L 668.0 358.0 L 644.0 358.0 Z" fill="#ddf2e5" stroke="#5aab80" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 660.0 328.0 L 660.0 336.0 L 668.0 336.0" fill="none" stroke="#5aab80" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/>
+<line x1="648.8" y1="344.0" x2="660.8" y2="344.0" stroke="#5aab80" stroke-width="1.2"/>
+<line x1="648.8" y1="348.7" x2="663.7" y2="348.7" stroke="#5aab80" stroke-width="1.2"/>
+<line x1="648.8" y1="353.3" x2="660.8" y2="353.3" stroke="#5aab80" stroke-width="1.2"/>
+<path d="M 671.0 343.0 L 677.0 343.0" fill="none" stroke="#59636e" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 677.0 339.5 L 682.0 343.0 L 677.0 346.5 Z" fill="#59636e" stroke="#59636e" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 684.0 328.0 L 700.0 328.0 L 708.0 336.0 L 708.0 358.0 L 684.0 358.0 Z" fill="#ddf2e5" stroke="#5aab80" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 700.0 328.0 L 700.0 336.0 L 708.0 336.0" fill="none" stroke="#5aab80" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/>
+<line x1="688.8" y1="344.0" x2="700.8" y2="344.0" stroke="#5aab80" stroke-width="1.2"/>
+<line x1="688.8" y1="348.7" x2="703.7" y2="348.7" stroke="#5aab80" stroke-width="1.2"/>
+<line x1="688.8" y1="353.3" x2="700.8" y2="353.3" stroke="#5aab80" stroke-width="1.2"/>
+<path d="M 711.0 343.0 L 717.0 343.0" fill="none" stroke="#59636e" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 717.0 339.5 L 722.0 343.0 L 717.0 346.5 Z" fill="#59636e" stroke="#59636e" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 724.0 328.0 L 740.0 328.0 L 748.0 336.0 L 748.0 358.0 L 724.0 358.0 Z" fill="#ddf2e5" stroke="#5aab80" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 740.0 328.0 L 740.0 336.0 L 748.0 336.0" fill="none" stroke="#5aab80" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/>
+<line x1="728.8" y1="344.0" x2="740.8" y2="344.0" stroke="#5aab80" stroke-width="1.2"/>
+<line x1="728.8" y1="348.7" x2="743.7" y2="348.7" stroke="#5aab80" stroke-width="1.2"/>
+<line x1="728.8" y1="353.3" x2="740.8" y2="353.3" stroke="#5aab80" stroke-width="1.2"/>
+<rect x="204.0" y="408.0" width="562.0" height="86.0" fill="#ece8fa" rx="10" stroke="#8f7fd3" stroke-width="1.2"/>
+<text x="222.0" y="438.0" font-size="15" fill="#1f2328" font-weight="600">Run record</text>
+<text x="222.0" y="459.0" font-size="13" fill="#59636e">Every call, cost and edit, replayable</text>
+<text x="222.0" y="479.0" font-size="12.5" fill="#8c959f">Python adds to it; nothing edits it</text>
+<line x1="558.0" y1="430.0" x2="732.8" y2="430.0" stroke="#8c959f" stroke-width="1.6" stroke-opacity="0.45" stroke-linecap="round"/>
+<line x1="558.0" y1="437.0" x2="691.0" y2="437.0" stroke="#8c959f" stroke-width="1.6" stroke-opacity="0.45" stroke-linecap="round"/>
+<line x1="558.0" y1="444.0" x2="717.6" y2="444.0" stroke="#8c959f" stroke-width="1.6" stroke-opacity="0.45" stroke-linecap="round"/>
+<line x1="558.0" y1="451.0" x2="664.4" y2="451.0" stroke="#8c959f" stroke-width="1.6" stroke-opacity="0.45" stroke-linecap="round"/>
+<line x1="558.0" y1="458.0" x2="706.2" y2="458.0" stroke="#8c959f" stroke-width="1.6" stroke-opacity="0.45" stroke-linecap="round"/>
+<line x1="558.0" y1="465.0" x2="679.6" y2="465.0" stroke="#8c959f" stroke-width="1.6" stroke-opacity="0.45" stroke-linecap="round"/>
+<line x1="558.0" y1="472.0" x2="725.2" y2="472.0" stroke="#8c959f" stroke-width="1.6" stroke-opacity="0.45" stroke-linecap="round"/>
+<path d="M 108.0 343.0 L 196.0 343.0" fill="none" stroke="#59636e" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 196.0 338.8 L 202.0 343.0 L 196.0 347.2 Z" fill="#59636e" stroke="#59636e" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="154.0" y="335.0" font-size="12.5" fill="#59636e" text-anchor="middle">extract</text>
+<path d="M 108.0 451.0 L 196.0 451.0" fill="none" stroke="#59636e" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 196.0 446.8 L 202.0 451.0 L 196.0 455.2 Z" fill="#59636e" stroke="#59636e" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="154.0" y="443.0" font-size="12.5" fill="#59636e" text-anchor="middle">record</text>
+<path d="M 232.0 298.0 L 232.0 178.0" fill="none" stroke="#59636e" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 227.8 178.0 L 232.0 172.0 L 236.2 178.0 Z" fill="#59636e" stroke="#59636e" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="242.0" y="239.0" font-size="12.5" fill="#59636e">select</text>
+<path d="M 646.0 190.0 L 646.0 178.0" fill="none" stroke="#59636e" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 641.8 178.0 L 646.0 172.0 L 650.2 178.0 Z" fill="#59636e" stroke="#59636e" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 768.0 127.0 L 808.0 127.0" fill="none" stroke="#59636e" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 808.0 122.8 L 814.0 127.0 L 808.0 131.2 Z" fill="#59636e" stroke="#59636e" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="791.0" y="119.0" font-size="12.5" fill="#59636e" text-anchor="middle">write</text>
+<text x="0.0" y="530.0" font-size="13.5" fill="#59636e">The model extracts (proposing each entry with its quote) and writes. Python checks each quote, selects the lines and records the run.</text>
+<text x="0.0" y="549.0" font-size="13.5" fill="#59636e">Memory sizes from Stage 1 (three novels; 5 chapters read first, then 20 translated); passage sizes from Stage 2, 60 unseen chapters.</text>
+</g>
+</svg>

@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="968" height="366" viewBox="0 0 968 366" role="img" aria-labelledby="title desc">
+<title id="title">Blind whole-chapter judgments</title>
+<desc id="desc">Full harness vs. each chapter alone: first-named version preferred 14, tie 9, second-named version preferred 17; Repaired vs. unrepaired draft: first-named version preferred 16, tie 16, second-named version preferred 8. Judges did not prefer the full harness over translating each chapter alone; one judge preferred repaired drafts over the same drafts without repair.</desc>
+<rect width="968" height="366" rx="12" fill="#ffffff"/>
+<g transform="translate(24 24)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" fill="#1f2328">
+<text x="0.0" y="26.0" font-size="21" fill="#1f2328" font-weight="600">Judges split on whole chapters, but preferred repaired drafts 16 to 8</text>
+<text x="0.0" y="52.0" font-size="14.5" fill="#59636e">Blind pairwise judgments in both presentation orders · each bar is 40 chapters, centered on ties</text>
+<rect x="0.0" y="79.0" width="12.0" height="12.0" fill="#2a78d6" rx="2"/>
+<text x="20.0" y="90.0" font-size="14" fill="#59636e">First-named version preferred</text>
+<rect x="273.4" y="79.0" width="12.0" height="12.0" fill="#d8dee4" rx="2"/>
+<text x="293.4" y="90.0" font-size="14" fill="#59636e">Tie</text>
+<rect x="342.9" y="79.0" width="12.0" height="12.0" fill="#e34948" rx="2"/>
+<text x="362.9" y="90.0" font-size="14" fill="#59636e">Second-named version preferred</text>
+<line x1="560.0" y1="118.0" x2="560.0" y2="236.0" stroke="#d1d9e0" stroke-width="1"/>
+<text x="0.0" y="146.0" font-size="16" fill="#1f2328" font-weight="600">Full harness vs. each chapter alone</text>
+<text x="0.0" y="166.0" font-size="13" fill="#59636e">both judge models · 40 chapters</text>
+<rect x="303.0" y="134.0" width="202.0" height="26.0" fill="#e34948" rx="3"/>
+<text x="404.0" y="152.0" font-size="13.5" fill="#ffffff" font-weight="600" text-anchor="middle">17</text>
+<rect x="507.0" y="134.0" width="106.0" height="26.0" fill="#d8dee4" rx="3"/>
+<text x="560.0" y="152.0" font-size="13.5" fill="#1f2328" font-weight="600" text-anchor="middle">9</text>
+<rect x="615.0" y="134.0" width="166.0" height="26.0" fill="#2a78d6" rx="3"/>
+<text x="698.0" y="152.0" font-size="13.5" fill="#ffffff" font-weight="600" text-anchor="middle">14</text>
+<text x="0.0" y="212.0" font-size="16" fill="#1f2328" font-weight="600">Repaired vs. unrepaired draft</text>
+<text x="0.0" y="232.0" font-size="13" fill="#59636e">one judge model · 40 chapters</text>
+<rect x="369.0" y="200.0" width="94.0" height="26.0" fill="#e34948" rx="3"/>
+<text x="416.0" y="218.0" font-size="13.5" fill="#ffffff" font-weight="600" text-anchor="middle">8</text>
+<rect x="465.0" y="200.0" width="190.0" height="26.0" fill="#d8dee4" rx="3"/>
+<text x="560.0" y="218.0" font-size="13.5" fill="#1f2328" font-weight="600" text-anchor="middle">16</text>
+<rect x="657.0" y="200.0" width="190.0" height="26.0" fill="#2a78d6" rx="3"/>
+<text x="752.0" y="218.0" font-size="13.5" fill="#ffffff" font-weight="600" text-anchor="middle">16</text>
+<text x="0.0" y="264.0" font-size="13.5" fill="#59636e">Judges: Claude Sonnet 5 and GPT-6 Luna (the second row used Luna only). They never saw the glossary, and in</text>
+<text x="0.0" y="283.0" font-size="13.5" fill="#59636e">novel D most objections were to the translator&#x27;s own terms. The study&#x27;s preset quality bar (at most 4 net losses</text>
+<text x="0.0" y="302.0" font-size="13.5" fill="#59636e">in 40) was met with 3, but no overall quality gain was shown.</text>
+</g>
+</svg>

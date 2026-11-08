@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="968" height="520" viewBox="0 0 968 520" role="img" aria-labelledby="title desc">
+<title id="title">What fills a passage&#x27;s memory: the full pack against names only</title>
+<desc id="desc">Left, names and facts: facts are 81 to 88% of the characters a passage is given, and the budget keeps old facts (median 9 to 12 chapters old) while cutting new ones (median 3 to 5); about 2,862 characters of memory per passage. Right, names only: 392 characters per passage. Inconsistent renderings: 11.3% with names and facts, 9.8% with names only. Judged character errors: 10 with names and facts, 8 with names only. Stage 2 (November 7): 60 unseen chapters, both packs with a 20-chapter lead-in.</desc>
+<rect width="968" height="520" rx="12" fill="#ffffff"/>
+<g transform="translate(24 24)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" fill="#1f2328">
+<text x="0.0" y="26.0" font-size="21" fill="#1f2328" font-weight="600">Sending only names did as well, at a seventh of the size</text>
+<text x="0.0" y="52.0" font-size="14.5" fill="#59636e">The memory one passage is given, drawn to scale: names in blue, facts in gray</text>
+<rect x="0.0" y="84.0" width="448.0" height="320.0" fill="#f6f8fa" rx="12"/>
+<text x="18.0" y="114.0" font-size="14.5" fill="#1f2328" font-weight="600">Names and facts (the old default)</text>
+<rect x="18.0" y="140.0" width="110.0" height="23.1" fill="#2a78d6" rx="3"/>
+<rect x="18.0" y="165.1" width="110.0" height="124.9" fill="#d8dee4" rx="3"/>
+<text x="140.0" y="231.6" font-size="13" fill="#59636e">facts</text>
+<text x="140.0" y="156.6" font-size="13" fill="#59636e">names</text>
+<text x="212.0" y="158.0" font-size="13" fill="#59636e">Facts are 81–88% of the</text>
+<text x="212.0" y="177.0" font-size="13" fill="#59636e">characters sent.</text>
+<text x="212.0" y="202.0" font-size="13" fill="#59636e">The budget keeps old facts</text>
+<text x="212.0" y="221.0" font-size="13" fill="#59636e">(median 9–12 chapters old)</text>
+<text x="212.0" y="240.0" font-size="13" fill="#59636e">and cuts new ones (median 3–5</text>
+<text x="212.0" y="259.0" font-size="13" fill="#59636e">chapters old).</text>
+<rect x="18.0" y="332.0" width="412.0" height="54.0" fill="#f6f8fa" rx="8" stroke="#d1d9e0" stroke-width="1.2"/>
+<text x="36.0" y="367.0" font-size="22" fill="#1f2328" font-weight="650">2,862</text>
+<text x="111.6" y="364.0" font-size="13.5" fill="#1f2328">characters of memory per passage</text>
+<rect x="472.0" y="84.0" width="448.0" height="320.0" fill="#f6f8fa" rx="12"/>
+<text x="490.0" y="114.0" font-size="14.5" fill="#1f2328" font-weight="600">Names only (now the default)</text>
+<rect x="490.0" y="140.0" width="110.0" height="20.5" fill="#2a78d6" rx="3"/>
+<text x="612.0" y="155.3" font-size="13" fill="#59636e">names</text>
+<text x="490.0" y="204.0" font-size="13" fill="#59636e">Inconsistent renderings: 11.3% with names and facts, 9.8% with</text>
+<text x="490.0" y="223.0" font-size="13" fill="#59636e">names only.</text>
+<text x="490.0" y="246.0" font-size="13" fill="#59636e">Paired difference: −1.4 points (95% interval −3.1 to −0.01).</text>
+<text x="490.0" y="269.0" font-size="13" fill="#59636e">Judged character errors: 10 with names and facts, 8 with names</text>
+<text x="490.0" y="288.0" font-size="13" fill="#59636e">only, in the 59 chapters both runs completed.</text>
+<rect x="490.0" y="332.0" width="412.0" height="54.0" fill="#efc4ad" rx="8" stroke="#cf7a5c" stroke-width="1.2"/>
+<text x="508.0" y="367.0" font-size="22" fill="#1f2328" font-weight="650">392</text>
+<text x="559.0" y="364.0" font-size="13.5" fill="#1f2328">characters of memory per passage</text>
+<text x="0.0" y="434.0" font-size="13.5" fill="#59636e">Stage 2 (November 7): 60 unseen chapters, both packs with a 20-chapter lead-in. Fact shares and ages from the memory audit of the Stage 1 run</text>
+<text x="0.0" y="453.0" font-size="13.5" fill="#59636e">(three novels, 25 chapters each). Names only became the default after this test; older runs replay with the pack they recorded.</text>
+</g>
+</svg>

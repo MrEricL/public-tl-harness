@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="968" height="550" viewBox="0 0 968 550" role="img" aria-labelledby="title desc">
+<title id="title">Inconsistent name translations by setup</title>
+<desc id="desc">Share of a name&#x27;s renderings that differ from its most common English, lower is better. Half the glossary hidden, scored on the hidden names · 60 chapters: Glossary only 22.7%, Glossary + previous five chapters 14.2%, Glossary + story memory 8.9%; No glossary · the same 60 chapters: Each chapter alone 22.2%, Story memory 9.0%; No glossary · 60 more chapters (Stage 2): Each chapter alone 24.7%, Story memory 11.4%.</desc>
+<rect width="968" height="550" rx="12" fill="#ffffff"/>
+<g transform="translate(24 24)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" fill="#1f2328">
+<text x="0.0" y="26.0" font-size="21" fill="#1f2328" font-weight="600">Story memory cut name drift by more than half on unseen chapters</text>
+<text x="0.0" y="52.0" font-size="14.5" fill="#59636e">Share of a name&#x27;s renderings that differ from its most common English · lower is better · same model throughout</text>
+<text x="0.0" y="106.0" font-size="13.5" fill="#59636e" font-weight="600">Half the glossary hidden, scored on the hidden names · 60 chapters</text>
+<text x="284.0" y="127.0" font-size="14" fill="#1f2328" text-anchor="end">Glossary only</text>
+<line x1="300.0" y1="122.0" x2="760.0" y2="122.0" stroke="#e5e9ed" stroke-width="1"/>
+<text x="284.0" y="161.0" font-size="14" fill="#1f2328" text-anchor="end">Glossary + previous five chapters</text>
+<line x1="300.0" y1="156.0" x2="760.0" y2="156.0" stroke="#e5e9ed" stroke-width="1"/>
+<text x="284.0" y="195.0" font-size="14" fill="#1f2328" text-anchor="end">Glossary + story memory</text>
+<line x1="300.0" y1="190.0" x2="760.0" y2="190.0" stroke="#e5e9ed" stroke-width="1"/>
+<path d="M 717.1 122.0 L 717.1 190.0 L 472.4 190.0" fill="none" stroke="#d1d9e0" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="717.1" cy="122.0" r="7" fill="#818b98" stroke="#ffffff" stroke-width="2"/>
+<text x="729.1" y="127.0" font-size="13.5" fill="#1f2328" font-weight="600">22.7%</text>
+<circle cx="562.0" cy="156.0" r="7" fill="#86b6ef" stroke="#ffffff" stroke-width="2"/>
+<text x="574.0" y="161.0" font-size="13.5" fill="#1f2328" font-weight="600">14.2%</text>
+<circle cx="463.4" cy="190.0" r="7" fill="#2a78d6" stroke="#ffffff" stroke-width="2"/>
+<text x="451.4" y="195.0" font-size="13.5" fill="#1f2328" font-weight="600" text-anchor="end">8.9%</text>
+<text x="780.0" y="195.0" font-size="14" fill="#2a78d6" font-weight="600">61% fewer [47–73%]</text>
+<text x="0.0" y="248.0" font-size="13.5" fill="#59636e" font-weight="600">No glossary · the same 60 chapters</text>
+<text x="284.0" y="269.0" font-size="14" fill="#1f2328" text-anchor="end">Each chapter alone</text>
+<line x1="300.0" y1="264.0" x2="760.0" y2="264.0" stroke="#e5e9ed" stroke-width="1"/>
+<text x="284.0" y="303.0" font-size="14" fill="#1f2328" text-anchor="end">Story memory</text>
+<line x1="300.0" y1="298.0" x2="760.0" y2="298.0" stroke="#e5e9ed" stroke-width="1"/>
+<path d="M 707.9 264.0 L 707.9 298.0 L 475.2 298.0" fill="none" stroke="#d1d9e0" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="707.9" cy="264.0" r="7" fill="#818b98" stroke="#ffffff" stroke-width="2"/>
+<text x="719.9" y="269.0" font-size="13.5" fill="#1f2328" font-weight="600">22.2%</text>
+<circle cx="466.2" cy="298.0" r="7" fill="#2a78d6" stroke="#ffffff" stroke-width="2"/>
+<text x="454.2" y="303.0" font-size="13.5" fill="#1f2328" font-weight="600" text-anchor="end">9.0%</text>
+<text x="780.0" y="303.0" font-size="14" fill="#2a78d6" font-weight="600">59% fewer [48–71%]</text>
+<text x="0.0" y="356.0" font-size="13.5" fill="#59636e" font-weight="600">No glossary · 60 more chapters (Stage 2)</text>
+<text x="284.0" y="377.0" font-size="14" fill="#1f2328" text-anchor="end">Each chapter alone</text>
+<line x1="300.0" y1="372.0" x2="760.0" y2="372.0" stroke="#e5e9ed" stroke-width="1"/>
+<text x="284.0" y="411.0" font-size="14" fill="#1f2328" text-anchor="end">Story memory</text>
+<line x1="300.0" y1="406.0" x2="760.0" y2="406.0" stroke="#e5e9ed" stroke-width="1"/>
+<path d="M 753.7 372.0 L 753.7 406.0 L 518.0 406.0" fill="none" stroke="#d1d9e0" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="753.7" cy="372.0" r="7" fill="#818b98" stroke="#ffffff" stroke-width="2"/>
+<text x="765.7" y="377.0" font-size="13.5" fill="#1f2328" font-weight="600">24.7%</text>
+<circle cx="509.0" cy="406.0" r="7" fill="#2a78d6" stroke="#ffffff" stroke-width="2"/>
+<text x="497.0" y="411.0" font-size="13.5" fill="#1f2328" font-weight="600" text-anchor="end">11.4%</text>
+<text x="780.0" y="411.0" font-size="14" fill="#2a78d6" font-weight="600">54% fewer</text>
+<text x="300.0" y="458.0" font-size="12.5" fill="#8c959f" text-anchor="middle">0%</text>
+<text x="484.0" y="458.0" font-size="12.5" fill="#8c959f" text-anchor="middle">10%</text>
+<text x="668.0" y="458.0" font-size="12.5" fill="#8c959f" text-anchor="middle">20%</text>
+<text x="0.0" y="490.0" font-size="13.5" fill="#59636e">Intervals: 95% paired bootstrap over names. Stage 2&#x27;s interval is in points: −13.2 [−17.6, −8.9]. An automatic extractor read each name&#x27;s English.</text>
+</g>
+</svg>

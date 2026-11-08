@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="968" height="518" viewBox="0 0 968 518" role="img" aria-labelledby="title desc">
+<title id="title">Live repair trials: faithful repairs against tokens used</title>
+<desc id="desc">252 live repair trials, 36 per setup. The first harness delivered 11 faithful repairs using 1,498,379 tokens; a direct DeepSeek prompt delivered 36 using 16,684. Other setups: Single-agent harness 15 using 488,190, Claude Code · Sonnet 5 30 using 78,226, Codex · GPT-5.6 Luna 34 using 383,084, Codex · GPT-5.6 Terra 36 using 454,303.</desc>
+<rect width="968" height="518" rx="12" fill="#ffffff"/>
+<g transform="translate(24 24)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" fill="#1f2328">
+<text x="0.0" y="26.0" font-size="21" fill="#1f2328" font-weight="600">The first harness used 90× the tokens of a direct prompt and repaired a third as many</text>
+<text x="0.0" y="52.0" font-size="14.5" fill="#59636e">Faithful repairs out of 36 against tokens used, per setup · 252 live trials, September 2026 · log scale</text>
+<line x1="60.0" y1="330.0" x2="860.0" y2="330.0" stroke="#e5e9ed" stroke-width="1"/>
+<text x="50.0" y="335.0" font-size="13" fill="#8c959f" text-anchor="end">0</text>
+<line x1="60.0" y1="248.7" x2="860.0" y2="248.7" stroke="#e5e9ed" stroke-width="1"/>
+<text x="50.0" y="253.7" font-size="13" fill="#8c959f" text-anchor="end">12</text>
+<line x1="60.0" y1="167.3" x2="860.0" y2="167.3" stroke="#e5e9ed" stroke-width="1"/>
+<text x="50.0" y="172.3" font-size="13" fill="#8c959f" text-anchor="end">24</text>
+<line x1="60.0" y1="86.0" x2="860.0" y2="86.0" stroke="#e5e9ed" stroke-width="1"/>
+<text x="50.0" y="91.0" font-size="13" fill="#8c959f" text-anchor="end">36</text>
+<line x1="60.0" y1="86.0" x2="60.0" y2="330.0" stroke="#e5e9ed" stroke-width="1"/>
+<text x="60.0" y="352.0" font-size="13" fill="#8c959f" text-anchor="middle">10K</text>
+<line x1="393.3" y1="86.0" x2="393.3" y2="330.0" stroke="#e5e9ed" stroke-width="1"/>
+<text x="393.3" y="352.0" font-size="13" fill="#8c959f" text-anchor="middle">100K</text>
+<line x1="726.7" y1="86.0" x2="726.7" y2="330.0" stroke="#e5e9ed" stroke-width="1"/>
+<text x="726.7" y="352.0" font-size="13" fill="#8c959f" text-anchor="middle">1M</text>
+<text x="460.0" y="376.0" font-size="13" fill="#59636e" text-anchor="middle">Tokens used across 36 trials</text>
+<text x="50.0" y="74.0" font-size="13" fill="#59636e">Faithful repairs</text>
+<circle cx="785.2" cy="255.4" r="7" fill="#e34948" stroke="#ffffff" stroke-width="2"/>
+<text x="773.2" y="279.4" font-size="13.5" fill="#1f2328" font-weight="600" text-anchor="end">First harness · 11</text>
+<circle cx="622.9" cy="228.3" r="7" fill="#e34948" stroke="#ffffff" stroke-width="2"/>
+<text x="634.9" y="233.3" font-size="13.5" fill="#1f2328" font-weight="600">Single-agent harness · 15</text>
+<circle cx="134.1" cy="86.0" r="7" fill="#2a78d6" stroke="#ffffff" stroke-width="2"/>
+<text x="146.1" y="108.0" font-size="13.5" fill="#1f2328" font-weight="600">Direct DeepSeek prompt · 36</text>
+<circle cx="357.8" cy="126.7" r="7" fill="#818b98" stroke="#ffffff" stroke-width="2"/>
+<text x="369.8" y="131.7" font-size="13.5" fill="#1f2328" font-weight="600">Claude Code · Sonnet 5 · 30</text>
+<circle cx="587.8" cy="99.6" r="7" fill="#818b98" stroke="#ffffff" stroke-width="2"/>
+<text x="575.8" y="117.6" font-size="13.5" fill="#1f2328" font-weight="600" text-anchor="end">Codex · GPT-5.6 Luna · 34</text>
+<circle cx="612.4" cy="86.0" r="7" fill="#818b98" stroke="#ffffff" stroke-width="2"/>
+<text x="600.4" y="76.0" font-size="13.5" fill="#1f2328" font-weight="600" text-anchor="end">Codex · GPT-5.6 Terra · 36</text>
+<text x="0.0" y="398.0" font-size="13.5" fill="#59636e">Rules-only control (no model): 15 of 36. The first harness also held 17 real problems for review, but a hold is not a repair.</text>
+<text x="0.0" y="417.0" font-size="13.5" fill="#59636e">Its verifier accepted an edit only if a rule score improved. After that changed, a separate check repaired</text>
+<text x="0.0" y="436.0" font-size="13.5" fill="#59636e">10 of 10 targeted meaning errors. Scored by blinded agent-assisted review, not human raters.</text>
+</g>
+</svg>

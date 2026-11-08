@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="968" height="604" viewBox="0 0 968 604" role="img" aria-labelledby="title desc">
+<title id="title">What goes into the harness, what it does, and what comes out</title>
+<desc id="desc">Inputs: Chinese chapters, an optional translator glossary and a chat model API. Harness steps: story memory, context builder, writer, term alignment, reviewer, edit guards and recorder, with memory carried into the next chapter. Outputs: an English TXT/EPUB book, an HTML report of every edit and cost, and a replay cache.</desc>
+<rect width="968" height="604" rx="12" fill="#0d1117"/>
+<g transform="translate(24 24)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" fill="#f0f6fc">
+<text x="0.0" y="26.0" font-size="21" fill="#f0f6fc" font-weight="600">What goes in, what the harness does, and what comes out</text>
+<text x="0.0" y="52.0" font-size="14.5" fill="#9198a1">The model writes and proposes; plain Python checks each proposal, decides what is kept and records it</text>
+<text x="0.0" y="90.0" font-size="13.5" fill="#9198a1" font-weight="600">Inputs</text>
+<text x="196.0" y="90.0" font-size="13.5" fill="#9198a1" font-weight="600">The harness</text>
+<text x="742.0" y="90.0" font-size="13.5" fill="#9198a1" font-weight="600">Outputs</text>
+<rect x="196.0" y="104.0" width="518.0" height="450.0" fill="#151b23" rx="12"/>
+<line x1="232.0" y1="142.0" x2="232.0" y2="484.0" stroke="#3d444d" stroke-width="1.5"/>
+<path d="M 232 496 L 232 514 L 212 514 L 212 142 L 214 142" fill="none" stroke="#9198a1" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+<line x1="212.0" y1="514.0" x2="248.0" y2="514.0" stroke="#9198a1" stroke-width="1.5"/>
+<path d="M 212.0 142.0 L 214.0 142.0" fill="none" stroke="#9198a1" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 214.0 137.8 L 220.0 142.0 L 214.0 146.2 Z" fill="#9198a1" stroke="#9198a1" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="256.0" y="528.0" font-size="13" fill="#6e7681">The next chapter starts from the updated memory</text>
+<circle cx="232" cy="142" r="12" fill="#0d1117" stroke="#9198a1" stroke-width="1.4"/>
+<text x="232.0" y="146.5" font-size="12" fill="#f0f6fc" font-weight="600" text-anchor="middle">1</text>
+<text x="256.0" y="140.0" font-size="15" fill="#f0f6fc" font-weight="600">Story memory</text>
+<text x="256.0" y="160.0" font-size="13" fill="#9198a1">Notes names and facts; Python checks every quote</text>
+<rect x="585.9" y="128.0" width="114.1" height="24.0" fill="#0d1117" rx="12" stroke="#3d444d" stroke-width="1"/>
+<text x="643.0" y="144.0" font-size="12" fill="#9198a1" font-weight="600" text-anchor="middle">Model + Python</text>
+<circle cx="232" cy="199" r="12" fill="#0d1117" stroke="#9198a1" stroke-width="1.4"/>
+<text x="232.0" y="203.5" font-size="12" fill="#f0f6fc" font-weight="600" text-anchor="middle">2</text>
+<text x="256.0" y="197.0" font-size="15" fill="#f0f6fc" font-weight="600">Context builder</text>
+<text x="256.0" y="217.0" font-size="13" fill="#9198a1">Glossary first, then the most relevant memory</text>
+<rect x="639.7" y="185.0" width="60.3" height="24.0" fill="#0d1117" rx="12" stroke="#3d444d" stroke-width="1"/>
+<text x="669.8" y="201.0" font-size="12" fill="#9198a1" font-weight="600" text-anchor="middle">Python</text>
+<circle cx="232" cy="256" r="12" fill="#0d1117" stroke="#9198a1" stroke-width="1.4"/>
+<text x="232.0" y="260.5" font-size="12" fill="#f0f6fc" font-weight="600" text-anchor="middle">3</text>
+<text x="256.0" y="254.0" font-size="15" fill="#f0f6fc" font-weight="600">Writer</text>
+<text x="256.0" y="274.0" font-size="13" fill="#9198a1">Drafts the English chapter with that context</text>
+<rect x="646.4" y="242.0" width="53.6" height="24.0" fill="#0d1117" rx="12" stroke="#3d444d" stroke-width="1"/>
+<text x="673.2" y="258.0" font-size="12" fill="#9198a1" font-weight="600" text-anchor="middle">Model</text>
+<circle cx="232" cy="313" r="12" fill="#0d1117" stroke="#9198a1" stroke-width="1.4"/>
+<text x="232.0" y="317.5" font-size="12" fill="#f0f6fc" font-weight="600" text-anchor="middle">4</text>
+<text x="256.0" y="311.0" font-size="15" fill="#f0f6fc" font-weight="600">Term alignment</text>
+<text x="256.0" y="331.0" font-size="13" fill="#9198a1">Fixes glossary terms the draft missed</text>
+<rect x="646.4" y="299.0" width="53.6" height="24.0" fill="#0d1117" rx="12" stroke="#3d444d" stroke-width="1"/>
+<text x="673.2" y="315.0" font-size="12" fill="#9198a1" font-weight="600" text-anchor="middle">Model</text>
+<circle cx="232" cy="370" r="12" fill="#0d1117" stroke="#9198a1" stroke-width="1.4"/>
+<text x="232.0" y="374.5" font-size="12" fill="#f0f6fc" font-weight="600" text-anchor="middle">5</text>
+<text x="256.0" y="368.0" font-size="15" fill="#f0f6fc" font-weight="600">Reviewer</text>
+<text x="256.0" y="388.0" font-size="13" fill="#9198a1">Compares each passage with the source, suggests edits</text>
+<rect x="646.4" y="356.0" width="53.6" height="24.0" fill="#0d1117" rx="12" stroke="#3d444d" stroke-width="1"/>
+<text x="673.2" y="372.0" font-size="12" fill="#9198a1" font-weight="600" text-anchor="middle">Model</text>
+<circle cx="232" cy="427" r="12" fill="#0d1117" stroke="#9198a1" stroke-width="1.4"/>
+<text x="232.0" y="431.5" font-size="12" fill="#f0f6fc" font-weight="600" text-anchor="middle">6</text>
+<text x="256.0" y="425.0" font-size="15" fill="#f0f6fc" font-weight="600">Edit guards</text>
+<text x="256.0" y="445.0" font-size="13" fill="#9198a1">Keeps an edit only if no check gets worse</text>
+<rect x="639.7" y="413.0" width="60.3" height="24.0" fill="#0d1117" rx="12" stroke="#3d444d" stroke-width="1"/>
+<text x="669.8" y="429.0" font-size="12" fill="#9198a1" font-weight="600" text-anchor="middle">Python</text>
+<circle cx="232" cy="484" r="12" fill="#0d1117" stroke="#9198a1" stroke-width="1.4"/>
+<text x="232.0" y="488.5" font-size="12" fill="#f0f6fc" font-weight="600" text-anchor="middle">7</text>
+<text x="256.0" y="482.0" font-size="15" fill="#f0f6fc" font-weight="600">Recorder</text>
+<text x="256.0" y="502.0" font-size="13" fill="#9198a1">Saves every call, cost and edit for replay</text>
+<rect x="639.7" y="470.0" width="60.3" height="24.0" fill="#0d1117" rx="12" stroke="#3d444d" stroke-width="1"/>
+<text x="669.8" y="486.0" font-size="12" fill="#9198a1" font-weight="600" text-anchor="middle">Python</text>
+<rect x="0.0" y="150.0" width="172.0" height="86.0" fill="#1a2028" rx="10" stroke="#4b5563" stroke-width="1.2"/>
+<text x="14.0" y="178.0" font-size="14.5" fill="#f0f6fc" font-weight="600">Chinese chapters</text>
+<text x="14.0" y="200.0" font-size="13" fill="#9198a1">a folder of .txt files,</text>
+<text x="14.0" y="218.0" font-size="13" fill="#9198a1">read in order</text>
+<rect x="0.0" y="266.0" width="172.0" height="86.0" fill="#1a2028" rx="10" stroke="#4b5563" stroke-width="1.2"/>
+<text x="14.0" y="294.0" font-size="14.5" fill="#f0f6fc" font-weight="600">Translator&#x27;s glossary</text>
+<text x="14.0" y="316.0" font-size="13" fill="#9198a1">the translator&#x27;s chosen</text>
+<text x="14.0" y="334.0" font-size="13" fill="#9198a1">names (optional)</text>
+<rect x="0.0" y="382.0" width="172.0" height="86.0" fill="#1a2028" rx="10" stroke="#4b5563" stroke-width="1.2"/>
+<text x="14.0" y="410.0" font-size="14.5" fill="#f0f6fc" font-weight="600">Chat model API</text>
+<text x="14.0" y="432.0" font-size="13" fill="#9198a1">any OpenAI-compatible</text>
+<text x="14.0" y="450.0" font-size="13" fill="#9198a1">provider, e.g. DeepSeek</text>
+<line x1="174.0" y1="193.0" x2="181.0" y2="193.0" stroke="#9198a1" stroke-width="1.5"/>
+<line x1="181.0" y1="193.0" x2="181.0" y2="142.0" stroke="#9198a1" stroke-width="1.5"/>
+<path d="M 181.0 142.0 L 190.0 142.0" fill="none" stroke="#9198a1" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 190.0 137.8 L 196.0 142.0 L 190.0 146.2 Z" fill="#9198a1" stroke="#9198a1" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<line x1="174.0" y1="309.0" x2="181.0" y2="309.0" stroke="#9198a1" stroke-width="1.5"/>
+<line x1="181.0" y1="309.0" x2="181.0" y2="199.0" stroke="#9198a1" stroke-width="1.5"/>
+<path d="M 181.0 199.0 L 190.0 199.0" fill="none" stroke="#9198a1" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 190.0 194.8 L 196.0 199.0 L 190.0 203.2 Z" fill="#9198a1" stroke="#9198a1" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<line x1="174.0" y1="425.0" x2="189.0" y2="425.0" stroke="#9198a1" stroke-width="1.5"/>
+<line x1="189.0" y1="425.0" x2="189.0" y2="405.0" stroke="#9198a1" stroke-width="1.5"/>
+<line x1="189.0" y1="234.0" x2="189.0" y2="405.0" stroke="#9198a1" stroke-width="1.5"/>
+<line x1="189.0" y1="234.0" x2="196.0" y2="234.0" stroke="#9198a1" stroke-width="1.5"/>
+<line x1="189.0" y1="405.0" x2="196.0" y2="405.0" stroke="#9198a1" stroke-width="1.5"/>
+<path d="M 189.0 319.5 L 190.0 319.5" fill="none" stroke="#9198a1" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 190.0 315.3 L 196.0 319.5 L 190.0 323.7 Z" fill="#9198a1" stroke="#9198a1" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="742.0" y="150.0" width="178.0" height="86.0" fill="#221d3b" rx="10" stroke="#7e6fc7" stroke-width="1.2"/>
+<text x="756.0" y="178.0" font-size="14.5" fill="#f0f6fc" font-weight="600">English book</text>
+<text x="756.0" y="200.0" font-size="13" fill="#9198a1">TXT and EPUB, checked</text>
+<text x="756.0" y="218.0" font-size="13" fill="#9198a1">before delivery</text>
+<rect x="742.0" y="266.0" width="178.0" height="86.0" fill="#221d3b" rx="10" stroke="#7e6fc7" stroke-width="1.2"/>
+<text x="756.0" y="294.0" font-size="14.5" fill="#f0f6fc" font-weight="600">HTML report</text>
+<text x="756.0" y="316.0" font-size="13" fill="#9198a1">every edit, warning</text>
+<text x="756.0" y="334.0" font-size="13" fill="#9198a1">and cost, side by side</text>
+<rect x="742.0" y="382.0" width="178.0" height="86.0" fill="#221d3b" rx="10" stroke="#7e6fc7" stroke-width="1.2"/>
+<text x="756.0" y="410.0" font-size="14.5" fill="#f0f6fc" font-weight="600">Replay cache</text>
+<text x="756.0" y="432.0" font-size="13" fill="#9198a1">rerun the whole book</text>
+<text x="756.0" y="450.0" font-size="13" fill="#9198a1">with zero API calls</text>
+<line x1="704.0" y1="482.0" x2="722.0" y2="482.0" stroke="#9198a1" stroke-width="1.5"/>
+<line x1="722.0" y1="193.0" x2="722.0" y2="482.0" stroke="#9198a1" stroke-width="1.5"/>
+<path d="M 722.0 193.0 L 734.0 193.0" fill="none" stroke="#9198a1" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 734.0 188.8 L 740.0 193.0 L 734.0 197.2 Z" fill="#9198a1" stroke="#9198a1" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 722.0 309.0 L 734.0 309.0" fill="none" stroke="#9198a1" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 734.0 304.8 L 740.0 309.0 L 734.0 313.2 Z" fill="#9198a1" stroke="#9198a1" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 722.0 425.0 L 734.0 425.0" fill="none" stroke="#9198a1" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 734.0 420.8 L 740.0 425.0 L 734.0 429.2 Z" fill="#9198a1" stroke="#9198a1" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+</g>
+</svg>

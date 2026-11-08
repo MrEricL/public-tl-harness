@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Offline Translation Harness Baseline</title>
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 2rem; line-height: 1.45; color: #24292f; }
+    h1, h2 { margin-top: 1.5rem; }
+    .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
+    .card { border: 1px solid #d0d7de; border-radius: 8px; padding: 1rem; background: #f6f8fa; }
+    .ok { color: #116329; font-weight: 700; }
+    .warn { color: #9a6700; font-weight: 700; }
+    .fail { color: #cf222e; font-weight: 700; }
+    pre { white-space: pre-wrap; background: #f6f8fa; padding: 1rem; border-radius: 8px; overflow: auto; max-height: 26rem; }
+    table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.95rem; }
+    th, td { border: 1px solid #d0d7de; padding: 0.5rem; vertical-align: top; }
+    th { background: #f6f8fa; }
+    .diff-old { background: #ffebe9; }
+    .diff-new { background: #dafbe1; }
+    .timeline span { display: inline-block; border: 1px solid #d0d7de; border-radius: 999px; padding: 0.25rem 0.65rem; margin: 0.15rem; background: #fff; }
+    .cockpit { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin: 1rem 0; }
+    .cockpit-card { border-left: 4px solid #0969da; background: #f6f8fa; padding: 1rem; border-radius: 6px; min-height: 8rem; }
+    .cockpit-card h3 { margin: 0 0 0.4rem; font-size: 1rem; }
+    .cockpit-card p { margin: 0.25rem 0; }
+    .decision-timeline { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.85rem; margin: 1rem 0; }
+    .decision-card { border: 1px solid #d0d7de; border-radius: 6px; padding: 0.9rem; background: #fff; }
+    .decision-card h3 { margin: 0 0 0.35rem; font-size: 0.95rem; }
+    .decision-card p { margin: 0.25rem 0; }
+    .bench-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 0.75rem; margin: 1rem 0; }
+    .bench-step { border: 1px solid #d0d7de; border-radius: 6px; padding: 0.85rem; background: #fff; }
+    .bench-step h3 { margin: 0 0 0.35rem; font-size: 0.95rem; }
+    .bench-step strong { font-size: 1.25rem; }
+    .muted { color: #57606a; }
+  </style>
+</head>
+<body>
+  <h1>Offline Translation Harness Baseline</h1>
+  <p><strong>{{ story.title }}</strong> / {{ chapter }} / run <code>{{ manifest.run_id }}</code></p>
+
+  <h2>Summary</h2>
+  <div class="grid">
+    <div class="card">Residual Chinese<br><strong>{{ baseline.residual_chinese }} -> {{ final.residual_chinese }}</strong></div>
+    <div class="card">Glossary Violations<br><strong>{{ baseline.glossary_violations }} -> {{ final.glossary_violations }}</strong></div>
+    <div class="card">Panel Mismatches<br><strong>{{ baseline.panel_mismatches }} -> {{ final.panel_mismatches }}</strong></div>
+    <div class="card">Score<br><strong>{{ baseline.score }} -> {{ final.score }}</strong></div>
+  </div>
+
+  <h2>Run Cockpit</h2>
+  <p>
+    <strong>Productive distrust:</strong> the system treats the first translation as untrusted material, then uses deterministic
+    checks, routed repairs, and patch acceptance to prove the final artifact is cleaner. This offline run is an
+    <strong>Offline replayable harness</strong>; it demonstrates the loop shape without claiming live semantic judgment.
+  </p>
+  <div class="cockpit">
+    <div class="cockpit-card">
+      <h3>Harness trace</h3>
+      <p>{{ trace|length }} recorded stages produce the manifest, report, TXT, EPUB, and QA receipts.</p>
+      <p class="muted">The trace is the durable record; this page is the human-readable cockpit over it.</p>
+    </div>
+    <div class="cockpit-card">
+      <h3>Evaluator-optimizer loop</h3>
+      <p>Baseline QA: {{ qa_reports.baseline.summary.total_findings }} finding(s), score {{ baseline.score }}.</p>
+      <p>Final QA: {{ qa_reports.final.summary.total_findings }} finding(s), score {{ final.score }}.</p>
+      <p class="muted">QA pushes back after every accepted patch.</p>
+    </div>
+    <div class="cockpit-card">
+      <h3>Router decision</h3>
+      {% for decision in repair_decisions %}
+        <p><code>{{ decision.finding_check_id }}</code> -> <strong>{{ decision.strategy }}</strong></p>
+      {% endfor %}
+      {% if not repair_decisions %}
+        <p>No repair needed.</p>
+      {% endif %}
+    </div>
+    <div class="cockpit-card">
+      <h3>Candidate selection</h3>
+      <p>Selected <strong>{{ ensemble.selected_candidate_id }}</strong> from {{ candidates|length }} candidate(s).</p>
+      <p>Human review requested: {{ "yes" if ensemble.requires_human_review else "no" }}.</p>
+    </div>
+    <div class="cockpit-card">
+      <h3>Patch accepted after QA</h3>
+      {% for attempt in patch_attempts %}
+        <p><code>{{ attempt.finding_check_id }}</code>: {{ attempt.before_score }}{% if attempt.after_score is not none %} -> {{ attempt.after_score }}{% endif %}, accepted {{ "yes" if attempt.accepted else "no" }}</p>
+      {% endfor %}
+      {% if not patch_attempts %}
+        <p>No patch attempts.</p>
+      {% endif %}
+    </div>
+    <div class="cockpit-card">
+      <h3>Artifact gate</h3>
+      <p>TXT/EPUB artifact QA: <strong>{{ "passed" if artifact_qa.passed else "failed" }}</strong>.</p>
+      <p class="muted">Packaging is checked after translation QA, not assumed safe.</p>
+    </div>
+  </div>
+
+  <h2>Decision Timeline</h2>
+  <p>
+    The run is a sequence of auditable decisions. Each card names the pattern, the gate, and the visible receipt
+    instead of treating translation as one opaque prompt call.
+  </p>
+  <div class="decision-timeline">
+    <div class="decision-card">
+      <h3>1. Translate Cheap</h3>
+      <p><strong>Pattern:</strong> prompt chaining.</p>
+      <p>Baseline score {{ baseline.score }} with {{ qa_reports.baseline.summary.total_findings }} finding(s).</p>
+      <p class="muted">Cheap output is useful input, not trusted output.</p>
+    </div>
+    <div class="decision-card">
+      <h3>2. QA Gauntlet</h3>
+      <p><strong>Gate:</strong> deterministic compliance scorer.</p>
+      <p>Glossary score {{ glossary.score }} with {{ qa_reports.glossary.summary.total_findings }} finding(s).</p>
+      <p class="muted">Residue, canon, panel, leakage, and artifact checks do the boring work.</p>
+    </div>
+    <div class="decision-card">
+      <h3>3. Route Findings</h3>
+      <p><strong>Pattern:</strong> routing.</p>
+      <p>{{ repair_decisions|length }} repair decision(s): {% for decision in repair_decisions %}<code>{{ decision.strategy }}</code>{% if not loop.last %}, {% endif %}{% else %}none{% endfor %}.</p>
+      <p class="muted">Mechanical issues go to rules; bounded ambiguity goes to candidate selection.</p>
+    </div>
+    <div class="decision-card">
+      <h3>4. Editor's Room</h3>
+      <p><strong>Pattern:</strong> orchestrator-workers plus blind judge.</p>
+      <p>{{ candidates|length }} worker candidate(s); selected <strong>{{ ensemble.selected_candidate_id }}</strong>.</p>
+      <p class="muted">Literal, fluent, and canon-strict workers are judged behind shuffled candidate ids.</p>
+    </div>
+    <div class="decision-card">
+      <h3>5. Patch Acceptance</h3>
+      <p><strong>Pattern:</strong> span-only patch with QA veto.</p>
+      <p>{{ patch_attempts|length }} attempt(s); {% for attempt in patch_attempts %}{{ "accepted" if attempt.accepted else "rejected" }}{% if not loop.last %}, {% endif %}{% else %}no patches needed{% endfor %}.</p>
+      <p class="muted">The patch is not trusted until it improves the compliance score.</p>
+    </div>
+    <div class="decision-card">
+      <h3>6. Re-QA</h3>
+      <p><strong>Gate:</strong> evaluator-optimizer loop.</p>
+      <p>Final score {{ final.score }} with {{ qa_reports.final.summary.total_findings }} finding(s).</p>
+      <p class="muted">The loop ends cleanly only when final deterministic QA clears.</p>
+    </div>
+    <div class="decision-card">
+      <h3>7. Artifact Gate</h3>
+      <p><strong>Gate:</strong> packaged TXT/EPUB QA.</p>
+      <p>Status <strong>{{ "pass" if artifact_qa.passed else "fail" }}</strong>; {{ artifact_qa.failures|length }} failure(s).</p>
+      <p class="muted">Packaging can introduce defects, so it gets its own receipt.</p>
+    </div>
+    <div class="decision-card">
+      <h3>8. Outcome Receipt</h3>
+      <p><strong>Pattern:</strong> bench ablation.</p>
+      <p>Score gain +{{ bench_ablation.summary.score_gain }}; findings reduced by {{ bench_ablation.summary.finding_reduction }}.</p>
+      <p class="muted">These are deterministic compliance signals, not semantic-quality or economic claims.</p>
+    </div>
+  </div>
+
+  <h2>Bench Ablation Strip</h2>
+  <p>
+    This strip reads the run as a small translation bench: each row adds one piece of the flow and shows whether the
+    compliance score moved. This is a bench view, not a semantic quality claim.
+  </p>
+  <div class="bench-strip">
+    {% for step in bench_ablation.steps %}
+      <div class="bench-step">
+        <h3>{{ step.label }}</h3>
+        <strong>
+          {% if step.artifact_passed is not none %}
+            {{ "pass" if step.artifact_passed else "fail" }}
+          {% elif step.compliance_score is not none %}
+            {{ step.compliance_score }}
+          {% endif %}
+        </strong>
+        <p class="muted">{{ step.pattern }}</p>
+        {% if step.finding_count is not none %}
+          <p class="muted">Findings: {{ step.finding_count }}</p>
+        {% endif %}
+        <p class="muted">{{ step.note }}</p>
+      </div>
+    {% endfor %}
+  </div>
+  <p><strong>Score gain:</strong> {{ baseline.score }} -> {{ final.score }} (+{{ bench_ablation.summary.score_gain }}).</p>
+  <p><strong>Finding reduction:</strong> {{ bench_ablation.summary.finding_reduction }}.</p>
+
+  <h2>Pipeline Timeline</h2>
+  <p class="timeline">
+    {% for stage in trace %}
+      <span class="{{ stage.status }}">{{ stage.stage }}: {{ stage.status }}</span>
+    {% endfor %}
+  </p>
+
+  <h2>Compliance vs Quality</h2>
+  <p>
+    Deterministic QA is a compliance gate for residue, glossary drift, panel preservation, prompt leakage, and packaged artifacts.
+    Offline candidate scores are compliance-only. Semantic quality scores appear only when a live or replay judge supplies them.
+  </p>
+
+  <h2>Glossary Canon</h2>
+  <table>
+    <tr><th>Source Term</th><th>Canonical English</th><th>Blocked Variants</th><th>Canonical In Final</th></tr>
+    {% for entry in glossary_entries %}
+      <tr>
+        <td>{{ entry.source }}</td>
+        <td>{{ entry.target }}</td>
+        <td>{{ ", ".join(entry.blocked_variants) }}</td>
+        <td>{{ "yes" if entry.target.lower() in final_text.lower() else "no" }}</td>
+      </tr>
+    {% endfor %}
+  </table>
+
+  <h2>Source vs Translation</h2>
+  <div class="grid">
+    <div><h3>Source</h3><pre>{{ source_text }}</pre></div>
+    <div><h3>Baseline</h3><pre>{{ baseline_text }}</pre></div>
+    <div><h3>Glossary</h3><pre>{{ glossary_text }}</pre></div>
+    <div><h3>Final</h3><pre>{{ final_text }}</pre></div>
+  </div>
+
+  <h2>QA Findings</h2>
+  <table>
+    <tr><th>Mode</th><th>Severity</th><th>Check</th><th>Found</th><th>Expected</th><th>Suggested Action</th></tr>
+    {% for mode, report in qa_reports.items() %}
+      {% for finding in report.findings %}
+      <tr>
+        <td>{{ mode }}</td><td>{{ finding.severity }}</td><td>{{ finding.check_id }}</td>
+        <td>{{ finding.found or "" }}</td><td>{{ finding.expected or "" }}</td><td>{{ finding.suggested_action or "" }}</td>
+      </tr>
+      {% endfor %}
+    {% endfor %}
+  </table>
+
+  <h2>Router / Candidate Selection</h2>
+  <p>
+    <strong>Editor's Room:</strong> bounded findings are sent through a small
+    <strong>orchestrator-workers</strong> pattern. The literal, fluent, and canon-strict workers submit candidates;
+    then a <strong>blind judge</strong> scores shuffled candidate ids before the patch is applied and re-checked.
+  </p>
+  <table>
+    <tr><th>Finding</th><th>Strategy</th><th>Selected Candidate</th><th>Human Review</th><th>Reason</th></tr>
+    {% for decision in repair_decisions %}
+      <tr>
+        <td>{{ decision.finding_check_id }}</td>
+        <td>{{ decision.strategy }}</td>
+        <td>{{ decision.selected_candidate_id or "" }}</td>
+        <td>{{ "yes" if decision.requires_human_review else "no" }}</td>
+        <td>{{ decision.reason }}</td>
+      </tr>
+    {% endfor %}
+  </table>
+  <p>Selected: <strong>{{ ensemble.selected_candidate_id }}</strong>; Disagreement: {{ "%.2f"|format(ensemble.disagreement) }}; Human review: {{ "Yes" if ensemble.requires_human_review else "No" }}</p>
+  <table>
+    <tr><th>Candidate</th><th>Worker / Source</th><th>Text</th><th>Residue Free</th><th>Glossary</th><th>Panels</th><th>Prompt Safe</th><th>Quality</th><th>Aggregate</th><th>Winner</th></tr>
+    {% for candidate_id, score in ensemble.aggregate_scores.items() %}
+      {% set candidate = (candidates | selectattr("candidate_id", "equalto", candidate_id) | list | first) %}
+      {% set vote_score = ensemble.votes[0].scores[candidate_id] if ensemble.votes and candidate_id in ensemble.votes[0].scores else none %}
+      <tr>
+        <td>{{ candidate_id }}</td>
+        <td>{{ candidate.source if candidate else "" }}</td>
+        <td>{{ candidate.text if candidate else "" }}{% if candidate and candidate.notes %}<br><span class="muted">{{ candidate.notes }}</span>{% endif %}</td>
+        <td>{{ vote_score.compliance.residue_free if vote_score else "" }}</td>
+        <td>{{ vote_score.compliance.glossary_consistency if vote_score else "" }}</td>
+        <td>{{ vote_score.compliance.panel_preservation if vote_score else "" }}</td>
+        <td>{{ vote_score.compliance.prompt_safety if vote_score else "" }}</td>
+        <td>{% if vote_score and vote_score.quality %}faithfulness {{ vote_score.quality.faithfulness }}, fluency {{ vote_score.quality.fluency }}{% else %}offline: not scored{% endif %}</td>
+        <td>{{ "%.2f"|format(score) }}</td>
+        <td>{{ "yes" if candidate_id == ensemble.selected_candidate_id else "" }}</td>
+      </tr>
+    {% endfor %}
+  </table>
+
+  <h2>Patch Acceptance</h2>
+  {% for attempt in patch_attempts %}
+    <p>
+      <strong>{{ attempt.finding_check_id }}</strong> / {{ attempt.strategy }} /
+      before {{ attempt.before_score }}{% if attempt.after_score is not none %} -> after {{ attempt.after_score }}{% endif %} /
+      accepted: {{ "yes" if attempt.accepted else "no" }} / {{ attempt.reason }}
+    </p>
+    {% if attempt.patch %}
+      <pre class="diff-old">{{ attempt.patch.old_text }}</pre>
+      <pre class="diff-new">{{ attempt.patch.new_text }}</pre>
+    {% endif %}
+  {% endfor %}
+
+  <h2>Artifact QA</h2>
+  <table>
+    <tr><th>Artifact</th><th>Chapter Count</th><th>Chinese Residue</th><th>Prompt Leakage</th><th>Status</th></tr>
+    <tr>
+      <td>TXT</td>
+      <td>{{ artifact_qa.txt.chapter_markers }}</td>
+      <td>{{ artifact_qa.txt.contains_chinese }}</td>
+      <td>{{ artifact_qa.txt.contains_prompt_leakage }}</td>
+      <td>{{ "pass" if artifact_qa.passed else "fail" }}</td>
+    </tr>
+    {% if artifact_qa.epub %}
+    <tr>
+      <td>EPUB</td>
+      <td>{{ artifact_qa.epub.xhtml_chapters }}</td>
+      <td>{{ artifact_qa.epub.contains_chinese }}</td>
+      <td>{{ artifact_qa.epub.contains_prompt_leakage }}</td>
+      <td>{{ "pass" if artifact_qa.passed else "fail" }}</td>
+    </tr>
+    {% endif %}
+  </table>
+
+  <h2>Eval Deltas</h2>
+  <table>
+    <tr><th>Mode</th><th>Score</th><th>Residue</th><th>Glossary</th><th>Panels</th><th>Prompt Leak</th></tr>
+    {% for metric in eval_metrics %}
+      <tr><td>{{ metric.mode }}</td><td>{{ metric.score }}</td><td>{{ metric.residual_chinese }}</td><td>{{ metric.glossary_violations }}</td><td>{{ metric.panel_mismatches }}</td><td>{{ metric.prompt_leakage }}</td></tr>
+    {% endfor %}
+  </table>
+
+  <h2>Artifacts</h2>
+  <ul>
+    {% for name, path in manifest.artifacts.items() %}
+      <li><strong>{{ name }}</strong>: <code>{{ path }}</code></li>
+    {% endfor %}
+  </ul>
+</body>
+</html>

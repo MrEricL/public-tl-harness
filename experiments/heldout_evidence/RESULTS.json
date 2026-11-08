@@ -1,0 +1,842 @@
+{
+  "schema_version": "heldout-evidence.v1",
+  "provenance": {
+    "study": "Frozen September 2026 web-novel study; 40 chapters from four works",
+    "source": "Numeric re-aggregation of the archived 2026-10-01 export, with anonymous work labels",
+    "new_model_calls": 0,
+    "privacy": "No corpus strings, term identifiers, source hashes, prompts, translations, or private paths"
+  },
+  "arms": {
+    "naive": "One chapter at a time",
+    "contextual": "Source memory and translator glossary",
+    "full_harness": "Context draft, alignment, and routed review/repair",
+    "review_everything": "Context draft, alignment, and every-passage review/repair"
+  },
+  "measurement": "One normalized extracted rendering per recurring source term per chapter; at least two valid renderings per included term",
+  "transition_matrix": "Rows: baseline distinct renderings 1, 2, 3+; columns: comparison arm distinct renderings 1, 2, 3+",
+  "cost_basis": "Archived 2026-09-22 off-peak token-price estimates, including memory and repair; excludes evaluation and subscription judges",
+  "work_summaries": [
+    {
+      "work": "A",
+      "chapters": 10,
+      "arms": {
+        "naive": {
+          "included_terms": 40,
+          "modal_count": 144,
+          "valid_renderings": 214,
+          "drifted_terms": 29,
+          "sum_term_modal_shares": 26.586507936507935,
+          "delivered_chapters": 10,
+          "warning_chapters": 0,
+          "standalone_cost_usd": 0.020482626
+        },
+        "contextual": {
+          "included_terms": 40,
+          "modal_count": 178,
+          "valid_renderings": 213,
+          "drifted_terms": 15,
+          "sum_term_modal_shares": 33.25555555555555,
+          "delivered_chapters": 10,
+          "warning_chapters": 0,
+          "standalone_cost_usd": 0.067774512
+        },
+        "full_harness": {
+          "included_terms": 40,
+          "modal_count": 175,
+          "valid_renderings": 212,
+          "drifted_terms": 19,
+          "sum_term_modal_shares": 32.56388888888889,
+          "delivered_chapters": 10,
+          "warning_chapters": 6,
+          "standalone_cost_usd": 0.147018834
+        },
+        "review_everything": {
+          "included_terms": 40,
+          "modal_count": 177,
+          "valid_renderings": 213,
+          "drifted_terms": 18,
+          "sum_term_modal_shares": 32.763888888888886,
+          "delivered_chapters": 10,
+          "warning_chapters": 9,
+          "standalone_cost_usd": 0.147450804
+        }
+      },
+      "paired_comparisons": {
+        "full_harness/naive": {
+          "paired_terms": 40,
+          "sum_modal_share_differences": 5.977380952380952,
+          "terms_improved": 18,
+          "terms_unchanged": 17,
+          "terms_regressed": 5,
+          "distinct_rendering_transitions": [
+            [
+              8,
+              3,
+              0
+            ],
+            [
+              3,
+              6,
+              1
+            ],
+            [
+              10,
+              2,
+              7
+            ]
+          ],
+          "quality": {
+            "wins": 5,
+            "ties": 1,
+            "losses": 4,
+            "unrated": 0,
+            "two_judges": 10,
+            "one_judge": 0,
+            "identical_outputs": 0
+          },
+          "quality_with_two_judges": {
+            "wins": 5,
+            "ties": 1,
+            "losses": 4
+          }
+        },
+        "contextual/naive": {
+          "paired_terms": 40,
+          "sum_modal_share_differences": 6.669047619047619,
+          "terms_improved": 19,
+          "terms_unchanged": 18,
+          "terms_regressed": 3,
+          "distinct_rendering_transitions": [
+            [
+              11,
+              0,
+              0
+            ],
+            [
+              4,
+              4,
+              2
+            ],
+            [
+              10,
+              1,
+              8
+            ]
+          ],
+          "quality": {
+            "wins": 5,
+            "ties": 1,
+            "losses": 4,
+            "unrated": 0,
+            "two_judges": 9,
+            "one_judge": 1,
+            "identical_outputs": 0
+          },
+          "quality_with_two_judges": {
+            "wins": 5,
+            "ties": 0,
+            "losses": 4
+          }
+        },
+        "full_harness/contextual": {
+          "paired_terms": 40,
+          "sum_modal_share_differences": -0.6916666666666667,
+          "terms_improved": 3,
+          "terms_unchanged": 32,
+          "terms_regressed": 5,
+          "distinct_rendering_transitions": [
+            [
+              21,
+              4,
+              0
+            ],
+            [
+              0,
+              5,
+              0
+            ],
+            [
+              0,
+              2,
+              8
+            ]
+          ],
+          "quality": {
+            "wins": 1,
+            "ties": 5,
+            "losses": 4,
+            "unrated": 0,
+            "two_judges": 0,
+            "one_judge": 8,
+            "identical_outputs": 2
+          },
+          "quality_with_two_judges": {
+            "wins": 0,
+            "ties": 0,
+            "losses": 0
+          }
+        },
+        "full_harness/review_everything": {
+          "paired_terms": 40,
+          "sum_modal_share_differences": -0.19999999999999996,
+          "terms_improved": 0,
+          "terms_unchanged": 38,
+          "terms_regressed": 2,
+          "distinct_rendering_transitions": [
+            [
+              21,
+              1,
+              0
+            ],
+            [
+              0,
+              10,
+              0
+            ],
+            [
+              0,
+              0,
+              8
+            ]
+          ],
+          "quality": {
+            "wins": 3,
+            "ties": 4,
+            "losses": 3,
+            "unrated": 0,
+            "two_judges": 0,
+            "one_judge": 9,
+            "identical_outputs": 1
+          },
+          "quality_with_two_judges": {
+            "wins": 0,
+            "ties": 0,
+            "losses": 0
+          }
+        }
+      }
+    },
+    {
+      "work": "B",
+      "chapters": 10,
+      "arms": {
+        "naive": {
+          "included_terms": 40,
+          "modal_count": 139,
+          "valid_renderings": 220,
+          "drifted_terms": 33,
+          "sum_term_modal_shares": 25.596031746031745,
+          "delivered_chapters": 10,
+          "warning_chapters": 0,
+          "standalone_cost_usd": 0.0235119
+        },
+        "contextual": {
+          "included_terms": 40,
+          "modal_count": 200,
+          "valid_renderings": 224,
+          "drifted_terms": 12,
+          "sum_term_modal_shares": 35.48095238095238,
+          "delivered_chapters": 10,
+          "warning_chapters": 0,
+          "standalone_cost_usd": 0.073508376
+        },
+        "full_harness": {
+          "included_terms": 40,
+          "modal_count": 203,
+          "valid_renderings": 224,
+          "drifted_terms": 10,
+          "sum_term_modal_shares": 36.31428571428572,
+          "delivered_chapters": 10,
+          "warning_chapters": 10,
+          "standalone_cost_usd": 0.236898162
+        },
+        "review_everything": {
+          "included_terms": 40,
+          "modal_count": 202,
+          "valid_renderings": 224,
+          "drifted_terms": 10,
+          "sum_term_modal_shares": 36.17142857142857,
+          "delivered_chapters": 10,
+          "warning_chapters": 10,
+          "standalone_cost_usd": 0.174018678
+        }
+      },
+      "paired_comparisons": {
+        "full_harness/naive": {
+          "paired_terms": 40,
+          "sum_modal_share_differences": 10.718253968253968,
+          "terms_improved": 28,
+          "terms_unchanged": 9,
+          "terms_regressed": 3,
+          "distinct_rendering_transitions": [
+            [
+              7,
+              0,
+              0
+            ],
+            [
+              12,
+              5,
+              2
+            ],
+            [
+              11,
+              1,
+              2
+            ]
+          ],
+          "quality": {
+            "wins": 2,
+            "ties": 5,
+            "losses": 3,
+            "unrated": 0,
+            "two_judges": 6,
+            "one_judge": 4,
+            "identical_outputs": 0
+          },
+          "quality_with_two_judges": {
+            "wins": 2,
+            "ties": 2,
+            "losses": 2
+          }
+        },
+        "contextual/naive": {
+          "paired_terms": 40,
+          "sum_modal_share_differences": 9.884920634920634,
+          "terms_improved": 26,
+          "terms_unchanged": 10,
+          "terms_regressed": 4,
+          "distinct_rendering_transitions": [
+            [
+              7,
+              0,
+              0
+            ],
+            [
+              11,
+              5,
+              3
+            ],
+            [
+              10,
+              3,
+              1
+            ]
+          ],
+          "quality": {
+            "wins": 3,
+            "ties": 3,
+            "losses": 4,
+            "unrated": 0,
+            "two_judges": 6,
+            "one_judge": 4,
+            "identical_outputs": 0
+          },
+          "quality_with_two_judges": {
+            "wins": 2,
+            "ties": 1,
+            "losses": 3
+          }
+        },
+        "full_harness/contextual": {
+          "paired_terms": 40,
+          "sum_modal_share_differences": 0.8333333333333333,
+          "terms_improved": 3,
+          "terms_unchanged": 37,
+          "terms_regressed": 0,
+          "distinct_rendering_transitions": [
+            [
+              28,
+              0,
+              0
+            ],
+            [
+              2,
+              5,
+              1
+            ],
+            [
+              0,
+              1,
+              3
+            ]
+          ],
+          "quality": {
+            "wins": 4,
+            "ties": 5,
+            "losses": 1,
+            "unrated": 0,
+            "two_judges": 0,
+            "one_judge": 10,
+            "identical_outputs": 0
+          },
+          "quality_with_two_judges": {
+            "wins": 0,
+            "ties": 0,
+            "losses": 0
+          }
+        },
+        "full_harness/review_everything": {
+          "paired_terms": 40,
+          "sum_modal_share_differences": 0.1428571428571429,
+          "terms_improved": 2,
+          "terms_unchanged": 37,
+          "terms_regressed": 1,
+          "distinct_rendering_transitions": [
+            [
+              30,
+              0,
+              0
+            ],
+            [
+              0,
+              5,
+              1
+            ],
+            [
+              0,
+              1,
+              3
+            ]
+          ],
+          "quality": {
+            "wins": 4,
+            "ties": 1,
+            "losses": 5,
+            "unrated": 0,
+            "two_judges": 0,
+            "one_judge": 10,
+            "identical_outputs": 0
+          },
+          "quality_with_two_judges": {
+            "wins": 0,
+            "ties": 0,
+            "losses": 0
+          }
+        }
+      }
+    },
+    {
+      "work": "C",
+      "chapters": 10,
+      "arms": {
+        "naive": {
+          "included_terms": 40,
+          "modal_count": 156,
+          "valid_renderings": 228,
+          "drifted_terms": 28,
+          "sum_term_modal_shares": 27.351190476190474,
+          "delivered_chapters": 10,
+          "warning_chapters": 0,
+          "standalone_cost_usd": 0.02447265
+        },
+        "contextual": {
+          "included_terms": 40,
+          "modal_count": 199,
+          "valid_renderings": 228,
+          "drifted_terms": 17,
+          "sum_term_modal_shares": 34.73571428571429,
+          "delivered_chapters": 10,
+          "warning_chapters": 0,
+          "standalone_cost_usd": 0.07083905400000001
+        },
+        "full_harness": {
+          "included_terms": 40,
+          "modal_count": 202,
+          "valid_renderings": 228,
+          "drifted_terms": 17,
+          "sum_term_modal_shares": 35.31071428571428,
+          "delivered_chapters": 10,
+          "warning_chapters": 7,
+          "standalone_cost_usd": 0.144914124
+        },
+        "review_everything": {
+          "included_terms": 40,
+          "modal_count": 202,
+          "valid_renderings": 228,
+          "drifted_terms": 17,
+          "sum_term_modal_shares": 35.26904761904762,
+          "delivered_chapters": 10,
+          "warning_chapters": 9,
+          "standalone_cost_usd": 0.159868188
+        }
+      },
+      "paired_comparisons": {
+        "full_harness/naive": {
+          "paired_terms": 40,
+          "sum_modal_share_differences": 7.95952380952381,
+          "terms_improved": 23,
+          "terms_unchanged": 14,
+          "terms_regressed": 3,
+          "distinct_rendering_transitions": [
+            [
+              10,
+              2,
+              0
+            ],
+            [
+              5,
+              3,
+              1
+            ],
+            [
+              8,
+              10,
+              1
+            ]
+          ],
+          "quality": {
+            "wins": 6,
+            "ties": 1,
+            "losses": 3,
+            "unrated": 0,
+            "two_judges": 10,
+            "one_judge": 0,
+            "identical_outputs": 0
+          },
+          "quality_with_two_judges": {
+            "wins": 6,
+            "ties": 1,
+            "losses": 3
+          }
+        },
+        "contextual/naive": {
+          "paired_terms": 40,
+          "sum_modal_share_differences": 7.3845238095238095,
+          "terms_improved": 22,
+          "terms_unchanged": 15,
+          "terms_regressed": 3,
+          "distinct_rendering_transitions": [
+            [
+              10,
+              2,
+              0
+            ],
+            [
+              5,
+              3,
+              1
+            ],
+            [
+              8,
+              8,
+              3
+            ]
+          ],
+          "quality": {
+            "wins": 5,
+            "ties": 3,
+            "losses": 2,
+            "unrated": 0,
+            "two_judges": 10,
+            "one_judge": 0,
+            "identical_outputs": 0
+          },
+          "quality_with_two_judges": {
+            "wins": 5,
+            "ties": 3,
+            "losses": 2
+          }
+        },
+        "full_harness/contextual": {
+          "paired_terms": 40,
+          "sum_modal_share_differences": 0.5750000000000001,
+          "terms_improved": 3,
+          "terms_unchanged": 36,
+          "terms_regressed": 1,
+          "distinct_rendering_transitions": [
+            [
+              23,
+              0,
+              0
+            ],
+            [
+              0,
+              13,
+              0
+            ],
+            [
+              0,
+              2,
+              2
+            ]
+          ],
+          "quality": {
+            "wins": 6,
+            "ties": 3,
+            "losses": 1,
+            "unrated": 0,
+            "two_judges": 0,
+            "one_judge": 8,
+            "identical_outputs": 2
+          },
+          "quality_with_two_judges": {
+            "wins": 0,
+            "ties": 0,
+            "losses": 0
+          }
+        },
+        "full_harness/review_everything": {
+          "paired_terms": 40,
+          "sum_modal_share_differences": 0.04166666666666663,
+          "terms_improved": 1,
+          "terms_unchanged": 38,
+          "terms_regressed": 1,
+          "distinct_rendering_transitions": [
+            [
+              23,
+              0,
+              0
+            ],
+            [
+              0,
+              14,
+              0
+            ],
+            [
+              0,
+              1,
+              2
+            ]
+          ],
+          "quality": {
+            "wins": 4,
+            "ties": 3,
+            "losses": 3,
+            "unrated": 0,
+            "two_judges": 0,
+            "one_judge": 9,
+            "identical_outputs": 1
+          },
+          "quality_with_two_judges": {
+            "wins": 0,
+            "ties": 0,
+            "losses": 0
+          }
+        }
+      }
+    },
+    {
+      "work": "D",
+      "chapters": 10,
+      "arms": {
+        "naive": {
+          "included_terms": 40,
+          "modal_count": 122,
+          "valid_renderings": 189,
+          "drifted_terms": 26,
+          "sum_term_modal_shares": 26.538492063492065,
+          "delivered_chapters": 10,
+          "warning_chapters": 0,
+          "standalone_cost_usd": 0.01552545
+        },
+        "contextual": {
+          "included_terms": 40,
+          "modal_count": 157,
+          "valid_renderings": 189,
+          "drifted_terms": 17,
+          "sum_term_modal_shares": 34.36230158730159,
+          "delivered_chapters": 10,
+          "warning_chapters": 0,
+          "standalone_cost_usd": 0.05139756
+        },
+        "full_harness": {
+          "included_terms": 40,
+          "modal_count": 164,
+          "valid_renderings": 189,
+          "drifted_terms": 16,
+          "sum_term_modal_shares": 35.40595238095238,
+          "delivered_chapters": 10,
+          "warning_chapters": 8,
+          "standalone_cost_usd": 0.14445564
+        },
+        "review_everything": {
+          "included_terms": 40,
+          "modal_count": 163,
+          "valid_renderings": 189,
+          "drifted_terms": 18,
+          "sum_term_modal_shares": 34.97539682539683,
+          "delivered_chapters": 10,
+          "warning_chapters": 9,
+          "standalone_cost_usd": 0.12489855600000001
+        }
+      },
+      "paired_comparisons": {
+        "full_harness/naive": {
+          "paired_terms": 40,
+          "sum_modal_share_differences": 8.867460317460317,
+          "terms_improved": 21,
+          "terms_unchanged": 17,
+          "terms_regressed": 2,
+          "distinct_rendering_transitions": [
+            [
+              12,
+              1,
+              1
+            ],
+            [
+              2,
+              4,
+              0
+            ],
+            [
+              10,
+              9,
+              1
+            ]
+          ],
+          "quality": {
+            "wins": 1,
+            "ties": 2,
+            "losses": 7,
+            "unrated": 0,
+            "two_judges": 8,
+            "one_judge": 2,
+            "identical_outputs": 0
+          },
+          "quality_with_two_judges": {
+            "wins": 1,
+            "ties": 2,
+            "losses": 5
+          }
+        },
+        "contextual/naive": {
+          "paired_terms": 40,
+          "sum_modal_share_differences": 7.823809523809524,
+          "terms_improved": 18,
+          "terms_unchanged": 19,
+          "terms_regressed": 3,
+          "distinct_rendering_transitions": [
+            [
+              12,
+              1,
+              1
+            ],
+            [
+              2,
+              4,
+              0
+            ],
+            [
+              9,
+              8,
+              3
+            ]
+          ],
+          "quality": {
+            "wins": 1,
+            "ties": 1,
+            "losses": 8,
+            "unrated": 0,
+            "two_judges": 8,
+            "one_judge": 2,
+            "identical_outputs": 0
+          },
+          "quality_with_two_judges": {
+            "wins": 1,
+            "ties": 1,
+            "losses": 6
+          }
+        },
+        "full_harness/contextual": {
+          "paired_terms": 40,
+          "sum_modal_share_differences": 1.0436507936507935,
+          "terms_improved": 3,
+          "terms_unchanged": 37,
+          "terms_regressed": 0,
+          "distinct_rendering_transitions": [
+            [
+              23,
+              0,
+              0
+            ],
+            [
+              0,
+              13,
+              0
+            ],
+            [
+              1,
+              1,
+              2
+            ]
+          ],
+          "quality": {
+            "wins": 5,
+            "ties": 3,
+            "losses": 2,
+            "unrated": 0,
+            "two_judges": 0,
+            "one_judge": 10,
+            "identical_outputs": 0
+          },
+          "quality_with_two_judges": {
+            "wins": 0,
+            "ties": 0,
+            "losses": 0
+          }
+        },
+        "full_harness/review_everything": {
+          "paired_terms": 40,
+          "sum_modal_share_differences": 0.4305555555555557,
+          "terms_improved": 3,
+          "terms_unchanged": 35,
+          "terms_regressed": 2,
+          "distinct_rendering_transitions": [
+            [
+              22,
+              0,
+              0
+            ],
+            [
+              2,
+              14,
+              0
+            ],
+            [
+              0,
+              0,
+              2
+            ]
+          ],
+          "quality": {
+            "wins": 5,
+            "ties": 3,
+            "losses": 2,
+            "unrated": 0,
+            "two_judges": 0,
+            "one_judge": 9,
+            "identical_outputs": 1
+          },
+          "quality_with_two_judges": {
+            "wins": 0,
+            "ties": 0,
+            "losses": 0
+          }
+        }
+      }
+    }
+  ],
+  "documentary_metrics": {
+    "basis": "Values in the archived analysis report, not recomputable from the exported term counts",
+    "term_chapter_opportunities_per_arm": 857,
+    "reference_glossary_terms": 143,
+    "exact_glossary_match_rates": {
+      "naive": 0.37,
+      "contextual": 0.844,
+      "full_harness": 0.86,
+      "review_everything": 0.858
+    },
+    "glossary_overlap_rates": {
+      "naive": 0.459,
+      "contextual": 0.939,
+      "full_harness": 0.955,
+      "review_everything": 0.954
+    },
+    "glossary_note": "Rounded reported rates only. Exact match was an existing secondary metric promoted in a later audit; the preregistered endpoint was permissive string overlap. No exact numerator or denominator is claimed here."
+  },
+  "judge_order_diagnostic": {
+    "consistent_pairs": 143,
+    "assessed_pairs": 220
+  }
+}

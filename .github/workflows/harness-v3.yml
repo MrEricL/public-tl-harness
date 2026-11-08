@@ -1,0 +1,40 @@
+name: Translation harness
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  harness-v3:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.13"]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install package and test dependencies
+        run: python -m pip install -e ".[dev,jev]"
+      - name: Test the released package and authored workflows
+        run: python -m pytest -q --junitxml="${{ runner.temp }}/test-results.xml"
+      - name: Check supported entry points
+        run: |
+          python demo.py --help
+          python -m agentic_translation.workbench --help
+          python -m agentic_translation harness run --help
+      - name: Verify historical aggregate evidence without a provider
+        run: python -I experiments/heldout_evidence/verify.py
+      - name: Retain test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: harness-tests-python-${{ matrix.python-version }}
+          path: ${{ runner.temp }}/test-results.xml
+          retention-days: 14
+          if-no-files-found: warn

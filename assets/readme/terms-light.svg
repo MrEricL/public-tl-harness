@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="968" height="294" viewBox="0 0 968 294" role="img" aria-labelledby="title desc">
+<title id="title">Terms that kept one English name</title>
+<desc id="desc">Of 160 recurring names and terms: without the harness 44 kept one English name, 44 had two and 72 had three or more; with the harness 98 kept one, 46 had two and 16 had three or more. 39 terms went from three or more names to one.</desc>
+<rect width="968" height="294" rx="12" fill="#ffffff"/>
+<g transform="translate(24 24)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" fill="#1f2328">
+<text x="0.0" y="26.0" font-size="21" fill="#1f2328" font-weight="600">Terms that kept one English name: 44 → 98 of 160</text>
+<text x="0.0" y="52.0" font-size="14.5" fill="#59636e">Each recurring name or term, counted by how many English versions it had across the chapters it appeared in</text>
+<rect x="0.0" y="79.0" width="12.0" height="12.0" fill="#2a78d6" rx="2"/>
+<text x="20.0" y="90.0" font-size="14" fill="#59636e">One English name throughout</text>
+<rect x="257.7" y="79.0" width="12.0" height="12.0" fill="#d8dee4" rx="2"/>
+<text x="277.7" y="90.0" font-size="14" fill="#59636e">Two names</text>
+<rect x="374.2" y="79.0" width="12.0" height="12.0" fill="#e34948" rx="2"/>
+<text x="394.2" y="90.0" font-size="14" fill="#59636e">Three or more names</text>
+<text x="0.0" y="138.0" font-size="15" fill="#1f2328" font-weight="600">Each chapter alone</text>
+<rect x="171.0" y="116.0" width="204.2" height="34.0" fill="#2a78d6" rx="4"/>
+<text x="273.1" y="138.0" font-size="13.5" fill="#ffffff" font-weight="600" text-anchor="middle">44 · one name</text>
+<rect x="377.2" y="116.0" width="204.2" height="34.0" fill="#d8dee4" rx="4"/>
+<text x="479.4" y="138.0" font-size="13.5" fill="#1f2328" font-weight="600" text-anchor="middle">44 · two names</text>
+<rect x="583.5" y="116.0" width="335.5" height="34.0" fill="#e34948" rx="4"/>
+<text x="751.2" y="138.0" font-size="13.5" fill="#ffffff" font-weight="600" text-anchor="middle">72 · three or more</text>
+<text x="0.0" y="188.0" font-size="15" fill="#1f2328" font-weight="600">With the harness</text>
+<rect x="171.0" y="166.0" width="457.4" height="34.0" fill="#2a78d6" rx="4"/>
+<text x="399.7" y="188.0" font-size="13.5" fill="#ffffff" font-weight="600" text-anchor="middle">98 · one name</text>
+<rect x="630.4" y="166.0" width="213.6" height="34.0" fill="#d8dee4" rx="4"/>
+<text x="737.2" y="188.0" font-size="13.5" fill="#1f2328" font-weight="600" text-anchor="middle">46 · two names</text>
+<rect x="846.0" y="166.0" width="73.0" height="34.0" fill="#e34948" rx="4"/>
+<text x="882.5" y="188.0" font-size="13.5" fill="#ffffff" font-weight="600" text-anchor="middle">16</text>
+<text x="0.0" y="232.0" font-size="13.5" fill="#59636e">39 terms went from three or more names to one, including 伊文: six spellings in ten chapters without the harness, &quot;Evan&quot; every time with it.</text>
+</g>
+</svg>

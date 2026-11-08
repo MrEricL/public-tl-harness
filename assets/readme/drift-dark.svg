@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="968" height="504" viewBox="0 0 968 504" role="img" aria-labelledby="title desc">
+<title id="title">Distinct translations per term accumulate without the harness</title>
+<desc id="desc">Average number of different English translations per tracked term so far, by chapter. Without the harness it reaches 2.49 by chapter 10; the three harness setups reach 1.52–1.56. Descriptive counts from automated extraction.</desc>
+<rect width="968" height="504" rx="12" fill="#0d1117"/>
+<g transform="translate(24 24)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" fill="#f0f6fc">
+<text x="0.0" y="26.0" font-size="21" fill="#f0f6fc" font-weight="600">The gap widens with every chapter</text>
+<text x="0.0" y="52.0" font-size="14.5" fill="#9198a1">Different English translations so far per tracked term · by chapter 10, 2.5 without the harness and about 1.5 with it</text>
+<line x1="30.0" y1="346.0" x2="700.0" y2="346.0" stroke="#21262d" stroke-width="1"/>
+<text x="20.0" y="351.0" font-size="13" fill="#6e7681" text-anchor="end">0</text>
+<line x1="30.0" y1="246.0" x2="700.0" y2="246.0" stroke="#21262d" stroke-width="1"/>
+<text x="20.0" y="251.0" font-size="13" fill="#6e7681" text-anchor="end">1</text>
+<line x1="30.0" y1="146.0" x2="700.0" y2="146.0" stroke="#21262d" stroke-width="1"/>
+<text x="20.0" y="151.0" font-size="13" fill="#6e7681" text-anchor="end">2</text>
+<line x1="30.0" y1="246.0" x2="700.0" y2="246.0" stroke="#3d444d" stroke-width="1"/>
+<text x="700.0" y="266.0" font-size="13" fill="#9198a1" text-anchor="end">1 = one translation for every tracked term</text>
+<text x="30.0" y="370.0" font-size="13" fill="#6e7681" text-anchor="middle">1</text>
+<text x="104.4" y="370.0" font-size="13" fill="#6e7681" text-anchor="middle">2</text>
+<text x="178.9" y="370.0" font-size="13" fill="#6e7681" text-anchor="middle">3</text>
+<text x="253.3" y="370.0" font-size="13" fill="#6e7681" text-anchor="middle">4</text>
+<text x="327.8" y="370.0" font-size="13" fill="#6e7681" text-anchor="middle">5</text>
+<text x="402.2" y="370.0" font-size="13" fill="#6e7681" text-anchor="middle">6</text>
+<text x="476.7" y="370.0" font-size="13" fill="#6e7681" text-anchor="middle">7</text>
+<text x="551.1" y="370.0" font-size="13" fill="#6e7681" text-anchor="middle">8</text>
+<text x="625.6" y="370.0" font-size="13" fill="#6e7681" text-anchor="middle">9</text>
+<text x="700.0" y="370.0" font-size="13" fill="#6e7681" text-anchor="middle">10</text>
+<text x="365.0" y="394.0" font-size="13" fill="#9198a1" text-anchor="middle">Chapter in the test run</text>
+<path d="M 30.0 289.8 L 104.4 256.0 L 178.9 225.4 L 253.3 188.5 L 327.8 169.1 L 402.2 144.8 L 476.7 129.1 L 551.1 113.5 L 625.6 103.5 L 700.0 97.3 L 700.0 194.1 L 625.6 196.6 L 551.1 201.6 L 476.7 207.2 L 402.2 212.2 L 327.8 219.1 L 253.3 226.6 L 178.9 247.9 L 104.4 264.8 L 30.0 289.8 Z" fill="#e66767" fill-opacity="0.10"/>
+<path d="M 30.0 289.8 L 104.4 264.1 L 178.9 246.0 L 253.3 225.4 L 327.8 216.0 L 402.2 209.1 L 476.7 201.6 L 551.1 197.2 L 625.6 192.2 L 700.0 189.8" fill="none" stroke="#184f95" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 30.0 290.4 L 104.4 265.4 L 178.9 249.1 L 253.3 228.5 L 327.8 219.8 L 402.2 213.5 L 476.7 207.2 L 551.1 200.4 L 625.6 194.8 L 700.0 192.9" fill="none" stroke="#184f95" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 30.0 289.8 L 104.4 256.0 L 178.9 225.4 L 253.3 188.5 L 327.8 169.1 L 402.2 144.8 L 476.7 129.1 L 551.1 113.5 L 625.6 103.5 L 700.0 97.3" fill="none" stroke="#6e7681" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 30.0 289.8 L 104.4 264.8 L 178.9 247.9 L 253.3 226.6 L 327.8 219.1 L 402.2 212.2 L 476.7 207.2 L 551.1 201.6 L 625.6 196.6 L 700.0 194.1" fill="none" stroke="#3987e5" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="700.0" cy="97.3" r="5" fill="#6e7681" stroke="#0d1117" stroke-width="2"/>
+<circle cx="700.0" cy="194.1" r="5" fill="#3987e5" stroke="#0d1117" stroke-width="2"/>
+<text x="716.0" y="102.3" font-size="15" fill="#f0f6fc" font-weight="600">Each chapter alone  2.49</text>
+<text x="716.0" y="190.1" font-size="15" fill="#f0f6fc" font-weight="600">With the harness  1.52–1.56</text>
+<text x="716.0" y="209.1" font-size="13" fill="#9198a1">thin lines: the two other setups</text>
+<text x="0.0" y="418.0" font-size="13.5" fill="#9198a1">Averaged over 4 novels; terms not yet seen count as zero, so perfect consistency stays at or below 1.</text>
+<text x="0.0" y="437.0" font-size="13.5" fill="#9198a1">Reproduced from cached extractions with zero model calls; a human check of the extraction is pending.</text>
+</g>
+</svg>

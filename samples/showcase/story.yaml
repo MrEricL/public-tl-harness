@@ -1,0 +1,27 @@
+slug: translation_showcase
+title: Starstream Crossing
+language: zh
+public_safe: true
+chapter_ids:
+  - "0001"
+  - "0002"
+  - "0003"
+paths:
+  source_dir: source
+  glossary_path: terms/master_glossary.txt
+  expected_dir: expected
+  runs_dir: runs
+translation:
+  # Deterministic local staging fixture; no live model output is implied.
+  provider: offline
+  model: showcase-fixture-v1
+qa:
+  max_repairs: 3
+report:
+  mode: full
+  max_source_chars: 2400
+  max_translation_chars: 2400
+package:
+  formats:
+    - txt
+    - epub

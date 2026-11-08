@@ -1,0 +1,306 @@
+"""Deterministic dual-model terminology agreement and arbitration."""
+
+from __future__ import annotations
+
+from collections.abc import Sequence
+from typing import Protocol
+
+from .models import ProviderCallRecord
+from .terminology_models import (
+    TerminologyCandidate,
+    TerminologyEvaluation,
+    TerminologyRequest,
+    TerminologyResolution,
+    TerminologyVote,
+    _normalize_term_key,
+)
+
+
+normalize_term = _normalize_term_key
+
+
+class TerminologyResolutionError(ValueError):
+    """A fail-closed terminology decision with any evidence collected so far."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        call_records: Sequence[ProviderCallRecord] = (),
+    ) -> None:
+        super().__init__(message)
+        self.call_records = list(call_records)
+
+
+class TerminologyVoter(Protocol):
+    voter_id: str
+    provider_name: str
+    model_name: str
+    call_records: list[ProviderCallRecord]
+
+    def vote(self, request: TerminologyRequest) -> TerminologyVote:
+        ...
+
+
+class TerminologyEvaluator(Protocol):
+    provider_name: str
+    model_name: str
+    call_records: list[ProviderCallRecord]
+
+    def evaluate(
+        self,
+        request: TerminologyRequest,
+        candidates: list[TerminologyCandidate],
+    ) -> TerminologyEvaluation:
+        ...
+
+
+def _append_unique(records: list[ProviderCallRecord], additions: object) -> None:
+    """Copy valid provider records without duplicating vote/evaluator evidence."""
+
+    if additions is None:
+        return
+    if isinstance(additions, ProviderCallRecord):
+        values = [additions]
+    elif isinstance(additions, (list, tuple)):
+        values = additions
+    else:
+        return
+    for value in values:
+        try:
+            record = ProviderCallRecord.model_validate(value)
+        except Exception:
+            # A provider may expose a partially initialized call list while
+            # raising.  Do not let diagnostics mask the original failure.
+            continue
+        if record not in records:
+            records.append(record)
+
+
+def _provider_record_count(owner: object) -> int:
+    values = getattr(owner, "call_records", None)
+    return len(values) if isinstance(values, list) else 0
+
+
+def blind_terminology_candidates(
+    votes: Sequence[TerminologyVote],
+) -> list[TerminologyCandidate]:
+    """Return provider-blinded candidates in a stable lexical order."""
+
+    if len(votes) != 2:
+        raise ValueError("blind terminology candidates requires exactly two votes")
+    ordered = sorted(
+        votes,
+        key=lambda vote: (vote.normalized_key, vote.recommendation),
+    )
+    return [
+        TerminologyCandidate(
+            candidate_id="candidate_a" if index == 0 else "candidate_b",
+            recommendation=vote.recommendation,
+            normalized_key=vote.normalized_key,
+        )
+        for index, vote in enumerate(ordered)
+    ]
+
+
+class TerminologyResolver:
+    """Resolve exactly one OpenAI and one DeepSeek proposal."""
+
+    def __init__(
+        self,
+        *,
+        voters: Sequence[TerminologyVoter],
+        evaluator: TerminologyEvaluator,
+        confidence_threshold: float = 0.65,
+    ) -> None:
+        if len(voters) != 2:
+            raise ValueError("terminology resolver requires exactly two voters")
+        if not 0.0 <= confidence_threshold <= 1.0:
+            raise ValueError("confidence_threshold must be between 0 and 1")
+        self.voters = list(voters)
+        identities = {(str(v.voter_id), str(v.provider_name)) for v in self.voters}
+        if identities != {("openai", "openai"), ("deepseek", "deepseek")}:
+            raise ValueError(
+                "terminology resolver requires openai and deepseek voter identities"
+            )
+        for voter in self.voters:
+            model_name = str(getattr(voter, "model_name", "")).strip()
+            if not model_name:
+                raise ValueError("terminology voters require configured model names")
+        # Persisted vote order must not depend on whichever provider list order
+        # a caller happened to construct.  OpenAI is canonical first, then
+        # DeepSeek, matching the configuration contract.
+        self.voters.sort(key=lambda voter: (0 if voter.voter_id == "openai" else 1))
+        evaluator_provider = str(getattr(evaluator, "provider_name", ""))
+        if evaluator_provider not in {"openai", "deepseek"}:
+            raise ValueError("terminology evaluator provider must be openai or deepseek")
+        evaluator_model = str(getattr(evaluator, "model_name", "")).strip()
+        if not evaluator_model:
+            raise ValueError("terminology evaluator requires a configured model name")
+        self.evaluator = evaluator
+        self.confidence_threshold = confidence_threshold
+
+    def _collect_delta(
+        self,
+        records: list[ProviderCallRecord],
+        owner: object,
+        start_count: int,
+        result: object | None = None,
+    ) -> None:
+        """Collect only calls generated by this voter/evaluator invocation."""
+
+        values = getattr(owner, "call_records", None)
+        if isinstance(values, list):
+            _append_unique(records, values[start_count:])
+        _append_unique(records, getattr(result, "provider_call", None))
+
+    def _blocked(self, request: TerminologyRequest) -> set[str]:
+        blocked = {normalize_term(value) for value in request.blocked_variants}
+        for entry in request.glossary_entries:
+            blocked.update(normalize_term(value) for value in entry.blocked_variants)
+        return {value for value in blocked if value}
+
+    def _escalation(
+        self,
+        *,
+        votes: list[TerminologyVote],
+        records: list[ProviderCallRecord],
+        agreement: bool,
+        reason: str,
+        candidates: list[TerminologyCandidate] | None = None,
+        evaluation: TerminologyEvaluation | None = None,
+    ) -> TerminologyResolution:
+        return TerminologyResolution(
+            votes=votes,
+            agreement=agreement,
+            candidates=candidates or [],
+            evaluation=evaluation,
+            selected_translation=None,
+            evaluator_used=evaluation is not None,
+            escalated=True,
+            escalation_reason=reason,
+            provider_calls=records,
+        )
+
+    def resolve(self, request: TerminologyRequest) -> TerminologyResolution:
+        votes: list[TerminologyVote] = []
+        records: list[ProviderCallRecord] = []
+
+        for voter in self.voters:
+            try:
+                call_start = _provider_record_count(voter)
+                vote = voter.vote(request)
+            except Exception as exc:
+                self._collect_delta(records, voter, call_start)
+                raise TerminologyResolutionError(
+                    f"terminology voter failed: {exc}",
+                    call_records=records,
+                ) from exc
+            self._collect_delta(records, voter, call_start, vote)
+            if (
+                vote.voter_id != voter.voter_id
+                or vote.provider != voter.provider_name
+                or vote.model != voter.model_name
+                or vote.source_term != request.source_term
+            ):
+                raise TerminologyResolutionError(
+                    "terminology voter returned mismatched configured identity or source term",
+                    call_records=records,
+                )
+            votes.append(vote)
+
+        if len(votes) != 2:  # pragma: no cover - constructor guarantees this.
+            raise TerminologyResolutionError("terminology resolver did not collect two votes", call_records=records)
+
+        blocked = self._blocked(request)
+        agreed = votes[0].normalized_key == votes[1].normalized_key
+        if agreed:
+            if min(vote.confidence for vote in votes) < self.confidence_threshold:
+                return self._escalation(
+                    votes=votes,
+                    records=records,
+                    agreement=True,
+                    reason="agreement confidence below threshold",
+                )
+            display = next(vote for vote in votes if vote.voter_id == "openai").recommendation
+            if normalize_term(display) in blocked:
+                return self._escalation(
+                    votes=votes,
+                    records=records,
+                    agreement=True,
+                    reason="agreed terminology matches a blocked variant",
+                )
+            return TerminologyResolution(
+                votes=votes,
+                agreement=True,
+                selected_translation=display,
+                evaluator_used=False,
+                escalated=False,
+                provider_calls=records,
+            )
+
+        candidates = blind_terminology_candidates(votes)
+        try:
+            call_start = _provider_record_count(self.evaluator)
+            evaluation = self.evaluator.evaluate(request, candidates)
+        except Exception as exc:
+            self._collect_delta(records, self.evaluator, call_start)
+            raise TerminologyResolutionError(
+                f"terminology evaluator failed: {exc}",
+                call_records=records,
+            ) from exc
+        self._collect_delta(records, self.evaluator, call_start, evaluation)
+        if (
+            evaluation.provider != self.evaluator.provider_name
+            or evaluation.model != self.evaluator.model_name
+        ):
+            raise TerminologyResolutionError(
+                "terminology evaluator returned mismatched configured identity",
+                call_records=records,
+            )
+        candidate_by_id = {candidate.candidate_id: candidate for candidate in candidates}
+        selected = candidate_by_id.get(evaluation.selected_candidate_id)
+        if selected is None:
+            raise TerminologyResolutionError(
+                "evaluator selected an unknown candidate",
+                call_records=records,
+            )
+        if evaluation.confidence < self.confidence_threshold:
+            return self._escalation(
+                votes=votes,
+                records=records,
+                agreement=False,
+                reason="evaluator confidence below threshold",
+                candidates=candidates,
+                evaluation=evaluation,
+            )
+        if selected.normalized_key in blocked:
+            return self._escalation(
+                votes=votes,
+                records=records,
+                agreement=False,
+                reason="evaluator selection matches a blocked variant",
+                candidates=candidates,
+                evaluation=evaluation,
+            )
+        return TerminologyResolution(
+            votes=votes,
+            agreement=False,
+            candidates=candidates,
+            evaluation=evaluation,
+            selected_candidate_id=selected.candidate_id,
+            selected_translation=selected.recommendation,
+            evaluator_used=True,
+            escalated=False,
+            provider_calls=records,
+        )
+
+
+__all__ = [
+    "TerminologyEvaluator",
+    "TerminologyResolutionError",
+    "TerminologyResolver",
+    "TerminologyVoter",
+    "blind_terminology_candidates",
+    "normalize_term",
+]

@@ -1,0 +1,27 @@
+# Generated run artifacts
+runs/*
+**/runs/*
+!runs/.gitkeep
+local_fixtures/*
+!local_fixtures/.gitkeep
+.agentic_cache/
+
+# Credentials and local settings
+.env
+.env.*
+!.env.example
+agentic.env
+
+# Python and tooling
+__pycache__/
+.pytest_cache/
+*.egg-info/
+.venv/
+build/
+dist/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+*.log
+.DS_Store

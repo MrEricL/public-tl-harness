@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="968" height="384" viewBox="0 0 968 384" role="img" aria-labelledby="title desc">
+<title id="title">Problem, harness and result</title>
+<desc id="desc">Problem: Novels arrive a chapter at a time and run for hundreds of them, so each one is translated alone and names drift between them. For example, 伊文 came out as Irwin, Evan, Ivan, Ewen, Evin, Erwin over ten chapters. Harness: source-checked story memory and the translator&#x27;s glossary go into every chapter, the model proposes edits and Python decides which are kept, and every call is recorded for replay. Result, on 60 unseen chapters with the same model and no glossary: memory gave 59% fewer inconsistent name translations than translating each chapter alone, 54% fewer on 60 more unseen chapters, at about 0.85 cents per chapter.</desc>
+<rect width="968" height="384" rx="12" fill="#0d1117"/>
+<g transform="translate(24 24)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" fill="#f0f6fc">
+<rect x="0.0" y="0.0" width="280.0" height="336.0" fill="#151b23" rx="12"/>
+<text x="18.0" y="44.0" font-size="16" fill="#f0f6fc" font-weight="600">Long novels drift</text>
+<rect x="320.0" y="0.0" width="280.0" height="336.0" fill="#151b23" rx="12"/>
+<text x="338.0" y="44.0" font-size="16" fill="#f0f6fc" font-weight="600">The harness remembers</text>
+<path d="M 288.0 168.0 L 305.0 168.0" fill="none" stroke="#9198a1" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 305.0 163.1 L 312.0 168.0 L 305.0 172.9 Z" fill="#9198a1" stroke="#9198a1" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="640.0" y="0.0" width="280.0" height="336.0" fill="#151b23" rx="12"/>
+<text x="658.0" y="44.0" font-size="16" fill="#f0f6fc" font-weight="600">Tested on unseen chapters</text>
+<path d="M 608.0 168.0 L 625.0 168.0" fill="none" stroke="#9198a1" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 625.0 163.1 L 632.0 168.0 L 625.0 172.9 Z" fill="#9198a1" stroke="#9198a1" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="18.0" y="78.0" width="22.0" height="30.0" fill="#0d1117" rx="3" stroke="#3987e5" stroke-width="2"/>
+<rect x="45.0" y="78.0" width="22.0" height="30.0" fill="#0d1117" rx="3" stroke="#3d444d" stroke-width="1"/>
+<rect x="72.0" y="78.0" width="22.0" height="30.0" fill="#0d1117" rx="3" stroke="#3d444d" stroke-width="1"/>
+<rect x="99.0" y="78.0" width="22.0" height="30.0" fill="#0d1117" rx="3" stroke="#3d444d" stroke-width="1"/>
+<rect x="126.0" y="78.0" width="22.0" height="30.0" fill="#0d1117" rx="3" stroke="#3d444d" stroke-width="1"/>
+<rect x="153.0" y="78.0" width="22.0" height="30.0" fill="#0d1117" rx="3" stroke="#3d444d" stroke-width="1"/>
+<rect x="180.0" y="78.0" width="22.0" height="30.0" fill="#0d1117" rx="3" stroke="#3d444d" stroke-width="1"/>
+<text x="218.0" y="100.0" font-size="16" fill="#6e7681" text-anchor="middle">…</text>
+<rect x="234.0" y="78.0" width="22.0" height="30.0" fill="#0d1117" rx="3" stroke="#3d444d" stroke-width="1"/>
+<text x="18.0" y="126.0" font-size="12.5" fill="#3987e5" font-weight="600">one call</text>
+<text x="262.0" y="126.0" font-size="12.5" fill="#9198a1" text-anchor="end">hundreds of chapters</text>
+<text x="18.0" y="156.0" font-size="13" fill="#f0f6fc">Novels arrive a chapter at a time</text>
+<text x="18.0" y="175.0" font-size="13" fill="#f0f6fc">and run for hundreds of them,</text>
+<text x="18.0" y="194.0" font-size="13" fill="#f0f6fc">so each one is translated alone</text>
+<text x="18.0" y="213.0" font-size="13" fill="#f0f6fc">and names drift between them.</text>
+<text x="18.0" y="236.0" font-size="12.5" fill="#9198a1">伊文, one character, over ten chapters:</text>
+<rect x="18.0" y="248.0" width="49.0" height="24.0" fill="#0d1117" rx="5" stroke="#e66767" stroke-width="1"/>
+<text x="42.5" y="264.5" font-size="12.5" fill="#f0f6fc" text-anchor="middle">Irwin</text>
+<rect x="72.0" y="248.0" width="42.0" height="24.0" fill="#0d1117" rx="5" stroke="#e66767" stroke-width="1"/>
+<text x="93.0" y="264.5" font-size="12.5" fill="#f0f6fc" text-anchor="middle">Evan</text>
+<rect x="119.0" y="248.0" width="42.0" height="24.0" fill="#0d1117" rx="5" stroke="#e66767" stroke-width="1"/>
+<text x="140.0" y="264.5" font-size="12.5" fill="#f0f6fc" text-anchor="middle">Ivan</text>
+<rect x="166.0" y="248.0" width="42.0" height="24.0" fill="#0d1117" rx="5" stroke="#e66767" stroke-width="1"/>
+<text x="187.0" y="264.5" font-size="12.5" fill="#f0f6fc" text-anchor="middle">Ewen</text>
+<rect x="213.0" y="248.0" width="42.0" height="24.0" fill="#0d1117" rx="5" stroke="#e66767" stroke-width="1"/>
+<text x="234.0" y="264.5" font-size="12.5" fill="#f0f6fc" text-anchor="middle">Evin</text>
+<rect x="18.0" y="278.0" width="49.0" height="24.0" fill="#0d1117" rx="5" stroke="#e66767" stroke-width="1"/>
+<text x="42.5" y="294.5" font-size="12.5" fill="#f0f6fc" text-anchor="middle">Erwin</text>
+<rect x="338.0" y="76.0" width="244.0" height="28.0" fill="#12301f" rx="6" stroke="#3f9a6a" stroke-width="1.2"/>
+<text x="460.0" y="95.0" font-size="13" fill="#f0f6fc" font-weight="600" text-anchor="middle">Story memory + optional glossary</text>
+<path d="M 360.0 106 L 360.0 120" fill="none" stroke="#9198a1" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 356.0 116 L 360.0 121 L 364.0 116" fill="none" stroke="#9198a1" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="346.0" y="124.0" width="28.0" height="34.0" fill="#0d1117" rx="3" stroke="#3d444d" stroke-width="1"/>
+<text x="360.0" y="146.0" font-size="12" fill="#9198a1" text-anchor="middle">1</text>
+<path d="M 408.0 106 L 408.0 120" fill="none" stroke="#9198a1" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 404.0 116 L 408.0 121 L 412.0 116" fill="none" stroke="#9198a1" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="394.0" y="124.0" width="28.0" height="34.0" fill="#0d1117" rx="3" stroke="#3d444d" stroke-width="1"/>
+<text x="408.0" y="146.0" font-size="12" fill="#9198a1" text-anchor="middle">2</text>
+<path d="M 456.0 106 L 456.0 120" fill="none" stroke="#9198a1" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 452.0 116 L 456.0 121 L 460.0 116" fill="none" stroke="#9198a1" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="442.0" y="124.0" width="28.0" height="34.0" fill="#0d1117" rx="3" stroke="#3d444d" stroke-width="1"/>
+<text x="456.0" y="146.0" font-size="12" fill="#9198a1" text-anchor="middle">3</text>
+<path d="M 504.0 106 L 504.0 120" fill="none" stroke="#9198a1" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 500.0 116 L 504.0 121 L 508.0 116" fill="none" stroke="#9198a1" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="490.0" y="124.0" width="28.0" height="34.0" fill="#0d1117" rx="3" stroke="#3d444d" stroke-width="1"/>
+<text x="504.0" y="146.0" font-size="12" fill="#9198a1" text-anchor="middle">4</text>
+<path d="M 552.0 106 L 552.0 120" fill="none" stroke="#9198a1" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 548.0 116 L 552.0 121 L 556.0 116" fill="none" stroke="#9198a1" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="538.0" y="124.0" width="28.0" height="34.0" fill="#0d1117" rx="3" stroke="#3d444d" stroke-width="1"/>
+<text x="552.0" y="146.0" font-size="12" fill="#9198a1" text-anchor="middle">5</text>
+<text x="566.0" y="164.0" font-size="10.5" fill="#6e7681" text-anchor="end">chapters</text>
+<rect x="338.0" y="168.0" width="244.0" height="28.0" fill="#0d1117" rx="6" stroke="#3d444d" stroke-width="1"/>
+<text x="460.0" y="187.0" font-size="13" fill="#f0f6fc" font-weight="600" text-anchor="middle">Python checks every edit</text>
+<text x="338.0" y="224.0" font-size="13" fill="#f0f6fc">Only names and facts whose quote</text>
+<text x="338.0" y="243.0" font-size="13" fill="#f0f6fc">is in the Chinese source stay.</text>
+<text x="338.0" y="262.0" font-size="13" fill="#f0f6fc">The model proposes edits; Python</text>
+<text x="338.0" y="281.0" font-size="13" fill="#f0f6fc">decides which are kept, and</text>
+<text x="338.0" y="300.0" font-size="13" fill="#f0f6fc">every call is recorded.</text>
+<text x="658.0" y="100.0" font-size="30" fill="#f0f6fc" font-weight="650">59%</text>
+<text x="658.0" y="122.0" font-size="13.5" fill="#9198a1">fewer inconsistent name translations</text>
+<text x="658.0" y="168.0" font-size="30" fill="#f0f6fc" font-weight="650">54%</text>
+<text x="658.0" y="190.0" font-size="13.5" fill="#9198a1">fewer on 60 more unseen chapters</text>
+<text x="658.0" y="236.0" font-size="30" fill="#f0f6fc" font-weight="650">0.85¢</text>
+<text x="658.0" y="258.0" font-size="13.5" fill="#9198a1">per chapter with memory</text>
+<text x="658.0" y="300.0" font-size="12.5" fill="#9198a1">Same model with and without memory, no</text>
+<text x="658.0" y="316.0" font-size="12.5" fill="#9198a1">glossary; each plan fixed in advance.</text>
+</g>
+</svg>

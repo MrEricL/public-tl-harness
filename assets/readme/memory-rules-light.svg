@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="968" height="440" viewBox="0 0 968 440" role="img" aria-labelledby="title desc">
+<title id="title">Who may change memory</title>
+<desc id="desc">Four steps. The extractor, a model, proposes names and facts, each with the sentence it came from. Python keeps an entry only if that quote is in the source, and what a character merely claims stays provisional. The translator&#x27;s glossary wins over memory whenever the two disagree. Each chapter&#x27;s snapshot is saved and never rewritten; the next one builds on it. Example from the demo: the sentence 她自称来自镜湖镇 (she says she is from Mirror Lake Town) gives 镜湖镇, Mirror Lake Town, a location kept as provisional because only she says so.</desc>
+<rect width="968" height="440" rx="12" fill="#ffffff"/>
+<g transform="translate(24 24)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" fill="#1f2328">
+<text x="0.0" y="26.0" font-size="21" fill="#1f2328" font-weight="600">Who may change memory</text>
+<text x="0.0" y="52.0" font-size="14.5" fill="#59636e">The model proposes; Python checks each quote, and the translator&#x27;s glossary has the last word</text>
+<rect x="0.0" y="84.0" width="216.5" height="164.0" fill="#e1ecfc" rx="10" stroke="#6b9de3" stroke-width="1.2"/>
+<text x="14.0" y="114.0" font-size="13.5" fill="#1f2328" font-weight="600">Model proposes</text>
+<text x="14.0" y="138.0" font-size="12.5" fill="#59636e">A model reads the</text>
+<text x="14.0" y="156.0" font-size="12.5" fill="#59636e">chapter&#x27;s Chinese and</text>
+<text x="14.0" y="174.0" font-size="12.5" fill="#59636e">proposes names and facts,</text>
+<text x="14.0" y="192.0" font-size="12.5" fill="#59636e">each with the sentence it</text>
+<text x="14.0" y="210.0" font-size="12.5" fill="#59636e">came from.</text>
+<rect x="234.5" y="84.0" width="216.5" height="164.0" fill="#fdecd2" rx="10" stroke="#d99a3a" stroke-width="1.2"/>
+<text x="248.5" y="114.0" font-size="13.5" fill="#1f2328" font-weight="600">Python checks</text>
+<text x="248.5" y="138.0" font-size="12.5" fill="#59636e">An entry stays only if its</text>
+<text x="248.5" y="156.0" font-size="12.5" fill="#59636e">quote is in the source.</text>
+<text x="248.5" y="174.0" font-size="12.5" fill="#59636e">What a character merely</text>
+<text x="248.5" y="192.0" font-size="12.5" fill="#59636e">claims stays provisional.</text>
+<path d="M 219.5 166.0 L 225.5 166.0" fill="none" stroke="#59636e" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 225.5 161.8 L 231.5 166.0 L 225.5 170.2 Z" fill="#59636e" stroke="#59636e" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="469.0" y="84.0" width="216.5" height="164.0" fill="#eef1f4" rx="10" stroke="#aab4bf" stroke-width="1.2"/>
+<text x="483.0" y="114.0" font-size="13.5" fill="#1f2328" font-weight="600">Glossary wins</text>
+<text x="483.0" y="138.0" font-size="12.5" fill="#59636e">The translator&#x27;s name</text>
+<text x="483.0" y="156.0" font-size="12.5" fill="#59636e">beats memory&#x27;s whenever</text>
+<text x="483.0" y="174.0" font-size="12.5" fill="#59636e">the two disagree.</text>
+<path d="M 454.0 166.0 L 460.0 166.0" fill="none" stroke="#59636e" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 460.0 161.8 L 466.0 166.0 L 460.0 170.2 Z" fill="#59636e" stroke="#59636e" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="703.5" y="84.0" width="216.5" height="164.0" fill="#ddf2e5" rx="10" stroke="#5aab80" stroke-width="1.2"/>
+<text x="717.5" y="114.0" font-size="13.5" fill="#1f2328" font-weight="600">Snapshot saved</text>
+<text x="717.5" y="138.0" font-size="12.5" fill="#59636e">One per chapter, chained</text>
+<text x="717.5" y="156.0" font-size="12.5" fill="#59636e">by hash. It is never</text>
+<text x="717.5" y="174.0" font-size="12.5" fill="#59636e">rewritten; the next</text>
+<text x="717.5" y="192.0" font-size="12.5" fill="#59636e">chapter builds on it.</text>
+<path d="M 688.5 166.0 L 694.5 166.0" fill="none" stroke="#59636e" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M 694.5 161.8 L 700.5 166.0 L 694.5 170.2 Z" fill="#59636e" stroke="#59636e" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="0.0" y="282.0" width="920.0" height="92.0" fill="#f6f8fa" rx="10"/>
+<text x="18.0" y="306.0" font-size="13" fill="#59636e">From the demo:</text>
+<text x="142.0" y="306.0" font-size="13.5" fill="#1f2328">她自称来自镜湖镇 (she says she is from Mirror Lake Town)</text>
+<text x="14.0" y="334.0" font-size="12" fill="#8c959f">proposed</text>
+<text x="14.0" y="352.0" font-size="13.5" fill="#1f2328">镜湖镇 → Mirror Lake Town</text>
+<text x="248.5" y="334.0" font-size="12" fill="#8c959f">kept, as provisional</text>
+<text x="248.5" y="352.0" font-size="13.5" fill="#1f2328">the quote is in the source, but only she says so</text>
+</g>
+</svg>
