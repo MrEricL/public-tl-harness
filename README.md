@@ -5,14 +5,16 @@ and invented terms stable across chapters. It carries a source-checked story
 memory and the translator's glossary between chapters; models propose edits,
 and Python checks and records each change.
 
-On 60 unseen chapters, source memory cut inconsistent name renderings by
-**59% without a glossary**, compared with translating each chapter alone. A
-second test on 60 fresh chapters from the same three novels found **54%
-fewer**. A separate comparison showed that with names only, memory sends
-**392 characters per passage instead of 2,862**, with no loss in naming
-consistency or judged character errors. Both tests fixed their plan and pass/fail rules
-before any model call. These are consistency results; overall translation
-quality was not shown to be better.
+On 120 unseen chapters with no glossary, source memory cut name changes by
+**68%**, compared with translating each chapter alone: 60% on the first 60
+chapters and 76% on the next 60. A name change is a different English name
+for the same thing; a plural, or a longer phrase around the name, doesn't
+count. As first scored, on a different sample of names and with plurals
+counted as changes, the two tests gave **59% and 54%**. A separate comparison showed that with names only,
+memory sends **392 characters per passage instead of 2,862**, with no loss
+in naming consistency or judged character errors. Every test fixed its plan
+and pass/fail rules before the calls it scored. These are consistency
+results; overall translation quality was not shown to be better.
 
 [![Tests](https://github.com/MrEricL/public-tl-harness/actions/workflows/harness-v3.yml/badge.svg)](https://github.com/MrEricL/public-tl-harness/actions/workflows/harness-v3.yml)
 ![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-3776AB)
@@ -20,7 +22,7 @@ quality was not shown to be better.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/readme/hero-dark.svg">
-  <img alt="Problem: Novels arrive a chapter at a time and run for hundreds of them, so each one is translated alone and names drift between them. For example, 伊文 came out as Irwin, Evan, Ivan, Ewen, Evin, Erwin over ten chapters. Harness: source-checked story memory and the translator's glossary go into every chapter, the model proposes edits and Python decides which are kept, and every call is recorded for replay. Result, on 60 unseen chapters with the same model and no glossary: memory gave 59% fewer inconsistent name translations than translating each chapter alone, 54% fewer on 60 more unseen chapters, at about 0.85 cents per chapter." src="assets/readme/hero-light.svg" width="100%">
+  <img alt="Problem: Novels arrive a chapter at a time and run for hundreds of them, so each one is translated alone and names drift between them. For example, 伊文 came out as Irwin, Evan, Ivan, Ewen, Evin, Erwin over ten chapters. Harness: source-checked story memory and the translator's glossary go into every chapter, the model proposes edits and Python decides which are kept, and every call is recorded for replay. Result, on 120 unseen chapters with the same model and no glossary: memory gave 68% fewer name changes than translating each chapter alone (60% on the first 60 chapters and 76% on the next 60), at about 0.85 cents per chapter. A plural or a longer phrase around a name isn't counted as a name change. As first scored, on a different sample of names and with plurals counted as changes, the two tests gave 59% and 54%." src="assets/readme/hero-light.svg" width="100%">
 </picture>
 
 [Problem](#what-it-solves) · [Design](#how-it-works) ·
@@ -96,8 +98,9 @@ Both are recorded for replay. [Memory rules and measurements](docs/MEMORY.md)
 
 ## Results
 
-All three registered tests used the same DeepSeek Flash writer at temperature
-0 in every setup they compared. The November tests average inconsistency over
+The three registered tests, and a fourth that rescored two of them with a
+corrected count, used the same DeepSeek Flash writer at temperature 0 in
+every setup they compared. The November tests average inconsistency over
 names, then over novels; September's rate counts renderings directly, so the
 three headline rates aren't directly comparable.
 
@@ -106,11 +109,77 @@ three headline rates aren't directly comparable.
 | September 2026 | 40 held-out chapters, four novels, supplied glossary | 62.5% fewer inconsistent renderings with the full harness; memory and glossary were combined |
 | Stage 1, November 2 | 60 unseen chapters, three novels | 59% fewer without a glossary; 61% fewer on names hidden from a half glossary |
 | Stage 2, November 7 | 60 fresh chapters from the same three novels | Memory's no-glossary result held: 54% fewer. Names only did no worse in a separate comparison |
+| Corrected count, November 10 | The same 120 chapters, scored on 220 names no test had read | Counting only real name changes, 68% fewer with memory [58%, 78%]; 52% by the original count on the same names |
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/readme/november-dark.svg">
   <img alt="Share of a name's renderings that differ from its most common English, lower is better. Half the glossary hidden, scored on the hidden names · 60 chapters: Glossary only 22.7%, Glossary + previous five chapters 14.2%, Glossary + story memory 8.9%; No glossary · the same 60 chapters: Each chapter alone 22.2%, Story memory 9.0%; No glossary · 60 more chapters (Stage 2): Each chapter alone 24.7%, Story memory 11.4%." src="assets/readme/november-light.svg" width="100%">
 </picture>
+
+### Counting only real name changes
+
+The tests above compare renderings as exact strings. So "ghoul" against
+"ghouls" counts as inconsistent, and so does "ghoul" against "ghoul king"
+where the Chinese is a longer compound (食尸鬼 inside 食尸鬼王). A reader
+wouldn't call either a change of name.
+
+I fixed a corrected count before testing it: two renderings are the same
+name if they differ only by a plural, a possessive, a hyphen or a space, or
+if one is the name's most common rendering inside a longer phrase. Then I
+scored it on 220 names that no earlier test had read, using the
+translations Stages 1 and 2 had already made. The names come from my
+glossaries, which these setups never saw. The plan and its pass/fail rules were frozen before
+any call.
+
+| Chapters, fresh names | Original count: each chapter alone → memory | Corrected count: each chapter alone → memory |
+| --- | --- | --- |
+| Stage 1's 60 (108 names) | 26.7% → 14.2%, 47% fewer [35%, 58%] | 18.1% → 7.3%, 60% fewer [45%, 74%] |
+| Stage 2's 60 (112 names) | 29.4% → 12.5%, 57% fewer [45%, 68%] | 20.7% → 5.0%, 76% fewer [62%, 89%] |
+| Both together | 52% fewer [44%, 60%] | 68% fewer [58%, 78%] |
+
+On Stage 2's chapters, each change was added on top of the last (112 fresh
+names; 107 in step 3, where one chapter has no translation):
+
+| Step | What changed | Name changes | Rate | Rate by the original count | What this step did |
+| --- | --- | ---: | ---: | ---: | --- |
+| Start | Each chapter translated alone | 91 of 485 renderings | 20.7% | 29.4% | |
+| 1 | + story memory (names and facts, after reading 5 earlier chapters) | 28 of 500 | 5.0% | 12.5% | −15.7 points [−20.2, −11.5]. The only step with a measured effect. |
+| 2 | + a longer lead-in (20 earlier chapters) | 30 of 499 | 4.4% | 11.8% | −0.6 points [−3.0, +1.9]. No measurable change. |
+| 3 | + memory sends only its names, not its facts (the current default) | 20 of 486 | 3.1% | 10.7% | −1.5 points [−3.2, +0.1]. No worse, with a seventh of memory's text. |
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/readme/steps-dark.svg">
+  <img alt="What each change did to name changes: the share of a name's translations that changed its name, on Stage 2's 60 chapters and names no earlier test had scored; lower is better. Bars are the corrected count and gray ticks the original count. Each chapter alone: 20.7% by the corrected count (91 of 485 renderings), 29.4% by the original count. With story memory: 5.0% (28 of 500), 12.5% by the original count. With a 20-chapter lead-in as well: 4.4% (30 of 499), 11.8% by the original count; no measurable change. With memory sending only its names, not its facts, as well: 3.1% (20 of 486), 10.7% by the original count; no worse, with a seventh of memory's text." src="assets/readme/steps-light.svg" width="100%">
+</picture>
+
+- **Steps 1 to 3 are all the same story memory.** Nothing in it is written
+  by hand: a model reads each Chinese chapter and proposes names with their
+  English, and Python keeps a name only if its quote is in the source. No
+  glossary was given in this test. Step 3 changes only what memory sends
+  with each passage: one line per name that appears in it, without the
+  facts.
+- **Only step 1 is a measured effect.** Steps 2 and 3 are about the size
+  of the noise: translating each chapter alone twice, with the same
+  prompts, differed by 1.4 points. The rate averages over names and then novels, so it can move
+  differently from the raw count.
+- **A separate judge model agreed with what the corrected count merges.**
+  GPT-6 Luna, reading each pair blind, called all 65 plural or spacing pairs
+  the same name, and 48 of 51 longer-phrase pairs. The rule set in advance
+  allowed at most 10% of each kind to be called different. The judge's
+  instructions stated the same two definitions, so this checks how the
+  count applies them, not the definitions themselves.
+- **The corrected count is still strict.** Of the 243 pairs it keeps as
+  name changes, the judge called 118 the same name. I haven't checked those
+  pairs myself.
+- **What this doesn't show.** These are fresh names on chapters already
+  tested, not fresh chapters. Merging renderings in both setups tends to
+  raise the relative cut whatever is merged, so the larger cut doesn't prove
+  the count is right. The evidence for the count is the judge's agreement,
+  plus my own check of 38 pairs, which isn't done yet. The plan had the top
+  of this page wait for that check. I moved the corrected count up on
+  November 10 before doing it, with the original figures beside it, and
+  I'll report the check here whichever way it comes out. Fifty of the 220
+  names are in both blocks and are counted once per block.
 
 ### Stage 1 and Stage 2 in detail
 
@@ -195,6 +264,11 @@ python experiments/heldout_evidence/verify.py
   memory's names, before building it. It could fix about 15 of the 51
   inconsistent renderings left in Stage 1, so it isn't built.
 
+- **November 10:** audited the consistency count itself. It treated plurals
+  and longer phrases as name changes. A corrected count, fixed before
+  testing and scored on 220 names no test had read, gives 68% fewer name
+  changes with memory, against 52% by the original count on the same names.
+
 Earlier command-line tools and research code are not in this release; this
 tree is the folder demo, the workbench and the book runner.
 
@@ -238,9 +312,9 @@ that all resulting edits are harmless. In September, two blind judges did not
 prefer the full harness over translating each chapter alone: 14 wins, 9 ties
 and 17 losses.
 
-Pending checks: human validation of the rendering extractor, the Stage 1
-meaning-error guardrail, a blind naming self-test, and human review of the
-alignment judge. Overall literary-quality superiority remains unestablished.
+Pending checks: human validation of the rendering extractor, my own check of
+the corrected count's merges, the Stage 1 meaning-error guardrail, a blind
+naming self-test, and human review of the alignment judge. Overall literary-quality superiority remains unestablished.
 
 ## About
 

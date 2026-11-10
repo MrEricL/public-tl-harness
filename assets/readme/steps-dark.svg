@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="968" height="400" viewBox="0 0 968 400" role="img" aria-labelledby="title desc">
+<title id="title">Name-change rate by setup</title>
+<desc id="desc">Share of a name&#x27;s translations that changed its name, on Stage 2&#x27;s 60 chapters and names no earlier test had scored; lower is better. Bars are the corrected count, gray ticks the original count. Each chapter alone: 20.7% by the corrected count (91 of 485), 29.4% by the original count; + story memory: 5.0% by the corrected count (28 of 500), 12.5% by the original count; + a 20-chapter lead-in: 4.4% by the corrected count (30 of 499), 11.8% by the original count (no measurable change); + memory sends names only: 3.1% by the corrected count (20 of 486), 10.7% by the original count (no worse, with a seventh of memory&#x27;s text).</desc>
+<rect width="968" height="400" rx="12" fill="#0d1117"/>
+<g transform="translate(24 24)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" fill="#f0f6fc">
+<text x="0.0" y="26.0" font-size="21" fill="#f0f6fc" font-weight="600">What each change did to name changes</text>
+<text x="0.0" y="52.0" font-size="14.5" fill="#9198a1">Share of a name&#x27;s translations that changed its name · Stage 2&#x27;s 60 chapters · lower is better</text>
+<line x1="236.0" y1="86.0" x2="236.0" y2="312.0" stroke="#3d444d" stroke-width="1.5"/>
+<text x="0.0" y="127.0" font-size="14" fill="#f0f6fc" font-weight="600">Each chapter alone</text>
+<rect x="236.0" y="112.0" width="300.0" height="20.0" fill="#3987e5" rx="4"/>
+<text x="546.0" y="127.0" font-size="14" fill="#f0f6fc" font-weight="600">20.7% · 91 of 485 by the corrected count</text>
+<line x1="662.3" y1="98.0" x2="662.3" y2="110.0" stroke="#6e7681" stroke-width="2"/>
+<text x="668.3" y="107.0" font-size="14" fill="#6e7681">29.4% by the original count</text>
+<text x="0.0" y="187.0" font-size="14" fill="#f0f6fc" font-weight="600">+ story memory</text>
+<rect x="236.0" y="172.0" width="71.9" height="20.0" fill="#3987e5" rx="4"/>
+<text x="317.9" y="187.0" font-size="14" fill="#f0f6fc" font-weight="600">5.0% · 28 of 500</text>
+<line x1="416.8" y1="158.0" x2="416.8" y2="170.0" stroke="#6e7681" stroke-width="2"/>
+<text x="422.8" y="167.0" font-size="14" fill="#6e7681">12.5%</text>
+<text x="0.0" y="247.0" font-size="14" fill="#f0f6fc" font-weight="600">+ a 20-chapter lead-in</text>
+<rect x="236.0" y="232.0" width="63.9" height="20.0" fill="#3987e5" rx="4"/>
+<text x="309.9" y="247.0" font-size="14" fill="#f0f6fc" font-weight="600">4.4% · 30 of 499</text>
+<line x1="406.5" y1="218.0" x2="406.5" y2="230.0" stroke="#6e7681" stroke-width="2"/>
+<text x="412.5" y="227.0" font-size="14" fill="#6e7681">11.8%</text>
+<text x="540.0" y="247.0" font-size="14" fill="#9198a1">no measurable change</text>
+<text x="0.0" y="307.0" font-size="14" fill="#f0f6fc" font-weight="600">+ memory sends names only</text>
+<rect x="236.0" y="292.0" width="44.9" height="20.0" fill="#3987e5" rx="4"/>
+<text x="290.9" y="307.0" font-size="14" fill="#f0f6fc" font-weight="600">3.1% · 20 of 486</text>
+<line x1="391.4" y1="278.0" x2="391.4" y2="290.0" stroke="#6e7681" stroke-width="2"/>
+<text x="397.4" y="287.0" font-size="14" fill="#6e7681">10.7%</text>
+<text x="540.0" y="307.0" font-size="14" fill="#9198a1">no worse, with a seventh of memory&#x27;s text</text>
+<text x="236.0" y="334.0" font-size="14" fill="#6e7681" text-anchor="middle">0%</text>
+<text x="381.0" y="334.0" font-size="14" fill="#6e7681" text-anchor="middle">10%</text>
+<text x="526.0" y="334.0" font-size="14" fill="#6e7681" text-anchor="middle">20%</text>
+<text x="671.0" y="334.0" font-size="14" fill="#6e7681" text-anchor="middle">30%</text>
+</g>
+</svg>

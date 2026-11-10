@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="968" height="384" viewBox="0 0 968 384" role="img" aria-labelledby="title desc">
 <title id="title">Problem, harness and result</title>
-<desc id="desc">Problem: Novels arrive a chapter at a time and run for hundreds of them, so each one is translated alone and names drift between them. For example, 伊文 came out as Irwin, Evan, Ivan, Ewen, Evin, Erwin over ten chapters. Harness: source-checked story memory and the translator&#x27;s glossary go into every chapter, the model proposes edits and Python decides which are kept, and every call is recorded for replay. Result, on 60 unseen chapters with the same model and no glossary: memory gave 59% fewer inconsistent name translations than translating each chapter alone, 54% fewer on 60 more unseen chapters, at about 0.85 cents per chapter.</desc>
+<desc id="desc">Problem: Novels arrive a chapter at a time and run for hundreds of them, so each one is translated alone and names drift between them. For example, 伊文 came out as Irwin, Evan, Ivan, Ewen, Evin, Erwin over ten chapters. Harness: source-checked story memory and the translator&#x27;s glossary go into every chapter, the model proposes edits and Python decides which are kept, and every call is recorded for replay. Result, on 120 unseen chapters with the same model and no glossary: memory gave 68% fewer name changes than translating each chapter alone (60% on the first 60 chapters and 76% on the next 60), at about 0.85 cents per chapter. A plural or a longer phrase around a name isn&#x27;t counted as a name change. As first scored, on a different sample of names and with plurals counted as changes, the two tests gave 59% and 54%.</desc>
 <rect width="968" height="384" rx="12" fill="#ffffff"/>
 <g transform="translate(24 24)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" fill="#1f2328">
 <rect x="0.0" y="0.0" width="280.0" height="336.0" fill="#f6f8fa" rx="12"/>
@@ -71,13 +71,13 @@
 <text x="338.0" y="262.0" font-size="13" fill="#1f2328">The model proposes edits; Python</text>
 <text x="338.0" y="281.0" font-size="13" fill="#1f2328">decides which are kept, and</text>
 <text x="338.0" y="300.0" font-size="13" fill="#1f2328">every call is recorded.</text>
-<text x="658.0" y="100.0" font-size="30" fill="#1f2328" font-weight="650">59%</text>
-<text x="658.0" y="122.0" font-size="13.5" fill="#59636e">fewer inconsistent name translations</text>
-<text x="658.0" y="168.0" font-size="30" fill="#1f2328" font-weight="650">54%</text>
-<text x="658.0" y="190.0" font-size="13.5" fill="#59636e">fewer on 60 more unseen chapters</text>
+<text x="658.0" y="100.0" font-size="30" fill="#1f2328" font-weight="650">68%</text>
+<text x="658.0" y="122.0" font-size="13.5" fill="#59636e">fewer name changes with memory</text>
+<text x="658.0" y="168.0" font-size="30" fill="#1f2328" font-weight="650">60% · 76%</text>
+<text x="658.0" y="190.0" font-size="13.5" fill="#59636e">on each block of 60 unseen chapters</text>
 <text x="658.0" y="236.0" font-size="30" fill="#1f2328" font-weight="650">0.85¢</text>
 <text x="658.0" y="258.0" font-size="13.5" fill="#59636e">per chapter with memory</text>
-<text x="658.0" y="300.0" font-size="12.5" fill="#59636e">Same model with and without memory, no</text>
-<text x="658.0" y="316.0" font-size="12.5" fill="#59636e">glossary; each plan fixed in advance.</text>
+<text x="658.0" y="300.0" font-size="12.5" fill="#59636e">No glossary; each plan fixed in advance.</text>
+<text x="658.0" y="316.0" font-size="12.5" fill="#59636e">As first scored, plurals counted: 59%, 54%.</text>
 </g>
 </svg>

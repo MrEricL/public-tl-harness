@@ -1,9 +1,10 @@
 # Results and methods
 
 The current evidence sequence is: the September combined harness study,
-Stage 1's separation of memory from the glossary, and Stage 2's fresh-block
-replication and smaller memory pack. Each test fixed its design and decision
-rules before scored generation. Amendments and post-scoring corrections are
+Stage 1's separation of memory from the glossary, Stage 2's fresh-block
+replication and smaller memory pack, and a November 10 rescoring of Stages 1
+and 2 with a corrected count. Each test fixed its design and decision rules
+before scored generation, or before scoring for the rescoring. Amendments and post-scoring corrections are
 identified below. Results measure terminology consistency and specific checks;
 overall translation-quality superiority has not been established.
 
@@ -172,6 +173,100 @@ The reviewer also receives that context, although Stage 2 tested the writer.
 Its effect on review quality remains untested. Stage 2 is a replication on
 new chapter blocks, not on new novels or a second writer model.
 
+## Corrected count — November 10: plurals and longer phrases aren't name changes
+
+**Why:** the consistency measure above reads one English rendering per name
+per chapter and compares exact strings. An audit of the saved renderings
+found two kinds it counts as inconsistent that a reader wouldn't call a
+change of name: a plural, hyphen or spacing difference ("ghoul" and
+"ghouls"), and the name inside a longer phrase where the Chinese is a longer
+compound ("ghoul king" for 食尸鬼王 when the name is 食尸鬼).
+
+**The corrected count:** for one name in one setup, each rendering is split
+into words, with possessive endings dropped. Two words are the same if one
+is the other's regular plural. Renderings with the same letters are the
+same however they are spaced or hyphenated. The usual name is the most
+common word sequence. A rendering is the same name if it is the usual name
+or contains it as whole words in order. Anything else, including a shorter
+form, is a name change. Rates are averaged over names within a novel and
+then over novels, as before.
+
+**Design:** no chapter was translated again. Stages 1 and 2 had scored at
+most 40 glossary names per novel out of those that recur. The test drew up
+to 40 more per novel from names never scored and unrelated to a scored name:
+108 on Stage 1's 60 chapters and 112 on Stage 2's. Fifty names are in both
+blocks; they are scored on different chapters and counted once per block. The rule, the name lists
+and the pass/fail rules were frozen before any call, after a blind review
+of the plan and code. The same extractor read the saved translations (418
+completed calls).
+
+| Chapters, fresh names | Original count: each chapter alone → memory | Corrected count: each chapter alone → memory |
+| --- | --- | --- |
+| Stage 1's 60 (108 names) | 26.7% → 14.2%, 47% fewer [35%, 58%] | 18.1% → 7.3%, 60% fewer [45%, 74%] |
+| Stage 2's 60 (112 names) | 29.4% → 12.5%, 57% fewer [45%, 68%] | 20.7% → 5.0%, 76% fewer [62%, 89%] |
+| Both together | 52% fewer [44%, 60%] | 68% fewer [58%, 78%] |
+
+| Question, by the corrected count | Paired difference, 95% interval | Rule set in advance | Decision |
+| --- | ---: | --- | --- |
+| Does memory cut name changes on Stage 1's chapters? | −10.8 points [−14.6, −7.2] | upper end below 0 | Holds |
+| And on Stage 2's chapters? | −15.7 points [−20.2, −11.5] | upper end below 0 | Holds |
+| Does a 20-chapter lead-in beat 5? | −0.6 points [−3.0, +1.9] | upper end below 0 | Fails |
+| Is the names-only pack still no worse? | −1.5 points [−3.2, +0.1] | upper end below +1.5 points | Holds |
+| Does a separate judge model agree with the merges? | 0 of 65 plural or spacing pairs called different; 3 of 51 longer-phrase pairs | at most 10% of each kind called different, at least 90% answered | Holds |
+
+**What the original count calls inconsistent, by kind** (renderings of fresh
+names; the four columns on the right split up "Counted inconsistent"):
+
+| Setup | Renderings | Counted inconsistent | Plural, hyphen or space | Longer phrase | Shorter form | Different name |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Stage 1, each chapter alone | 502 | 140 | 28 | 19 | 0 | 94 |
+| Stage 1, memory | 502 | 72 | 23 | 7 | 2 | 40 |
+| Stage 2, each chapter alone | 485 | 134 | 28 | 15 | 2 | 89 |
+| Stage 2, memory, 5-chapter lead-in | 500 | 63 | 25 | 10 | 1 | 27 |
+| Stage 2, memory, 20-chapter lead-in | 499 | 67 | 24 | 13 | 0 | 30 |
+| Stage 2, memory, 20-chapter lead-in, names only | 486 | 55 | 24 | 11 | 3 | 17 |
+
+The kinds are measured from the name's usual form, which isn't always its
+most common exact string, so in the first row they add up to 141.
+
+**The blind check:** GPT-6 Luna read 351 distinct pairs of a name's usual
+rendering and another rendering. It saw the Chinese name, both renderings in
+a shuffled order and the Chinese around the name, and wasn't told which
+setup a rendering came from or how the corrected count had read the pair.
+Its instructions stated the count's two definitions (grammar alone isn't a
+change of name, and neither are extra words for a longer Chinese compound),
+so the check shows how the count applies them, not whether a reader would
+share them. Sixteen pairs appear twice in the table, once for each
+rendering taken as the usual one, which makes 367 rows.
+
+| The corrected count reads the pair as | Pairs | Judge: same name | Judge: different name | Unsure |
+| --- | ---: | ---: | ---: | ---: |
+| Plural, hyphen or space (merged) | 65 | 65 | 0 | 0 |
+| Longer phrase (merged) | 51 | 48 | 3 | 0 |
+| Shorter form (kept as a change) | 8 | 6 | 2 | 0 |
+| Different name (kept as a change) | 243 | 118 | 124 | 1 |
+
+The judge accepts what the corrected count merges. Of the 243 pairs the
+count keeps as changes, the judge called 118 the same name. Nobody has
+checked those pairs, so the count may still be too strict, in both setups.
+
+**Limits:** these are fresh names on chapters already tested, not fresh
+chapters. Merging renderings in both setups tends to raise the relative cut
+whatever is merged, so the larger cut is not evidence that the count is
+right; the judge's agreement is, and the translator's own check of 38 pairs
+is still to do. The plan had the README's headline wait for that check; it
+was moved to the corrected count on November 10 before the check, with the
+original figures kept beside it. The count reads a name with and without a final "-s" as one
+name, and a generic usual name ("sect") absorbs longer names that contain
+it. It still reads one rendering per chapter, so a name that switches
+inside a chapter is invisible. The extractor and the judge are both models.
+
+**Amendment and cost:** the first extraction run stopped itself after 37
+calls on provider refusals, before any rendering was read; extraction then
+sent three calls at a time, and finished after the account was topped up.
+The measure, names and thresholds didn't change. The test cost $0.26 in
+DeepSeek calls; the judge ran on a subscription.
+
 ## Alignment pilots: post-draft patches were not adopted for memory names
 
 Four registered development pilots tested forcing missing names into saved
@@ -318,9 +413,9 @@ API charges, with judging run on subscription tools.
 
 ## Remaining validation
 
-Human validation of rendering extraction, the Stage 1 meaning-error guardrail,
-a blind naming self-test, and a human check of the alignment judge remain
-pending. Recorded calls and exact source quotations support traceability;
+Human validation of rendering extraction, the translator's check of the
+corrected count's merges, the Stage 1 meaning-error guardrail, a blind
+naming self-test, and a human check of the alignment judge remain pending. Recorded calls and exact source quotations support traceability;
 they do not independently establish semantic truth or literary quality.
 
 [How it works](HOW_IT_WORKS.md) · [Memory](MEMORY.md) ·

@@ -11,6 +11,9 @@
 - The repository now covers the folder demo, the local workbench and the book
   runner. Older command-line tools are no longer included.
 - Results from two new memory tests, in the README and the results page.
+- November 10: a corrected count of name changes, which no longer treats a
+  plural or a longer phrase as a change of name, tested on names no earlier
+  test had read. Results are in the README and the results page.
 
 ## October 2026
 
