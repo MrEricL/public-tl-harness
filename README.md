@@ -90,7 +90,8 @@ New runs send **names only** from memory. Facts remain stored, and older runs
 replay with their recorded settings. Compatible compound names can survive
 alongside glossary entries; conflicting memory names yield to the glossary.
 Memory respects when source evidence became available and never reads a later
-chapter. A checked quotation proves provenance, not a correct interpretation.
+chapter. A checked quote shows that an entry came from the source; it doesn't
+show that the model understood it correctly.
 
 For installments, `demo.py --memory-from RUN` continues a saved memory tape.
 `--lead-in N` reads the first N source files into memory and translates the rest.
@@ -221,8 +222,9 @@ prices.
   of memory characters. The pack kept older facts while cutting newer ones.
   A 15-chapter development pilot cut the pack from about 2,449 to 217
   characters with no observed loss, which led to the names-only test above.
-- **More history did not solve adherence.** A 20-chapter lead-in raised naming
-  delivery from 88% to 93%, without an established consistency improvement.
+- **A longer lead-in didn't help.** A 20-chapter lead-in raised the share of
+  name appearances with memory's line from 88% to 93%, with no measurable
+  change in consistency.
 - **Patching names could damage the passage.** One blind judge rated 29 of
   42 word-swap patches worse and eight better; for whole-sentence rewrites,
   21 of 45 were worse and seven better. These are development pilots, with
@@ -314,7 +316,7 @@ and 17 losses.
 
 Pending checks: human validation of the rendering extractor, my own check of
 the corrected count's merges, the Stage 1 meaning-error guardrail, a blind
-naming self-test, and human review of the alignment judge. Overall literary-quality superiority remains unestablished.
+naming self-test, and human review of the alignment judge.
 
 ## About
 
